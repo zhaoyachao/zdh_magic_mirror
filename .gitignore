@@ -1,0 +1,10 @@
+.idea
+*.iml
+gradle
+
+plugin/target
+label/target
+common/target
+ship/target
+*/target
+*-SNAPSHOT

@@ -1,0 +1,7 @@
+host = smtp.qq.com
+port = 587
+from = xxxx@qq.com
+user = xxxx@qq.com
+pass = xxxx
+startttlsEnable = true
+sslEnable = false

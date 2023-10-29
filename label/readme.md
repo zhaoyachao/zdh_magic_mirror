@@ -1,0 +1,33 @@
+# 标签计算平台
+    标签计算平台,提供产出客群能力
+    
+#tips
+    运算符 and, or, not, not_use
+    and: 交集运算符
+    or: 并集运算符
+    not: 排除运算符
+    not_use: 解除上下游关系运算符
+    
+    任务的关系,and 和 or 都是针对上游任务的运算, 通过and/or(交集/并集)运算后的结果 和下游做 [交集] 运算
+    not 是排除逻辑, 需先取上游的[并集]运算, 通过上游[并集运算结果] 排除下游数据
+
+# 打包
+    cd zdh_magic_mirror
+    sh install.sh (此步必须执行,且需要修改install.sh脚本中指定的本地仓库路径)
+    cd zdh_magic_mirror/label
+    sh build.sh
+
+# 启动
+    cd zdh_magic_mirror/label/xxx-SNAPSHOT
+    sh bin/start.sh
+
+# 更新记录
+    v1.0 新增mybatis框架
+    v1.0 默认使用数据库数据交互
+    v1.0 数据计算引擎 只支持mysql
+    v1.0 修复mybatis默认连接池,连接异常
+    v1.0 支持数据计算引擎配置化
+    
+    
+# 未实现待优化
+    1.标签计算时-通过生成sql计算,当前sql语法兼容未做

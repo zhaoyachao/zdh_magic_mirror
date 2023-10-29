@@ -1,0 +1,1 @@
+java -Dloader.path=libs/,conf/ -Xss512M -jar zdh_variable.jar
