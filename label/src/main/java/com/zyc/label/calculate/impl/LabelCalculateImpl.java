@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.DataSourcesInfo;
+import com.zyc.common.entity.LabelInfo;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.redis.JedisPoolUtil;
@@ -17,7 +18,6 @@ import com.zyc.label.calculate.LabelCalculate;
 import com.zyc.label.service.impl.DataSourcesServiceImpl;
 import com.zyc.label.service.impl.LabelServiceImpl;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
-import com.zyc.common.entity.LabelInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.slf4j.Logger;
@@ -317,70 +317,16 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                         //todo 此处重新实现,不区分未来过去,根据时间加减即可
                         //param_value 结构[day|hour|second];3;4 ,表示相对未来3到4天
                         //param_value 结构[day|hour|second];-3;-1 ,表示相对过去3天到1天
-                        if(!StringUtils.isEmpty(param_value)){
-                            String[] param_values = param_value.split(";");
-                            String unit="day";
-                            String start = "";
-                            String end = "";
-                            if(param_values.length==3){
-                                unit = param_values[0];
-                                if(!Arrays.asList(new String[]{"day","hour","second"}).contains(unit)){
-                                    //抛异常
-                                    throw new Exception("参数:"+code+"相对时间配置错误,时间单位,必须放到首位");
-                                }
-                                start = param_values[1];
-                                end = param_values[2];
-                            }else if(param_values.length ==2 ){
-                                start = param_values[1];
-                                end = param_values[2];
-                            }else{
-                                //此处抛异常
-                                throw new Exception("参数:"+code+"相对时间配置错误,配置信息为空");
-                            }
-                            if(Integer.parseInt(start)>Integer.parseInt(end)){
-                                //抛异常,开始时间 只能小于结束时间
-                                throw new Exception("参数:"+code+"相对时间配置错误,开始时间不可大于结束时间");
-                            }
-                            String value="";
-                            if(unit.equalsIgnoreCase("day")){
-                                if(labelInfo.getLabel_engine().equalsIgnoreCase("mysql")){
-                                    if(param_type!=null && (param_type.equalsIgnoreCase("date") || param_type.equalsIgnoreCase("timestamp"))){
-                                        value=String.format("datediff(current_date(),%s)>="+start+" and datediff(current_date(),%s)<="+end, code,code);
-                                        if(start.contains("-")){
-                                            value=String.format("datediff(%s,current_date())>="+start+" and datediff(%s,current_date())<="+end, code,code);
-                                        }
-                                    }else if(param_type!=null && param_type.equalsIgnoreCase("ts")){
-                                        value="datediff(current_date(),FROM_UNIXTIME("+code+", '%Y-%m-%d'))>="+start+" and datediff(current_date(),FROM_UNIXTIME("+code+", '%Y-%m-%d'))<= "+end;
-                                        if(start.contains("-")){
-                                            value="datediff(FROM_UNIXTIME("+code+", '%Y-%m-%d'),current_date())>="+start+" and datediff(FROM_UNIXTIME("+code+", '%Y-%m-%d'),current_date())<= "+end;
-                                        }
-                                    }
-                                }else if(labelInfo.getLabel_engine().equalsIgnoreCase("hive")){
-
-                                }else if(labelInfo.getLabel_engine().equalsIgnoreCase("spark")){
-
-                                }
-
-                            }else if(unit.equalsIgnoreCase("hour")){
-                                if(labelInfo.getLabel_engine().equalsIgnoreCase("mysql")){
-                                    if(param_type!=null && !param_type.equalsIgnoreCase("date")){
-                                        value=String.format("TIMESTAMPDIFF(HOUR, now(), %s)>="+start+" and TIMESTAMPDIFF(HOUR, now(), %s)<="+end, code,code);
-                                    }else if(param_type!=null && !param_type.equalsIgnoreCase("timestamp")){
-                                        value=String.format("TIMESTAMPDIFF(HOUR, now(), %s)>="+start+" and TIMESTAMPDIFF(HOUR, now(), %s)<="+end, code,code);
-                                    }else if(param_type!=null && !param_type.equalsIgnoreCase("ts")){
-                                        value="TIMESTAMPDIFF(HOUR, now(), FROM_UNIXTIME("+code+", '%Y-%m-%d %H:%i:%S'))>="+start+" and TIMESTAMPDIFF(HOUR, now(), FROM_UNIXTIME("+code+", '%Y-%m-%d %H:%i:%S'))<="+end;
-                                    }
-                                }else if(labelInfo.getLabel_engine().equalsIgnoreCase("hive")){
-
-                                }else if(labelInfo.getLabel_engine().equalsIgnoreCase("spark")){
-
-                                }
-                            }else if(unit.equalsIgnoreCase("second")){
-                                //此处暂不实现
-                                throw new Exception("参数:"+code+"相对时间配置错误,暂不支持秒级单位处理");
-                            }
-
-                            jinJavaParam.put(code,value);
+                        if(labelInfo.getLabel_engine().equalsIgnoreCase("mysql")){
+                            MysqlEngineImpl mysqlEngine = new MysqlEngineImpl();
+                            String expr = mysqlEngine.buildExpr(param_value, param_type, code, operate);
+                            jinJavaParam.put(code,expr);
+                        }else if(labelInfo.getLabel_engine().equalsIgnoreCase("hive")){
+                            HivesqlEngineImpl hivesqlEngine = new HivesqlEngineImpl();
+                            String expr = hivesqlEngine.buildExpr(param_value, param_type, code, operate);
+                            jinJavaParam.put(code,expr);
+                        }else{
+                            throw new Exception("暂不支持其他计算引擎");
                         }
                         break;
                     default:
