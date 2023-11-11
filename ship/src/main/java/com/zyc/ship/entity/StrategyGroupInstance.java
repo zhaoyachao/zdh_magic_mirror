@@ -69,6 +69,11 @@ public class StrategyGroupInstance {
 
     private List<String> label_codes;
 
+    /**
+     * 小流量比例
+     */
+    private String small_flow_rate;
+
     public String getScene() {
         return scene;
     }
@@ -179,5 +184,13 @@ public class StrategyGroupInstance {
 
     public void setLabel_codes(List<String> label_codes) {
         this.label_codes = label_codes;
+    }
+
+    public String getSmall_flow_rate() {
+        return small_flow_rate;
+    }
+
+    public void setSmall_flow_rate(String small_flow_rate) {
+        this.small_flow_rate = small_flow_rate;
     }
 }

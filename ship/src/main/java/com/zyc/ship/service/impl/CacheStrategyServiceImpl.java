@@ -7,11 +7,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.DAG;
 import com.zyc.common.util.MybatisUtil;
 import com.zyc.ship.dao.StrategyGroupMapper;
 import com.zyc.ship.entity.StrategyGroupInstance;
 import com.zyc.ship.service.StrategyService;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 
 import java.io.IOException;
@@ -81,9 +83,10 @@ public class CacheStrategyServiceImpl implements StrategyService {
                 DAG dag=new DAG();
                 StrategyGroupInstance strategyGroupInstance=new StrategyGroupInstance();
                 String group_instance_id = row.get("id").toString();
+                String group_id = row.get("strategy_group_id").toString();
                 strategyGroupInstance.setData_node(Sets.newHashSet(row.getOrDefault("data_node", "-1").toString().split(",")));
                 strategyGroupInstance.setId(group_instance_id);
-                strategyGroupInstance.setGroup_id(row.get("strategy_group_id").toString());
+                strategyGroupInstance.setGroup_id(group_id);
 
                 JSONObject run_jsmind_data = JSON.parseObject(row.get("run_jsmind_data").toString());
                 //获取跟节点
@@ -131,6 +134,13 @@ public class CacheStrategyServiceImpl implements StrategyService {
                 strategyGroupInstance.setDagMap(dagMap);
                 strategyGroupInstance.setStrategyMap(stringStrategyMap);
                 strategyGroupInstance.setLabel_codes(Lists.newArrayList(label_codes));
+                Object small_flow_rate_map_str = JedisPoolUtil.redisClient.get("small_flow_rate_"+group_id);
+                if(small_flow_rate_map_str != null && !StringUtils.isEmpty(small_flow_rate_map_str.toString())){
+                    Map<String, String> stringStringMap = JSON.parseObject(small_flow_rate_map_str.toString(), Map.class);
+                    String small_flow_rate = stringStringMap.getOrDefault(group_instance_id,"");
+                    strategyGroupInstance.setSmall_flow_rate(small_flow_rate);
+                }
+
                 for (String data_node: data_nodes){
                     if(maps.containsKey(data_node)){
                         maps.get(data_node).add(strategyGroupInstance);

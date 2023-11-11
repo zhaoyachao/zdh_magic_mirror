@@ -43,6 +43,22 @@ public class ShipCommonEngine implements Engine {
         return new ArrayList<>();
     }
 
+    public List<StrategyGroupInstance> getHitStrategyGroups(int flow,List<StrategyGroupInstance> strategy_groups){
+        List<StrategyGroupInstance> hit_strategy_groups = new ArrayList<>();
+        //校验分流
+        for (StrategyGroupInstance strategyGroupInstance: strategy_groups){
+            if(!StringUtils.isEmpty(strategyGroupInstance.getSmall_flow_rate())){
+                String[] flows = strategyGroupInstance.getSmall_flow_rate().split(",",2);
+                if(flows.length != 2){
+                    continue;
+                }
+                if(flow >= Integer.valueOf(flows[0]) && flow <= Integer.valueOf(flows[1])){
+                    hit_strategy_groups.add(strategyGroupInstance);
+                }
+            }
+        }
+        return hit_strategy_groups;
+    }
 
     /**
      * 加载标签和过滤集

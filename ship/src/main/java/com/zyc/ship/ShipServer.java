@@ -1,5 +1,6 @@
 package com.zyc.ship;
 
+import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.ship.disruptor.DisruptorManager;
 import com.zyc.ship.disruptor.ShipMasterEventWorkHandler;
 import com.zyc.ship.disruptor.ShipWorkerEventWorkHandler;
@@ -37,6 +38,8 @@ public class ShipServer {
                 properties.load(inputStream);
             }
             logger.info("加载配置文件路径:{}", conf_path);
+
+            JedisPoolUtil.connect(properties);
 
             LabelHttpUtil.init(properties);
             FilterHttpUtil.init(properties);

@@ -109,6 +109,11 @@ public class ShipCommonInputParam implements InputParam{
         this.data_node = data_node;
     }
 
+    public int getFlow(){
+
+        return uid.hashCode()%100+1;
+    }
+
     @Override
     public void checkParams() throws Exception {
 
