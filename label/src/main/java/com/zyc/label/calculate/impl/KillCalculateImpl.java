@@ -109,7 +109,7 @@ public class KillCalculateImpl extends BaseCalculate implements KillCalculate {
                         }else{
                             setStatus(strategyInstance.getId(), "killed");
                         }
-                        LogUtil.info(strategyInstance.getId(), "killed");
+                        LogUtil.info(strategyInstance.getStrategy_id(), strategyInstance.getId(), "killed");
                     }
                 }
 

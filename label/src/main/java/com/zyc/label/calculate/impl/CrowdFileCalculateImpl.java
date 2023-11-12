@@ -94,6 +94,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
         //唯一任务ID
         String id=this.param.get("id").toString();
         String group_id=this.param.get("group_id").toString();
+        String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
         String file_path = "";
@@ -144,20 +145,21 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
             rs = calculate(file_dir, pre_tasks_list, operate, rowsStr, strategyInstances, is_disenable);
 
             logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
             file_path = getFilePath(base_path,group_id,group_instance_id,id);
 
             String save_path = writeFile(id,file_path, rs);
             logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
             setStatus(id, "finish");
-            logger.info("task: {}, update status finish", id);
+            logStr = StrUtil.format("task: {}, update status finish", id);
+            LogUtil.info(strategy_id, id, logStr);
 
         }catch (Exception e){
             atomicInteger.decrementAndGet();
             writeEmptyFile(file_path);
             setStatus(id, "error");
-            LogUtil.error(id, e.getMessage());
+            LogUtil.error(strategy_id, id, e.getMessage());
             e.printStackTrace();
         }
 

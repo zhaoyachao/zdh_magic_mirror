@@ -81,6 +81,7 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
         //唯一任务ID
         String id=this.param.get("id").toString();
         String group_id=this.param.get("group_id").toString();
+        String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
         String file_path = "";
@@ -108,14 +109,16 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
             file_path= getFilePath(base_path,group_id,group_instance_id,id);
             String save_path = writeFile(id,file_path, rs);
             logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
             setStatus(id, "finish");
+            logStr = StrUtil.format("task: {}, update status finish", id);
+            LogUtil.info(strategy_id, id, logStr);
         }catch (Exception e){
             atomicInteger.decrementAndGet();
             writeEmptyFile(file_path);
             try{
                 setStatus(id,"error");
-                LogUtil.error(id, e.getMessage());
+                LogUtil.error(strategy_id, id, e.getMessage());
             }catch (Exception ex){
 
             }

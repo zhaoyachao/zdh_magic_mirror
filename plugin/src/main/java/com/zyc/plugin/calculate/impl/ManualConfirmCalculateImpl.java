@@ -86,6 +86,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
         //唯一任务ID
         String id=this.param.get("id").toString();
         String group_id=this.param.get("group_id").toString();
+        String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
         String file_path="";
@@ -131,7 +132,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
                         boolean is_success = send(account, confirm_notice_type, noticeInfo);
                         if(is_success) check=true;
                         logStr = StrUtil.format("task: {}, notice {} {}, owner: {}", id, confirm_notice_type, is_success, owner);
-                        LogUtil.info(id, logStr);
+                        LogUtil.info(strategy_id, id, logStr);
                     }
                 }
             }
@@ -142,16 +143,16 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
 
             String save_path = writeFile(id,file_path, rs);
             logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
             if(is_disenable.equalsIgnoreCase("true")){
                 setStatus(id, "finish");
                 logStr = StrUtil.format("task: {}, update status finish", id);
-                LogUtil.info(id, logStr);
+                LogUtil.info(strategy_id, id, logStr);
             }
         }catch (Exception e){
             writeEmptyFile(file_path);
             setStatus(id, "error");
-            LogUtil.error(id, e.getMessage());
+            LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {
@@ -200,7 +201,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
         }catch (Exception e){
             String logStr = StrUtil.format("task: {}, send error: {}", localVar.get(), e.getMessage());
             logger.info(logStr);
-            LogUtil.error(localVar.get(), logStr);
+            LogUtil.error("",localVar.get(), logStr);
         }
         return false;
     }
@@ -214,7 +215,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
         }catch (Exception e){
             String logStr = StrUtil.format("task: {}, send zdh error: {}", localVar.get(), e.getMessage());
             logger.info(logStr);
-            LogUtil.error(localVar.get(), logStr);
+            LogUtil.error("",localVar.get(), logStr);
         }
 
         return false;

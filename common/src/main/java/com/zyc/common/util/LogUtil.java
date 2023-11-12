@@ -92,7 +92,7 @@ public class LogUtil {
     }
 
 
-    public static void error(String task_logs_id, String msg){
+    public static void error(String job_id,String task_logs_id, String msg){
         StackTraceElement caller = getCaller();
         log().log(LogUtil.class.getName(), Level.ERROR, msg, null);
         ZdhLogs zdhLogs=new ZdhLogs();
@@ -103,18 +103,19 @@ public class LogUtil {
         send(zdhLogs);
     }
 
-    public static void info(String task_logs_id, String msg){
+    public static void info(String job_id,String task_logs_id, String msg){
         StackTraceElement caller = getCaller();
         log().log(LogUtil.class.getName(), Level.INFO, msg, null);
         ZdhLogs zdhLogs=new ZdhLogs();
         zdhLogs.setLevel("INFO");
+        zdhLogs.setJob_id(job_id);
         zdhLogs.setTask_logs_id(task_logs_id);
         zdhLogs.setMsg(msg);
         zdhLogs.setLog_time(new Timestamp(new Date().getTime()));
         send(zdhLogs);
     }
 
-    public static void debug(String task_logs_id, String msg){
+    public static void debug(String job_id,String task_logs_id, String msg){
         StackTraceElement caller = getCaller();
         log().log(LogUtil.class.getName(), Level.DEBUG, msg, null);
         ZdhLogs zdhLogs=new ZdhLogs();

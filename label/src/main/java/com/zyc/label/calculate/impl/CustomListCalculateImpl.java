@@ -140,7 +140,7 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
                 //生成参数
                 String name_list_str = run_jsmind_data.getOrDefault("name_list","").toString();
                 logStr = StrUtil.format("task: {}, param: {}", id, name_list_str);
-                LogUtil.info(id, logStr);
+                LogUtil.info(strategy_id, id, logStr);
                 String[] name_list = name_list_str.split(",");
                 if(name_list!=null && name_list.length>0){
                     rowsStr.addAll(Lists.newArrayList(name_list));
@@ -164,16 +164,16 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
 
             String save_path = writeFile(id,file_path, rs);
             logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
             setStatus(id, "finish");
             strategyLogInfo.setStatus("1");
             strategyLogInfo.setSuccess_num(String.valueOf(rs.size()));
-            LogUtil.info("task: {}, update status finish", id);
-
+            logStr = StrUtil.format("task: {}, update status finish", id);
+            LogUtil.info(strategy_id, id, logStr);
         }catch (Exception e){
             writeEmptyFile(file_path);
             setStatus(id, "error");
-            LogUtil.error(id, e.getMessage());
+            LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

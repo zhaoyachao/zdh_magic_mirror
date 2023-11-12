@@ -165,7 +165,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                 Map<String, String> jinJavaParam=getJinJavaParam(rule_params,labelInfo);
                 jinJavaParam.put("cur_time", cur_time);
                 logStr = StrUtil.format("task: {}, param: {}", id, jinJavaParam);
-                LogUtil.info(id, logStr);
+                LogUtil.info(strategy_id, id, logStr);
 
                 String data_sources_choose_input = labelInfo.getData_sources_choose_input();
 
@@ -176,7 +176,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
 
                 String new_sql = jinjava.render(sql, jinJavaParam);
                 logStr = StrUtil.format("task: {}, sql: {}", id, new_sql);
-                LogUtil.info(id, logStr);
+                LogUtil.info(strategy_id, id, logStr);
                 List<Map<String,Object>> rows =new ArrayList<>();
                 if(is_disenable.equalsIgnoreCase("true")){
                     //禁用任务不做处理,认为结果为空
@@ -210,12 +210,12 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
 
             String save_path = writeFile(id,file_path, rs);
             logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
             setStatus(id, "finish");
             strategyLogInfo.setStatus("1");
             strategyLogInfo.setSuccess_num(String.valueOf(rs.size()));
-            LogUtil.info("task: {}, update status finish", id);
-
+            logStr = StrUtil.format("task: {}, update status finish", id);
+            LogUtil.info(strategy_id, id, logStr);
             //根据计算引擎 执行,以spark sql 执行
             //new_sql = "insert overwrite table label_detail PARTITION(task_id='"+id+"') "+new_sql;
 
@@ -229,7 +229,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
         }catch (Exception e){
             writeEmptyFile(file_path);
             setStatus(id, "error");
-            LogUtil.error(id, e.getMessage());
+            LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

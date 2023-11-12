@@ -80,6 +80,7 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
         //唯一任务ID
         String id=this.param.get("id").toString();
         String group_id=this.param.get("group_id").toString();
+        String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
         String file_path="";
@@ -125,7 +126,7 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                         shunt_value = rs.size();
                     }
                     logStr = StrUtil.format("task: {}, shunt_type: num, size: {}, num: {}", id, rs.size(), shunt_value);
-                    LogUtil.info(id, logStr);
+                    LogUtil.info(strategy_id, id, logStr);
                     rs = rs.stream().limit(shunt_value).collect(Collectors.toSet());
                 }else if(shunt_type.equalsIgnoreCase("rate")){
                     //按比例分流
@@ -147,7 +148,7 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                     //按任务组实例id+分流器code, 注册index范围,此处需要校验index是否重复
                     //addIndex(group_instance_id+"_"+shunt_code, index, index2);
                     logStr = StrUtil.format("task: {}, shunt_type: rate, size: {}, start: {}, end: {}", id, rs.size(), start, end);
-                    LogUtil.info(id, logStr);
+                    LogUtil.info(strategy_id, id, logStr);
                     rs = tmp;
                 }else if(shunt_type.equalsIgnoreCase("hash")){
                     //按hash一致性分流
@@ -166,7 +167,7 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                         }
                     }
                     logStr = StrUtil.format("task: {}, shunt_type: rate, size: {}, start: {}, end: {}", id, rs.size(), start, end);
-                    LogUtil.info(id, logStr);
+                    LogUtil.info(strategy_id, id, logStr);
                     rs = tmp;
                 }
             }
@@ -175,14 +176,14 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
             String save_path = writeFile(id,file_path, rs);
 
             logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
             setStatus(id, "finish");
             logStr = StrUtil.format("task: {}, update status finish", id);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
         }catch (Exception e){
             writeEmptyFile(file_path);
             setStatus(id, "error");
-            LogUtil.error(id, e.getMessage());
+            LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

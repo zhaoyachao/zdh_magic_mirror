@@ -90,6 +90,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
         //唯一任务ID
         String id=this.param.get("id").toString();
         String group_id=this.param.get("group_id").toString();
+        String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
         String file_path="";
@@ -123,7 +124,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
             }else{
                 TouchConfigInfo touchConfigInfo = touchService.selectById(touch_id);
                 logStr = StrUtil.format("task: {}, touch_type: {}", id, touch_task);
-                LogUtil.info(id, logStr);
+                LogUtil.info(strategy_id, id, logStr);
                 if(touch_task.equalsIgnoreCase("email")){
                     emailTouch(touchConfigInfo,rs, file_dir,id);
                 }else if(touch_task.equalsIgnoreCase("sms")){
@@ -134,14 +135,14 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
             String save_path = writeFile(id,file_path, rs);
 
             logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
             setStatus(id, "finish");
             logStr = StrUtil.format("task: {}, update status finish", id);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
         }catch (Exception e){
             writeEmptyFile(file_path);
             setStatus(id, "error");
-            LogUtil.error(id, e.getMessage());
+            LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

@@ -80,6 +80,7 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
         //唯一任务ID
         String id=this.param.get("id").toString();
         String group_id=this.param.get("group_id").toString();
+        String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
         String file_path="";
@@ -142,21 +143,22 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
             String file_idmapping_path = getFilePath(file_dir, "idmapping_"+id);
             String save_idmapping_path = writeFile(id,file_idmapping_path, rs2);
             logStr = StrUtil.format("task: {}, id mapping end, size: {}", id, rs3.size());
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
 
             String save_path = writeFile(id,file_path, rs3);
 
             logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
             setStatus(id, "finish");
-            logger.info("task: {}, update status finish", id);
+            logStr = StrUtil.format("task: {}, update status finish", id);
+            LogUtil.info(strategy_id, id, logStr);
 
             System.err.println("计算引擎执行待实现");
 
         }catch (Exception e){
             writeEmptyFile(file_path);
             setStatus(id, "error");
-            LogUtil.error(id, e.getMessage());
+            LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

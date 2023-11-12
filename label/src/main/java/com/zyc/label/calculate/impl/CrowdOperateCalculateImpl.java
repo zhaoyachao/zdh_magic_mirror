@@ -89,6 +89,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
         //唯一任务ID
         String id=this.param.get("id").toString();
         String group_id=this.param.get("group_id").toString();
+        String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
         String file_path = "";
@@ -127,15 +128,16 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
 
             String save_path = writeFile(id,file_path, rs);
             logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(id, logStr);
+            LogUtil.info(strategy_id, id, logStr);
             setStatus(id, "finish");
-            logger.info("task: {}, update status finish", id);
+            logStr = StrUtil.format("task: {}, update status finish", id);
+            LogUtil.info(strategy_id, id, logStr);
 
         }catch (Exception e){
             atomicInteger.decrementAndGet();
             writeEmptyFile(file_path);
             setStatus(id,"error");
-            LogUtil.error(id, e.getMessage());
+            LogUtil.error(strategy_id, id, e.getMessage());
             e.printStackTrace();
         }
     }
