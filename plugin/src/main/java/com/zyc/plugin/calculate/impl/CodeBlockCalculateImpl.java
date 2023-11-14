@@ -6,7 +6,6 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.common.util.LogUtil;
-import com.zyc.plugin.PluginService;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.CodeBlockCalculate;
 import com.zyc.plugin.impl.KafkaPluginServiceImpl;
@@ -164,13 +163,5 @@ public class CodeBlockCalculateImpl extends BaseCalculate implements CodeBlockCa
         }finally {
             atomicInteger.decrementAndGet();
         }
-    }
-
-
-    public PluginService getPluginService(String plugin_code){
-        if(plugin_code.equalsIgnoreCase("kafka")){
-            return new KafkaPluginServiceImpl();
-        }
-        return null;
     }
 }

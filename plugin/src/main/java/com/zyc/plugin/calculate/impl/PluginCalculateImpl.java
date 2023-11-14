@@ -6,8 +6,10 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.common.entity.PluginInfo;
+import com.zyc.common.plugin.PluginParam;
+import com.zyc.common.plugin.PluginResult;
+import com.zyc.common.plugin.PluginService;
 import com.zyc.common.util.LogUtil;
-import com.zyc.plugin.PluginService;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.PluginCalculate;
 import com.zyc.plugin.impl.KafkaPluginServiceImpl;
@@ -121,22 +123,20 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
             }else{
                 PluginInfo pluginInfo = pluginService.selectById(rule_id);
                 PluginService pluginServiceImpl = getPluginService(rule_id);
-                if(rule_id.equalsIgnoreCase("kafka")){
-                    //读取已经推送的信息
-                    List<String> his = readFile(file_dir+"/kafka_"+id);
-                    Set<String> his2 = his.stream().map(str->str.split(",")[0]).collect(Collectors.toSet());
-                    Set<String> hisSet = Sets.newHashSet(his2);
+                //读取已经推送的信息
+                List<String> his = readFile(file_dir+"/"+rule_id+"_"+id);
+                Set<String> his2 = his.stream().map(str->str.split(",")[0]).collect(Collectors.toSet());
+                Set<String> hisSet = Sets.newHashSet(his2);
 
-                    Set<String> diff = Sets.difference(rs, hisSet);
-                    Set<String> tmp = Sets.newHashSet();
-                    for (String s: diff){
-                        String result = pluginServiceImpl.execute(pluginInfo, rule_params, s);
-                        tmp.add(s+","+result+","+System.currentTimeMillis());
-                    }
-                    writeFile(id,file_dir+"/kafka_"+id, tmp);
+                Set<String> diff = Sets.difference(rs, hisSet);
+                Set<String> tmp = Sets.newHashSet();
+                for (String s: diff){
+                    PluginParam pluginParam = pluginServiceImpl.getPluginParam(rule_params);
+                    PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, s);
+                    tmp.add(s+","+result.getCode()+","+JSON.toJSONString(result.getResult())+","+System.currentTimeMillis());
                 }
+                writeFile(id,file_dir+"/"+rule_id+"_"+id, tmp);
             }
-
 
             String save_path = writeFile(id,file_path, rs);
 

@@ -197,7 +197,7 @@ public abstract class BaseCalculate {
             return Sets.newHashSet();
         }
 
-        Set<String> result = Sets.newHashSet();
+        Set<String> result = null;
         Map<String,StrategyInstance> map=new HashMap<>();
         for (StrategyInstance strategyInstance: strategyInstances){
             map.put(strategyInstance.getId(), strategyInstance);
@@ -227,6 +227,9 @@ public abstract class BaseCalculate {
                     return Sets.newHashSet();
                 }
             }
+        }
+        if(result == null){
+            result = Sets.newHashSet();
         }
         return result;
     }
