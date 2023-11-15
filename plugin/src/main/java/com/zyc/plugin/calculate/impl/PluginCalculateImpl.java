@@ -1,6 +1,5 @@
 package com.zyc.plugin.calculate.impl;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
@@ -9,6 +8,7 @@ import com.zyc.common.entity.PluginInfo;
 import com.zyc.common.plugin.PluginParam;
 import com.zyc.common.plugin.PluginResult;
 import com.zyc.common.plugin.PluginService;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.PluginCalculate;
@@ -91,7 +91,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
         String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
-        String file_path="";
+        String file_path=getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取plugin code
@@ -116,8 +116,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
             Set<String> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
 
-            file_path = getFilePath(file_dir, id);
-
+            Set<String> rs3 = Sets.newHashSet();
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用,不做操作
             }else{
@@ -129,25 +128,19 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
                 Set<String> hisSet = Sets.newHashSet(his2);
 
                 Set<String> diff = Sets.difference(rs, hisSet);
-                Set<String> tmp = Sets.newHashSet();
+
                 for (String s: diff){
                     PluginParam pluginParam = pluginServiceImpl.getPluginParam(rule_params);
                     PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, s);
-                    tmp.add(s+","+result.getCode()+","+JSON.toJSONString(result.getResult())+","+System.currentTimeMillis());
+                    rs3.add(s+","+result.getCode()+","+JSON.toJSONString(result.getResult())+","+System.currentTimeMillis());
                 }
-                writeFile(id,file_dir+"/"+rule_id+"_"+id, tmp);
+                writeFile(id,file_dir+"/"+rule_id+"_"+id, rs3);
             }
 
-            String save_path = writeFile(id,file_path, rs);
-
-            logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(strategy_id, id, logStr);
-            setStatus(id, "finish");
-            logStr = StrUtil.format("task: {}, update status finish", id);
-            LogUtil.info(strategy_id, id, logStr);
+            writeFileAndPrintLog(id,strategy_id, file_path, rs3);
         }catch (Exception e){
             writeEmptyFile(file_path);
-            setStatus(id, "error");
+            setStatus(id, Const.STATUS_ERROR);
             LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();

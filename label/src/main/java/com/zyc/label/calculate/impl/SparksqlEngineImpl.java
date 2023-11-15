@@ -1,9 +1,6 @@
 package com.zyc.label.calculate.impl;
 
 import com.zyc.label.calculate.SqlEngine;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.Arrays;
 
 /**
  * spark 引擎表达式实现

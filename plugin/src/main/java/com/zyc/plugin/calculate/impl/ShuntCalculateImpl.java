@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.ShuntCalculate;
@@ -83,7 +84,7 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
         String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
-        String file_path="";
+        String file_path=getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取标签code
@@ -108,11 +109,11 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
             String base_path=dbConfig.get("file.path");
             //解析参数,生成人群
 
-            file_path=getFilePath(base_path,group_id,group_instance_id,id);
-
             //生成参数
             CalculateResult calculateResult = calculateResult(base_path, run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
+            String file_dir = calculateResult.getFile_dir();
+
 
             String shunt_type = shunt_param.getOrDefault("shunt_type","num").toString();
 
@@ -172,17 +173,10 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                 }
             }
 
-
-            String save_path = writeFile(id,file_path, rs);
-
-            logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(strategy_id, id, logStr);
-            setStatus(id, "finish");
-            logStr = StrUtil.format("task: {}, update status finish", id);
-            LogUtil.info(strategy_id, id, logStr);
+            writeFileAndPrintLog(id,strategy_id, file_path, rs);
         }catch (Exception e){
             writeEmptyFile(file_path);
-            setStatus(id, "error");
+            setStatus(id, Const.STATUS_ERROR);
             LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();

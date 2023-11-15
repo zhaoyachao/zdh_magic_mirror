@@ -1,4 +1,7 @@
 package com.zyc.common.plugin;
 
-public interface PluginParam {
+/**
+ * 插件参数
+ */
+public interface PluginParam{
 }

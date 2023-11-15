@@ -1,9 +1,12 @@
 package com.zyc.plugin.calculate.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
+import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateCommomParam;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
@@ -24,6 +27,21 @@ public abstract class BaseCalculate {
     public static ConcurrentHashMap<String,BlockingQueue> queue = new ConcurrentHashMap<String, BlockingQueue>();
 
     public abstract String getOperate(Map run_jsmind_data);
+
+    /**
+     * 根据策略配置和系统配置目录获取文件写入地址
+     * @param param
+     * @param dbConfig
+     * @return
+     */
+    public String getFilePathByParam(Map param, Map dbConfig){
+        String base_path=dbConfig.get("file.path").toString();
+        String id=param.get("id").toString();
+        String group_id=param.get("group_id").toString();
+        String strategy_id=param.get("strategy_id").toString();
+        String group_instance_id=param.get("group_instance_id").toString();
+        return getFilePath(base_path,group_id,group_instance_id,id);
+    }
 
     public String getFileDir(String base_path,String group_id, String group_instance_id){
         String file_dir= String.format("%s/%s/%s", base_path,group_id,group_instance_id);
@@ -232,5 +250,22 @@ public abstract class BaseCalculate {
             result = Sets.newHashSet();
         }
         return result;
+    }
+
+    /**
+     * 统一写入文件并打印日志
+     * @param id
+     * @param strategy_id
+     * @param file_path
+     * @param rs
+     * @throws IOException
+     */
+    public void writeFileAndPrintLog(String id,String strategy_id, String file_path, Set<String> rs) throws IOException {
+        String save_path = writeFile(id,file_path, rs);
+        String logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
+        LogUtil.info(strategy_id, id, logStr);
+        setStatus(id, Const.STATUS_FINISH);
+        logStr = StrUtil.format("task: {}, update status finish", id);
+        LogUtil.info(strategy_id, id, logStr);
     }
 }

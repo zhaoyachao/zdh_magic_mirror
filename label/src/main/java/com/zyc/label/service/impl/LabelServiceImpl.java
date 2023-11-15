@@ -1,8 +1,8 @@
 package com.zyc.label.service.impl;
 
+import com.zyc.common.entity.LabelInfo;
 import com.zyc.common.util.MybatisUtil;
 import com.zyc.label.dao.LabelMapper;
-import com.zyc.common.entity.LabelInfo;
 import org.apache.ibatis.session.SqlSession;
 
 import java.io.IOException;

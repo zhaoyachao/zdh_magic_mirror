@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.TouchConfigInfo;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.TouchCalculate;
@@ -93,7 +94,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
         String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
-        String file_path="";
+        String file_path=getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取标签code
@@ -141,7 +142,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
             LogUtil.info(strategy_id, id, logStr);
         }catch (Exception e){
             writeEmptyFile(file_path);
-            setStatus(id, "error");
+            setStatus(id, Const.STATUS_ERROR);
             LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();

@@ -1,9 +1,13 @@
 package com.zyc.label.calculate.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
+import com.zyc.common.util.LogUtil;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 
@@ -15,6 +19,21 @@ import java.sql.Timestamp;
 import java.util.*;
 
 public class BaseCalculate {
+
+    /**
+     * 根据策略配置和系统配置目录获取文件写入地址
+     * @param param
+     * @param dbConfig
+     * @return
+     */
+    public String getFilePathByParam(Map param, Map dbConfig){
+        String base_path=dbConfig.get("file.path").toString();
+        String id=param.get("id").toString();
+        String group_id=param.get("group_id").toString();
+        String strategy_id=param.get("strategy_id").toString();
+        String group_instance_id=param.get("group_instance_id").toString();
+        return getFilePath(base_path,group_id,group_instance_id,id);
+    }
 
     /**
      * 获取任务写入目录
@@ -91,23 +110,27 @@ public class BaseCalculate {
         strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
     }
 
+
     /**
-     *
-     * @param pre_tasks
+     * 解析上游任务和当前节点任务做运算-入口
+     * @param currentRows
+     * @param is_disenable
      * @param file_dir
-     * @param operate or,and, not
+     * @param param
+     * @param run_jsmind_data
+     * @param strategyInstanceService
      * @return
      * @throws IOException
      */
-    public Set<String> calculatePreTasks(String pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances) throws IOException {
-        Set<String> rs=Sets.newHashSet() ;
+    public Set<String> calculateCommon(Set<String> currentRows,String is_disenable, String file_dir, Map param,Map run_jsmind_data, StrategyInstanceServiceImpl strategyInstanceService) throws IOException {
+        String pre_tasks = param.get("pre_tasks").toString();
+        List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
+        String operate=run_jsmind_data.get("operate").toString();
+        List<String> pre_tasks_list = Lists.newArrayList();
         if(!StringUtils.isEmpty(pre_tasks)){
-            //如果是排除逻辑, 上游多个任务先取并集,然后再排除当前标签,此处默认使用并集
-            rs = calculate(Arrays.asList(pre_tasks.split(",")), file_dir, operate, strategyInstances);
-        }else{
-            //如果上游为空,则过滤无效 todo
+            pre_tasks_list = Lists.newArrayList(pre_tasks.split(","));
         }
-        return rs;
+        return calculate(file_dir, pre_tasks_list, operate, currentRows, strategyInstances, is_disenable);
     }
 
     /**
@@ -272,5 +295,22 @@ public class BaseCalculate {
             }
         }
         return result;
+    }
+
+    /**
+     * 统一写入文件并打印日志
+     * @param id
+     * @param strategy_id
+     * @param file_path
+     * @param rs
+     * @throws IOException
+     */
+    public void writeFileAndPrintLog(String id,String strategy_id, String file_path, Set<String> rs) throws IOException {
+        String save_path = writeFile(id,file_path, rs);
+        String logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
+        LogUtil.info(strategy_id, id, logStr);
+        setStatus(id, Const.STATUS_FINISH);
+        logStr = StrUtil.format("task: {}, update status finish", id);
+        LogUtil.info(strategy_id, id, logStr);
     }
 }

@@ -1,9 +1,9 @@
 package com.zyc.label.calculate.impl;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.common.util.MybatisUtil;
 import com.zyc.label.calculate.CrowdRuleCalculate;
@@ -92,7 +92,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
         String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
-        String file_path = "";
+        String file_path = getFilePathByParam(this.param, this.dbConfig);
         try{
             String base_path=dbConfig.get("file.path");
             //客群运算id
@@ -124,19 +124,12 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
                 }
             }
 
-            file_path = getFilePath(base_path,group_id,group_instance_id,id);
-
-            String save_path = writeFile(id,file_path, rs);
-            logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(strategy_id, id, logStr);
-            setStatus(id, "finish");
-            logStr = StrUtil.format("task: {}, update status finish", id);
-            LogUtil.info(strategy_id, id, logStr);
+            writeFileAndPrintLog(id,strategy_id, file_path,rs);
 
         }catch (Exception e){
             atomicInteger.decrementAndGet();
             writeEmptyFile(file_path);
-            setStatus(id,"error");
+            setStatus(id, Const.STATUS_ERROR);
             LogUtil.error(strategy_id, id, e.getMessage());
             e.printStackTrace();
         }

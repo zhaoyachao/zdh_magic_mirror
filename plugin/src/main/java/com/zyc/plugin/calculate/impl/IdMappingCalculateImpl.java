@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.IdMappingCalculate;
@@ -83,7 +84,7 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
         String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
-        String file_path="";
+        String file_path=getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取标签code
@@ -111,8 +112,8 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
             file_path = getFilePath(file_dir, id);
 
             logger.info("task: {}, merge upstream data end, size: {}", id, rs.size());
-            Set<String> rs2=Sets.newHashSet() ;
-            Set<String> rs3=Sets.newHashSet() ;
+            Set<String> rs2=Sets.newHashSet() ;//映射明细,每条记录的映射关系
+            Set<String> rs3=Sets.newHashSet() ;//映射结果,映射成功的结果
             if(is_disenable.equalsIgnoreCase("true")){
                 rs2=rs;
                 rs3=rs;
@@ -145,19 +146,11 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
             logStr = StrUtil.format("task: {}, id mapping end, size: {}", id, rs3.size());
             LogUtil.info(strategy_id, id, logStr);
 
-            String save_path = writeFile(id,file_path, rs3);
-
-            logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(strategy_id, id, logStr);
-            setStatus(id, "finish");
-            logStr = StrUtil.format("task: {}, update status finish", id);
-            LogUtil.info(strategy_id, id, logStr);
-
-            System.err.println("计算引擎执行待实现");
+            writeFileAndPrintLog(id,strategy_id, file_path, rs3);
 
         }catch (Exception e){
             writeEmptyFile(file_path);
-            setStatus(id, "error");
+            setStatus(id, Const.STATUS_ERROR);
             LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();

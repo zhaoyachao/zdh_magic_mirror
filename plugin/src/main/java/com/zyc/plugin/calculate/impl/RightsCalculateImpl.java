@@ -1,12 +1,9 @@
 package com.zyc.plugin.calculate.impl;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.zyc.common.entity.FilterInfo;
-import com.zyc.common.util.FileUtil;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.RightsCalculate;
@@ -14,8 +11,6 @@ import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -89,7 +84,7 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
         String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
-        String file_path="";
+        String file_path=getFilePathByParam(this.param, this.dbConfig);
         try{
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
@@ -102,8 +97,6 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
                 throw new Exception("标签信息数据库配置异常");
             }
             String base_path=dbConfig.get("file.path");
-
-            file_path=getFilePath(base_path,group_id,group_instance_id,id);
 
             //生成参数
             Gson gson=new Gson();
@@ -120,16 +113,11 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
                 throw new Exception("当前权益模块未实现");
             }
 
-            String save_path = writeFile(id,file_path, rs);
-            logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(strategy_id, id, logStr);
-            setStatus(id, "finish");
-            logStr = StrUtil.format("task: {}, update status finish", id);
-            LogUtil.info(strategy_id, id, logStr);
+            writeFileAndPrintLog(id,strategy_id, file_path, rs);
 
         }catch (Exception e){
             writeEmptyFile(file_path);
-            setStatus(id, "error");
+            setStatus(id, Const.STATUS_ERROR);
             LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();

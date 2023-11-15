@@ -1,8 +1,8 @@
 package com.zyc.label;
 
 import com.alibaba.fastjson.JSON;
-import com.zyc.common.queue.QueueHandler;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.queue.QueueHandler;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.label.calculate.impl.*;
@@ -51,6 +51,10 @@ public class LabelServer {
             }
 
             logger.info(config.toString());
+
+            if(config.get("file.path") == null){
+                throw new Exception("配置信息缺失file.path参数");
+            }
 
             JedisPoolUtil.connect(config);
 

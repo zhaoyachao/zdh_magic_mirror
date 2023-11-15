@@ -6,6 +6,7 @@ import com.zyc.common.entity.NoticeInfo;
 import com.zyc.common.entity.PermissionUserInfo;
 import com.zyc.common.service.impl.NoticeServiceImpl;
 import com.zyc.common.service.impl.PermissionUserServiceImpl;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.ManualConfirmCalculate;
@@ -145,13 +146,13 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
             logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
             LogUtil.info(strategy_id, id, logStr);
             if(is_disenable.equalsIgnoreCase("true")){
-                setStatus(id, "finish");
+                setStatus(id, Const.STATUS_FINISH);
                 logStr = StrUtil.format("task: {}, update status finish", id);
                 LogUtil.info(strategy_id, id, logStr);
             }
         }catch (Exception e){
             writeEmptyFile(file_path);
-            setStatus(id, "error");
+            setStatus(id, Const.STATUS_ERROR);
             LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();

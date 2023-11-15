@@ -51,6 +51,10 @@ public class PluginServer {
 
             logger.info(config.toString());
 
+            if(config.get("file.path") == null){
+                throw new Exception("配置信息缺失file.path参数");
+            }
+
             int limit = Integer.valueOf(config.getProperty("task.max.num", "50"));
 
             QueueHandler queueHandler=new DbQueueHandler();

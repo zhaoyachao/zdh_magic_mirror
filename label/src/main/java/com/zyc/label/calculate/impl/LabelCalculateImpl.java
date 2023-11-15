@@ -2,16 +2,15 @@ package com.zyc.label.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.DataSourcesInfo;
 import com.zyc.common.entity.LabelInfo;
-import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.redis.JedisPoolUtil;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.DBUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.label.calculate.LabelCalculate;
@@ -116,7 +115,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
         strategyLogInfo.setStrategy_instance_id(id);
         strategyLogInfo.setStrategy_group_instance_id(group_instance_id);
         String logStr="";
-        String file_path = "";
+        String file_path = getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取标签code
@@ -192,30 +191,15 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
 
             }
 
-
             Set<String> rs=Sets.newHashSet() ;
-            //检查标签上游
-            String pre_tasks = this.param.get("pre_tasks").toString();
-            List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
             String file_dir= getFileDir(base_path,group_id,group_instance_id);
-            String operate=run_jsmind_data.get("operate").toString();
-            List<String> pre_tasks_list = Lists.newArrayList();
-            if(!StringUtils.isEmpty(pre_tasks)){
-                pre_tasks_list = Lists.newArrayList(pre_tasks.split(","));
-            }
-            rs = calculate(file_dir, pre_tasks_list, operate, rowsStr, strategyInstances, is_disenable);
+            //解析上游任务并和当前节点数据做运算
+            rs = calculateCommon(rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
-            //执行sql,返回数据写文件
-            file_path= getFilePath(base_path,group_id,group_instance_id,id);
-
-            String save_path = writeFile(id,file_path, rs);
-            logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(strategy_id, id, logStr);
-            setStatus(id, "finish");
+            writeFileAndPrintLog(id,strategy_id, file_path, rs);
             strategyLogInfo.setStatus("1");
             strategyLogInfo.setSuccess_num(String.valueOf(rs.size()));
-            logStr = StrUtil.format("task: {}, update status finish", id);
-            LogUtil.info(strategy_id, id, logStr);
+
             //根据计算引擎 执行,以spark sql 执行
             //new_sql = "insert overwrite table label_detail PARTITION(task_id='"+id+"') "+new_sql;
 
@@ -228,7 +212,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
 
         }catch (Exception e){
             writeEmptyFile(file_path);
-            setStatus(id, "error");
+            setStatus(id, Const.STATUS_ERROR);
             LogUtil.error(strategy_id, id, e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();

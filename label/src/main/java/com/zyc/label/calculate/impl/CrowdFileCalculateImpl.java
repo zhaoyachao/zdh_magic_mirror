@@ -2,15 +2,13 @@ package com.zyc.label.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.common.util.SFTPUtil;
 import com.zyc.label.calculate.CrowdFileCalculate;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +95,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
         String strategy_id=this.param.get("strategy_id").toString();
         String group_instance_id=this.param.get("group_instance_id").toString();
         String logStr="";
-        String file_path = "";
+        String file_path = getFilePathByParam(this.param, this.dbConfig);
         try{
             String base_path=dbConfig.get("file.path");
             //客群运算id
@@ -132,33 +130,19 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                 List<String> rows = FileUtil.readStringSplit(new File(file_sftp_path), Charset.forName("utf-8"));
                 rowsStr = Sets.newHashSet(rows);
             }
-            //获取上游任务
-            String pre_tasks = this.param.get("pre_tasks").toString();
+
             String file_dir= getFileDir(base_path,group_id,group_instance_id);
-            String operate=run_jsmind_data.get("operate").toString();
-            rs=Sets.newHashSet() ;
-            List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
-            List<String> pre_tasks_list = Lists.newArrayList();
-            if(!StringUtils.isEmpty(pre_tasks)){
-                pre_tasks_list = Lists.newArrayList(pre_tasks.split(","));
-            }
-            rs = calculate(file_dir, pre_tasks_list, operate, rowsStr, strategyInstances, is_disenable);
+            //解析上游任务并和当前节点数据做运算
+            rs = calculateCommon(rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
             logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
             LogUtil.info(strategy_id, id, logStr);
-            file_path = getFilePath(base_path,group_id,group_instance_id,id);
 
-            String save_path = writeFile(id,file_path, rs);
-            logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(strategy_id, id, logStr);
-            setStatus(id, "finish");
-            logStr = StrUtil.format("task: {}, update status finish", id);
-            LogUtil.info(strategy_id, id, logStr);
-
+            writeFileAndPrintLog(id,strategy_id, file_path,rs);
         }catch (Exception e){
             atomicInteger.decrementAndGet();
             writeEmptyFile(file_path);
-            setStatus(id, "error");
+            setStatus(id, Const.STATUS_ERROR);
             LogUtil.error(strategy_id, id, e.getMessage());
             e.printStackTrace();
         }
