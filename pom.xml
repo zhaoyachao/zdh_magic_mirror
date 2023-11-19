@@ -39,6 +39,7 @@
         <disruptor.version>3.4.4</disruptor.version>
         <commons-jexl3.version>3.1</commons-jexl3.version>
         <groovy-all.version>3.0.19</groovy-all.version>
+        <rocksdb.version>7.10.2</rocksdb.version>
     </properties>
 
     <name>zdh magic mirror Tapestry 5 Application</name>
@@ -169,6 +170,12 @@
                 <artifactId>groovy-all</artifactId>
                 <version>${groovy-all.version}</version>
                 <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.rocksdb</groupId>
+                <artifactId>rocksdbjni</artifactId>
+                <version>${rocksdb.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

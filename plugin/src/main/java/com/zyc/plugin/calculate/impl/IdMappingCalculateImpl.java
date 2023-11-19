@@ -162,11 +162,13 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
     public IdMappingEngine readIdMappingData(String data_engine, String base_path, String id_mapping_code) throws Exception {
 
         if(data_engine.equalsIgnoreCase("file")){
-            String file_path=base_path+"/id_mapping/"+id_mapping_code;
+            String file_path=base_path+"/id_mapping/"+data_engine+"/"+id_mapping_code;
             FileIdMappingEngineImpl idMappingEngine = new FileIdMappingEngineImpl(file_path);
             return idMappingEngine;
         }else if(data_engine.equalsIgnoreCase("rocksdb")){
-
+            String file_path=base_path+"/id_mapping/"+data_engine+"/"+id_mapping_code;
+            RocksDbIdMappingEngineImpl idMappingEngine = new RocksDbIdMappingEngineImpl(file_path);
+            return idMappingEngine;
         }else if(data_engine.equalsIgnoreCase("jdbc")){
 
         }else if(data_engine.equalsIgnoreCase("es")){

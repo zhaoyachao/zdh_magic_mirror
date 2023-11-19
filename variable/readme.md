@@ -19,4 +19,7 @@
     
 #启动
     cd zdh_magic_mirror/variable/xxx-SNAPSHOT
-    sh bin/start.sh    
+    sh bin/start.sh
+    
+#更新说明
+    v5.2.1 优化三方依赖版本    

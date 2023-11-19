@@ -18,9 +18,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+
         <netty-all.version>4.1.75.Final</netty-all.version>
         <javax.mail.version>1.6.2</javax.mail.version>
-        <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
+        <aliyun-java-sdk-core.version>4.6.1</aliyun-java-sdk-core.version>
+        <aliyun-java-sdk-dysmsapi.version>2.2.1</aliyun-java-sdk-dysmsapi.version>
+        <kafka-clients.version>2.3.1</kafka-clients.version>
     </properties>
 
     <repositories>
@@ -131,19 +134,24 @@
         <dependency>
             <groupId>com.aliyun</groupId>
             <artifactId>aliyun-java-sdk-core</artifactId>
-            <version>4.6.1</version>
+            <version>${aliyun-java-sdk-core.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.aliyun</groupId>
             <artifactId>aliyun-java-sdk-dysmsapi</artifactId>
-            <version>2.2.1</version>
+            <version>${aliyun-java-sdk-dysmsapi.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>2.3.1</version>
+            <version>${kafka-clients.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.rocksdb</groupId>
+            <artifactId>rocksdbjni</artifactId>
         </dependency>
 
     </dependencies>
