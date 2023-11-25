@@ -2,6 +2,7 @@ package com.zyc.label.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.queue.QueueHandler;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
@@ -19,7 +20,8 @@ public class DbQueueHandler implements QueueHandler {
     private static Logger logger= LoggerFactory.getLogger(DbQueueHandler.class);
     private StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
 
-    private String[] instanceTypes = new String[]{"label","crowd_rule","crowd_operate", "crowd_file","custom_list"};
+    private String[] instanceTypes = new String[]{InstanceType.LABEL.getCode(),InstanceType.CROWD_OPERATE.getCode(),InstanceType.CROWD_FILE.getCode(),
+            InstanceType.CROWD_RULE.getCode(),InstanceType.CUSTOM_LIST.getCode()};
     private String[] status = new String[]{"check_dep_finish"};
 
     @Override

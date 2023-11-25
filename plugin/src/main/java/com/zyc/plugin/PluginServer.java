@@ -1,6 +1,7 @@
 package com.zyc.plugin;
 
 import com.alibaba.fastjson.JSON;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.queue.QueueHandler;
 import com.zyc.common.util.LogUtil;
@@ -78,24 +79,26 @@ public class PluginServer {
                     strategyInstance.setStatus("etl");
                     strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
                     Runnable runnable=null;
-                    if(m.get("instance_type").toString().equalsIgnoreCase("filter")){
+                    if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.FILTER.getCode())){
                         runnable=new FilterCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("shunt")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.SHUNT.getCode())){
                         runnable=new ShuntCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("touch")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.TOUCH.getCode())){
                         runnable=new TouchCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("plugin")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.PLUGIN.getCode())){
                         runnable=new PluginCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("id_mapping")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.ID_MAPPING.getCode())){
                         runnable=new IdMappingCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("manual_confirm")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.MANUAL_CONFIRM.getCode())){
                         runnable=new ManualConfirmCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("rights")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.RIGHTS.getCode())){
                         runnable=new RightsCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("code_block")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.CODE_BLOCK.getCode())){
                         runnable=new CodeBlockCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("tn")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.TN.getCode())){
                         runnable=new TnCalculateImpl(m, atomicInteger, config);
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
+                        runnable=new FunctionCalculateImpl(m, atomicInteger, config);
                     }else{
                         //不支持的任务类型
                         LogUtil.error(m.get("strategy_id").toString(), m.get("id").toString(), "不支持的任务类型, "+m.get("instance_type").toString());

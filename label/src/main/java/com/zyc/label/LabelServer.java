@@ -1,6 +1,7 @@
 package com.zyc.label;
 
 import com.alibaba.fastjson.JSON;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.queue.QueueHandler;
 import com.zyc.common.redis.JedisPoolUtil;
@@ -81,15 +82,15 @@ public class LabelServer {
                     strategyInstance.setStatus("etl");
                     strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
                     Runnable runnable=null;
-                    if(m.get("instance_type").toString().equalsIgnoreCase("label")){
+                    if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.LABEL.getCode())){
                         runnable=new LabelCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("crowd_operate")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.CROWD_OPERATE.getCode())){
                         runnable=new CrowdOperateCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("crowd_file")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.CROWD_FILE.getCode())){
                         runnable=new CrowdFileCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("crowd_rule")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.CROWD_RULE.getCode())){
                         runnable=new CrowdRuleCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase("custom_list")){
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.CUSTOM_LIST.getCode())){
                         runnable=new CustomListCalculateImpl(m, atomicInteger, config);
                     }else{
                         //不支持的任务类型

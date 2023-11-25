@@ -2,6 +2,7 @@ package com.zyc.plugin.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.queue.QueueHandler;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
@@ -19,7 +20,10 @@ public class DbQueueHandler implements QueueHandler {
     private static Logger logger= LoggerFactory.getLogger(DbQueueHandler.class);
     private StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
 
-    private String[] instanceTypes = new String[]{"filter","shunt","touch","id_mapping","plugin", "manual_confirm","rights", "code_block", "tn"};
+    private String[] instanceTypes = new String[]{
+            InstanceType.FILTER.getCode(),InstanceType.SHUNT.getCode(),InstanceType.TOUCH.getCode(),InstanceType.PLUGIN.getCode(),
+            InstanceType.ID_MAPPING.getCode(),InstanceType.MANUAL_CONFIRM.getCode(),InstanceType.RIGHTS.getCode(),InstanceType.CODE_BLOCK.getCode(),
+            InstanceType.TN.getCode(), InstanceType.FUNCTION.getCode()};
     private String[] status = new String[]{"check_dep_finish"};
 
     @Override
