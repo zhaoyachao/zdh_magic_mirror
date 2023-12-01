@@ -111,7 +111,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
             Set<String> rs = null;
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用任务不做处理,认为结果为空
-                rs = Sets.newHashSet() ;
+                rs = Sets.newHashSet();
             }else{
                 String file_dir= getFileDir(base_path,group_id,group_instance_id);
                 if(!StringUtils.isEmpty(pre_tasks)){

@@ -237,6 +237,7 @@ public class BaseCalculate {
     /**
      * 人群运算符使用
      * 操作符not_use,表示不使用上游数据
+     * 使用not排除逻辑时,需要指定一个base数据,用于做排除的基准数据
      * @param pre_tasks
      * @param file_dir
      * @param operate

@@ -113,7 +113,7 @@ public abstract class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public CalculateResult calculateResult(String base_path, Map run_jsmind_data, Map param, StrategyInstanceServiceImpl strategyInstanceService) throws IOException {
+    public CalculateResult calculateResult(String base_path, Map run_jsmind_data, Map param, StrategyInstanceServiceImpl strategyInstanceService) throws Exception {
         //生成参数
         Set<String> rs=Sets.newHashSet() ;
         //检查标签上游
@@ -138,7 +138,7 @@ public abstract class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculatePreTasks(String pre_tasks, String file_dir, String operator, List<StrategyInstance> strategyInstances) throws IOException {
+    public Set<String> calculatePreTasks(String pre_tasks, String file_dir, String operator, List<StrategyInstance> strategyInstances) throws Exception {
         Set<String> rs=Sets.newHashSet() ;
         if(!StringUtils.isEmpty(pre_tasks)){
             rs = calculate(Lists.newArrayList(pre_tasks.split(",")), file_dir, operator, strategyInstances);
@@ -209,7 +209,7 @@ public abstract class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculate(List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances) throws IOException {
+    public Set<String> calculate(List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances) throws Exception {
 
         if(operate.equalsIgnoreCase("not_use")){
             return Sets.newHashSet();
@@ -240,7 +240,7 @@ public abstract class BaseCalculate {
                     result = Sets.intersection(result, set);
                 }else if(operate.equalsIgnoreCase("not")){
                     //计算排除
-                    result = Sets.difference(result, set);
+                    throw new Exception("不支持排除操作,plugin模块仅支持and, or, not_use操作符");
                 }else if(operate.equalsIgnoreCase("not_use")){
                     return Sets.newHashSet();
                 }
