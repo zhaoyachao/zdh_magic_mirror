@@ -3,6 +3,7 @@ package com.zyc.plugin.calculate.impl;
 import cn.hutool.core.lang.JarClassLoader;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ClassLoaderUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -171,6 +172,8 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                 rs = rs3;
             }
 
+            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
+            LogUtil.info(strategy_id, id, logStr);
             writeFileAndPrintLog(id,strategy_id, file_path, rs);
         }catch (Exception e){
             writeEmptyFile(file_path);

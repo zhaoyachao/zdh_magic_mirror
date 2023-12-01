@@ -1,5 +1,6 @@
 package com.zyc.plugin.calculate.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -112,7 +113,8 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
                 //遍历权益,发放失败从rs集合中删除用户
                 throw new Exception("当前权益模块未实现");
             }
-
+            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
+            LogUtil.info(strategy_id, id, logStr);
             writeFileAndPrintLog(id,strategy_id, file_path, rs);
 
         }catch (Exception e){

@@ -1,5 +1,6 @@
 package com.zyc.label.calculate.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyInstance;
@@ -123,6 +124,8 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
                     throw new Exception("运算符节点至少依赖一个父节点");
                 }
             }
+            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
+            LogUtil.info(strategy_id, id, logStr);
 
             writeFileAndPrintLog(id,strategy_id, file_path,rs);
 

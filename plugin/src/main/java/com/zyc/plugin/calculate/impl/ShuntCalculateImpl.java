@@ -172,6 +172,8 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                     rs = tmp;
                 }
             }
+            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
+            LogUtil.info(strategy_id, id, logStr);
 
             writeFileAndPrintLog(id,strategy_id, file_path, rs);
         }catch (Exception e){

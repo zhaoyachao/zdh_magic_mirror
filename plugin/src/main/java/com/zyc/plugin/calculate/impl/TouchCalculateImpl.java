@@ -133,13 +133,10 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
                 }
             }
 
-            String save_path = writeFile(id,file_path, rs);
+            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
+            LogUtil.info(strategy_id, id, logStr);
 
-            logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(strategy_id, id, logStr);
-            setStatus(id, "finish");
-            logStr = StrUtil.format("task: {}, update status finish", id);
-            LogUtil.info(strategy_id, id, logStr);
+            writeFileAndPrintLog(id,strategy_id, file_path, rs);
         }catch (Exception e){
             writeEmptyFile(file_path);
             setStatus(id, Const.STATUS_ERROR);

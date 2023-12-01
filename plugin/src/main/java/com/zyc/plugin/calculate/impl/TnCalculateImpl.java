@@ -1,5 +1,6 @@
 package com.zyc.plugin.calculate.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.FilterInfo;
@@ -117,7 +118,8 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
             }else{
 
             }
-
+            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
+            LogUtil.info(strategy_id, id, logStr);
             writeFileAndPrintLog(id,strategy_id, file_path, rs);
         }catch (Exception e){
             writeEmptyFile(file_path);

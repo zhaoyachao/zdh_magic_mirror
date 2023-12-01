@@ -1,5 +1,6 @@
 package com.zyc.plugin.calculate.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
@@ -146,6 +147,9 @@ public class CodeBlockCalculateImpl extends BaseCalculate implements CodeBlockCa
                     throw new Exception("java代码返回结果类型仅支持map结构");
                 }
             }
+
+            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
+            LogUtil.info(strategy_id, id, logStr);
 
             writeFileAndPrintLog(id,strategy_id, file_path, rs);
         }catch (Exception e){

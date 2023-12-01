@@ -1,5 +1,6 @@
 package com.zyc.plugin.calculate.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
@@ -137,6 +138,8 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
                 writeFile(id,file_dir+"/"+rule_id+"_"+id, rs3);
             }
 
+            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
+            LogUtil.info(strategy_id, id, logStr);
             writeFileAndPrintLog(id,strategy_id, file_path, rs3);
         }catch (Exception e){
             writeEmptyFile(file_path);

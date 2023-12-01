@@ -196,6 +196,8 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             //解析上游任务并和当前节点数据做运算
             rs = calculateCommon(rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
+            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
+            LogUtil.info(strategy_id, id, logStr);
             writeFileAndPrintLog(id,strategy_id, file_path, rs);
             strategyLogInfo.setStatus("1");
             strategyLogInfo.setSuccess_num(String.valueOf(rs.size()));
