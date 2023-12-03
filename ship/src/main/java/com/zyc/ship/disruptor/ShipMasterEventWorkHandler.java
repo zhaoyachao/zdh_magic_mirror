@@ -88,6 +88,7 @@ public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
         shipEvent1.setShipExecutor(shipEvent.getShipExecutor());
         shipEvent1.setLabelValues(shipEvent.getLabelValues());
         shipEvent1.setFilterValues(shipEvent.getFilterValues());
+        shipEvent1.setRunParam(shipEvent.getRunParam());
         return shipEvent1;
     }
 

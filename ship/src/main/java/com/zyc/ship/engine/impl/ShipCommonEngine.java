@@ -275,6 +275,7 @@ public class ShipCommonEngine implements Engine {
             ShipResult shipResult = new RiskShipResultImpl();
             ShipExecutor shipExecutor = new RiskShipExecutorImpl(shipEvent, shipResult);
             shipEvent.setShipExecutor(shipExecutor);
+            shipEvent.setRunParam(new ConcurrentHashMap<>());
 
             EventTranslator<ShipEvent> eventEventTranslator = DisruptorManager.buildByShipEvent(shipEvent);
 

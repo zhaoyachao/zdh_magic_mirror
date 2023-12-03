@@ -1,6 +1,7 @@
 package com.zyc.ship.engine.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Sets;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.entity.*;
@@ -13,6 +14,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * ship 实时风控决策,需要返回决策信息
@@ -51,7 +53,10 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
 
             //校验分流
             List<StrategyGroupInstance> hit_strategy_groups = getHitStrategyGroups(flow, strategy_groups);
+            Set<StrategyGroupInstance> not_hit_strategy_groups = Sets.difference(Sets.newHashSet(strategy_groups), Sets.newHashSet(hit_strategy_groups));
+            Set not_hit_strategy_group_ids = not_hit_strategy_groups.stream().map(strategyGroupInstance -> strategyGroupInstance.getId()).collect(Collectors.toSet());
 
+            logger.info("uuid: {}, data_node: {}, flow not hit strategy_groups: {}",uuid, data_node, JSON.toJSONString(not_hit_strategy_group_ids));
             logger.info("uuid: {}, data_node: {}, hit strategy_groups: {}",uuid, data_node, JSON.toJSONString(hit_strategy_groups));
             Map<String, Object> labels = new HashMap<>();
             Map<String, Object> filters = new HashMap<>();

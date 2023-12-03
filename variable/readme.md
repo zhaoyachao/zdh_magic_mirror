@@ -5,8 +5,11 @@
     3：预测模型是根据机器学习等算法产出的模型,比如常见的打分模型
     
 # 变量存储数据结构
-    redis做数据存储,以{场景}:{uid} 做一级key, value 为map结构, map的key为 变量code, map的value为2级map, 2级map的key为参数code, 2级map的value为参数value
+    redis做数据存储,以{product_code}_tag_{uid} 做一级key, value 为map结构 如下 {"tag_age": "{'age': '20'}"}
+     map的key为 变量code, map的value为2级map, 2级map的key为参数code, 2级map的value为参数value
+    
     rocksdb作为历史数据存储,便于之后历史时刻数据问题追踪
+    
 # 过滤存储数据结构
     redis做数据存储,以{场景}:{uid} 做一级key, value 为map结构, map的key为 过滤code, map的value为2级map, 2级map的key为参数code, 2级map的value为参数value
     rocksdb作为历史数据存储,便于之后历史时刻数据问题追踪

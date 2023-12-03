@@ -79,6 +79,10 @@ public class ShipEvent {
 
     private ShipExecutor shipExecutor;
 
+    /**
+     * 执行中产生的数据
+     */
+    private ConcurrentHashMap<String, Object> runParam;
 
     public Map<String, Object> getLabelValues() {
         return labelValues;
@@ -230,6 +234,14 @@ public class ShipEvent {
 
     public void setShipExecutor(ShipExecutor shipExecutor) {
         this.shipExecutor = shipExecutor;
+    }
+
+    public ConcurrentHashMap<String, Object> getRunParam() {
+        return runParam;
+    }
+
+    public void setRunParam(ConcurrentHashMap<String, Object> runParam) {
+        this.runParam = runParam;
     }
 
     public void clear(){

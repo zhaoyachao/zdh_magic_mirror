@@ -82,6 +82,7 @@ public class DisruptorManager {
                 event.setShipExecutor(shipEvent.getShipExecutor());
                 event.setLabelValues(shipEvent.getLabelValues());
                 event.setFilterValues(shipEvent.getFilterValues());
+                event.setRunParam(shipEvent.getRunParam());
 
             }
         };

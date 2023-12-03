@@ -5,6 +5,7 @@ import com.zyc.ship.disruptor.DisruptorManager;
 import com.zyc.ship.disruptor.ShipMasterEventWorkHandler;
 import com.zyc.ship.disruptor.ShipWorkerEventWorkHandler;
 import com.zyc.ship.netty.NettyServer;
+import com.zyc.ship.service.impl.CacheFunctionServiceImpl;
 import com.zyc.ship.service.impl.CacheStrategyServiceImpl;
 import com.zyc.ship.util.FilterHttpUtil;
 import com.zyc.ship.util.LabelHttpUtil;
@@ -44,6 +45,7 @@ public class ShipServer {
             LabelHttpUtil.init(properties);
             FilterHttpUtil.init(properties);
             CacheStrategyServiceImpl cacheStrategyService = new CacheStrategyServiceImpl();
+            CacheFunctionServiceImpl cacheFunctionService = new CacheFunctionServiceImpl();
             Thread schedule = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -51,6 +53,7 @@ public class ShipServer {
                         try{
                             logger.info("更新配置");
                             cacheStrategyService.schedule();
+                            cacheFunctionService.schedule();
                             Thread.sleep(1000*60);
                         }catch (Exception e){
                             e.printStackTrace();

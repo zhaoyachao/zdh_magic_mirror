@@ -2,21 +2,31 @@ package com.zyc.ship.engine.impl;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.JarClassLoader;
+import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.core.util.ClassLoaderUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.zyc.common.entity.FunctionInfo;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipExecutor;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.entity.*;
+import com.zyc.ship.service.impl.CacheFunctionServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -44,7 +54,7 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             Map<String,Object> labelVaues = shipEvent.getLabelValues();
             String instance_type = strategyInstance.getInstance_type();
             JSONObject run_jsmind_data =  JSON.parseObject(strategyInstance.getRun_jsmind_data());
-            if(instance_type.equalsIgnoreCase("label")){
+            if(instance_type.equalsIgnoreCase(InstanceType.LABEL.getCode())){
                 List<LabelValueConfig> labelValueConfigs = labelParam2LableValueConfig(run_jsmind_data);
                 tmp = "success";
                 for (LabelValueConfig labelValueConfig:labelValueConfigs){
@@ -52,40 +62,46 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                         tmp = "error";
                     }
                 }
-            }else if(instance_type.equalsIgnoreCase("data_node")){
+            }else if(instance_type.equalsIgnoreCase(InstanceType.DATA_NODE.getCode())){
                 tmp = "success";
-            }else if(instance_type.equalsIgnoreCase("filter")){
+            }else if(instance_type.equalsIgnoreCase(InstanceType.FILTER.getCode())){
                 String[] filters = run_jsmind_data.getString("filter").split(",");
                 tmp = "success";
                 if(!isHitFilter(filters, shipEvent.getFilterValues(), uid)){
                     tmp = "error";
                 }
-            }else if(instance_type.equalsIgnoreCase("shunt")){
+            }else if(instance_type.equalsIgnoreCase(InstanceType.SHUNT.getCode())){
                 tmp = "success";
                 //校验是否命中分流
                 if(!shunt(null, strategyInstance, uid)){
                     tmp = "error";
                 }
-            }else if(instance_type.equalsIgnoreCase("risk")){
+            }else if(instance_type.equalsIgnoreCase(InstanceType.RISK.getCode())){
                 //决策信息
                 String event_code = run_jsmind_data.getString("rule_id");
                 String event_code_result = run_jsmind_data.getString("rule_param");
                 tmp = "success";
                 shipResult1.setRiskStrategyEventResult(new RiskStrategyEventResult(event_code, event_code_result));
-            }else if(instance_type.equalsIgnoreCase("touch")){
+            }else if(instance_type.equalsIgnoreCase(InstanceType.TOUCH.getCode())){
                 //触达
-            }else if(instance_type.equalsIgnoreCase("plugin")){
+            }else if(instance_type.equalsIgnoreCase(InstanceType.PLUGIN.getCode())){
                 //插件
-            }else if(instance_type.equalsIgnoreCase("id_mapping")){
-                logger.warn("暂不支持id_mapping类型,默认成功");
+            }else if(instance_type.equalsIgnoreCase(InstanceType.ID_MAPPING.getCode())){
+                String mapping_code = run_jsmind_data.getString("id_mapping_code");
+                String tag_key = "tag_"+mapping_code;
+                Object value = labelVaues.get(tag_key);
+                if(value == null){
+                    tmp = "error";
+                }
+                shipEvent.getRunParam().put(mapping_code, value);
                 tmp = "success";
-            }else if(instance_type.equalsIgnoreCase("crowd_operate")){
+            }else if(instance_type.equalsIgnoreCase(InstanceType.CROWD_OPERATE.getCode())){
                 //到执行器时的运算符,都是可执行的,master disruptor会提前判断
                 tmp = "success";
-            }else if(instance_type.equalsIgnoreCase("custom_list")){
+            }else if(instance_type.equalsIgnoreCase(InstanceType.CUSTOM_LIST.getCode())){
                 String name_list_str = run_jsmind_data.getOrDefault("name_list","").toString();
                 tmp = String.valueOf(Sets.newHashSet(name_list_str.split(",")).contains(uid));
-            }else if(instance_type.equalsIgnoreCase("code_block")){
+            }else if(instance_type.equalsIgnoreCase(InstanceType.CODE_BLOCK.getCode())){
                 String code_type=run_jsmind_data.getOrDefault("code_type", "").toString();
                 String command=run_jsmind_data.getOrDefault("command", "").toString();
                 //String hashKey = MD5.create().digestHex(command);
@@ -96,6 +112,25 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                     params.put("strategy_instance", strategyInstance);
                     boolean result =(boolean) GroovyFactory.execExpress(command, params);
                     tmp = String.valueOf(result);
+                }
+            }else if(instance_type.equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
+                String function_name = run_jsmind_data.getString("rule_id");
+                Gson gson=new Gson();
+                List<Map> rule_params = gson.fromJson(run_jsmind_data.get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
+
+                CacheFunctionServiceImpl cacheFunctionService = new CacheFunctionServiceImpl();
+                FunctionInfo functionInfo = cacheFunctionService.selectByFunctionCode(function_name);
+
+                List<String> param_value = new ArrayList<>();
+                for(Map map: rule_params){
+                    String value = map.get("param_value").toString();
+                    param_value.add(value);
+                }
+                Object res = functionExcute(functionInfo, param_value.toArray(new String[param_value.size()]));
+                if(res == null){
+                    tmp = "error";
+                }else{
+                    tmp = "success";
                 }
             }else{
                 logger.error("暂不支持的经营类型: {}", instance_type);
@@ -436,5 +471,51 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             return false;
         }
 
+    }
+
+    public Object functionExcute(FunctionInfo functionInfo, String[] param_value){
+        try{
+            String function_name = functionInfo.getFunction_name();
+            String function_class = functionInfo.getFunction_class();
+            String function_load_path = functionInfo.getFunction_load_path();
+            String function_script = functionInfo.getFunction_script();
+            JSONArray jsonArray = functionInfo.getParam_json_object();
+
+            Map<String, Object> objectMap = new LinkedHashMap<>();
+            List<String> params = new ArrayList<>();
+            for(int i=0;i<jsonArray.size();i++){
+                String param_code = jsonArray.getJSONObject(i).getString("param_code");
+                objectMap.put(param_code, param_value[i]);
+                params.add(param_code);
+            }
+
+            if(CacheFunctionServiceImpl.cacheFunctionInstance.containsKey(function_name)){
+                Object clsInstance = CacheFunctionServiceImpl.cacheFunctionInstance.get(function_name);
+                if(!StringUtils.isEmpty(function_class)){
+                    String[] function_packages = function_class.split(",");
+                    String clsName = ArrayUtil.get(function_packages, function_packages.length-1);
+                    String clsInstanceName = StringUtils.uncapitalize(clsName);
+                    //加载三方工具类
+                    if(!StringUtils.isEmpty(function_load_path)){
+                        objectMap.put(clsInstanceName, clsInstance);
+                        function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(params, ",")+")";
+                        Object ret = GroovyFactory.execExpress(function_script, objectMap);
+                        return ret;
+                    }else{
+                        objectMap.put(clsInstanceName, clsInstance);
+                        function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(params, ",")+")";
+                        Object ret = GroovyFactory.execExpress(function_script, objectMap);
+                        return ret;
+                    }
+                }
+            }
+            if(!StringUtils.isEmpty(function_script)){
+                Object ret = GroovyFactory.execExpress(function_script, function_name, objectMap);
+                return ret;
+            }
+        }catch (Exception e){
+
+        }
+        return null;
     }
 }
