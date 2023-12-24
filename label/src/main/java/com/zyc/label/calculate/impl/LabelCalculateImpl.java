@@ -1,5 +1,7 @@
 package com.zyc.label.calculate.impl;
 
+import cn.hutool.core.date.DatePattern;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
@@ -22,6 +24,7 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -104,18 +107,8 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         LabelServiceImpl labelService=new LabelServiceImpl();
         DataSourcesServiceImpl dataSourcesService=new DataSourcesServiceImpl();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
-        StrategyLogInfo strategyLogInfo = new StrategyLogInfo();
-        strategyLogInfo.setStrategy_group_id(group_id);
-        strategyLogInfo.setStrategy_id(strategy_id);
-        strategyLogInfo.setStrategy_instance_id(id);
-        strategyLogInfo.setStrategy_group_instance_id(group_instance_id);
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path = getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取标签code
@@ -123,12 +116,6 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             String label_code=run_jsmind_data.get("rule_id").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
-            //调度逻辑时间,yyyy-MM-dd HH:mm:ss
-            String cur_time=this.param.get("cur_time").toString();
-
-            if(dbConfig==null){
-                throw new Exception("标签信息数据库配置异常");
-            }
             String driver=dbConfig.get("driver");
             String url=dbConfig.get("url");
             String username=dbConfig.get("user");
@@ -151,10 +138,10 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                 }
                 //校验标签底层数据是否准备完成
                 if(Boolean.valueOf(dbConfig.getOrDefault("label.check.dep", "false"))){
-                    boolean is_dep = checkLabelDep(labelInfo, cur_time);
+                    boolean is_dep = checkLabelDep(labelInfo, DateUtil.format(strategyLogInfo.getCur_time(), DatePattern.NORM_DATETIME_PATTERN));
                     if(!is_dep){
                         //依赖未完成,直接返回,此处应该打印日志
-                        logger.info("task: {}, labele: {} ,depend data is not found, please wait retry", id, label_code);
+                        logger.info("task: {}, labele: {} ,depend data is not found, please wait retry", strategyLogInfo.getStrategy_instance_id(), label_code);
                         return ;
                     }
                 }
@@ -162,9 +149,9 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                 Gson gson=new Gson();
                 List<Map> rule_params = gson.fromJson(run_jsmind_data.get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
                 Map<String, String> jinJavaParam=getJinJavaParam(rule_params,labelInfo);
-                jinJavaParam.put("cur_time", cur_time);
-                logStr = StrUtil.format("task: {}, param: {}", id, jinJavaParam);
-                LogUtil.info(strategy_id, id, logStr);
+                jinJavaParam.put("cur_time", DateUtil.format(strategyLogInfo.getCur_time(), DatePattern.NORM_DATETIME_PATTERN));
+                logStr = StrUtil.format("task: {}, param: {}", strategyLogInfo.getStrategy_instance_id(), jinJavaParam);
+                LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
 
                 String data_sources_choose_input = labelInfo.getData_sources_choose_input();
 
@@ -174,8 +161,8 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                 Jinjava jinjava=new Jinjava();
 
                 String new_sql = jinjava.render(sql, jinJavaParam);
-                logStr = StrUtil.format("task: {}, sql: {}", id, new_sql);
-                LogUtil.info(strategy_id, id, logStr);
+                logStr = StrUtil.format("task: {}, sql: {}", strategyLogInfo.getStrategy_instance_id(), new_sql);
+                LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                 List<Map<String,Object>> rows =new ArrayList<>();
                 if(is_disenable.equalsIgnoreCase("true")){
                     //禁用任务不做处理,认为结果为空
@@ -192,15 +179,13 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             }
 
             Set<String> rs=Sets.newHashSet() ;
-            String file_dir= getFileDir(base_path,group_id,group_instance_id);
+            String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
+                    strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
             rs = calculateCommon(rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
-            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
-            LogUtil.info(strategy_id, id, logStr);
-            writeFileAndPrintLog(id,strategy_id, file_path, rs);
-            strategyLogInfo.setStatus("1");
-            strategyLogInfo.setSuccess_num(String.valueOf(rs.size()));
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
 
             //根据计算引擎 执行,以spark sql 执行
             //new_sql = "insert overwrite table label_detail PARTITION(task_id='"+id+"') "+new_sql;
@@ -213,9 +198,8 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             System.err.println("计算引擎执行待实现,当前以本地文件做存储");
 
         }catch (Exception e){
-            writeEmptyFile(file_path);
-            setStatus(id, Const.STATUS_ERROR);
-            LogUtil.error(strategy_id, id, e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

@@ -26,3 +26,4 @@
     v5.2.1 新增rocksdb引擎
     
     v5.2.2 新增function函数
+    v5.2.2 统一 and,or,not,not_use操作符概念及处理逻辑

@@ -3,6 +3,7 @@ package com.zyc.label.calculate.impl;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
 import com.zyc.common.util.LogUtil;
@@ -89,27 +90,16 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
     public void run() {
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path = getFilePathByParam(this.param, this.dbConfig);
         try{
-            String base_path=dbConfig.get("file.path");
+
             //客群运算id
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
             //以文件id作为文件名
             String crowd_file=run_jsmind_data.get("crowd_file").toString();
 
-            //调度逻辑时间,yyyy-MM-dd HH:mm:ss
-            String cur_time=this.param.get("cur_time").toString();
-
-            if(dbConfig==null){
-                throw new Exception("客群运算信息数据库配置异常");
-            }
             Set<String> rowsStr=Sets.newHashSet();
             Set<String> rs=Sets.newHashSet() ;
             if(is_disenable.equalsIgnoreCase("true")){
@@ -123,7 +113,8 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                 int port=Integer.parseInt(dbConfig.get("sftp.port"));
                 SFTPUtil sftpUtil=new SFTPUtil(username, password, host, port);
                 //下载sftp文件存储本地
-                String file_sftp_path = getFilePath(base_path, group_id, group_instance_id, "sftp_"+id);
+                String file_sftp_path = getFilePath(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
+                        strategyLogInfo.getStrategy_group_instance_id(), "sftp_"+strategyLogInfo.getStrategy_instance_id());
                 sftpUtil.download(directory, crowd_file, file_sftp_path);
 
                 //读取本地文件
@@ -131,19 +122,18 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                 rowsStr = Sets.newHashSet(rows);
             }
 
-            String file_dir= getFileDir(base_path,group_id,group_instance_id);
+            String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
+                    strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
             rs = calculateCommon(rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
-            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
-            LogUtil.info(strategy_id, id, logStr);
 
-            writeFileAndPrintLog(id,strategy_id, file_path,rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
             atomicInteger.decrementAndGet();
-            writeEmptyFile(file_path);
-            setStatus(id, Const.STATUS_ERROR);
-            LogUtil.error(strategy_id, id, e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             e.printStackTrace();
         }
 

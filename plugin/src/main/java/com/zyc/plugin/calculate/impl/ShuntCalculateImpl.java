@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
+import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
@@ -78,13 +79,8 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
     public void run() {
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path=getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取标签code
@@ -98,19 +94,10 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
 
             Map shunt_param = shunt_params.get(0);
 
-            System.err.println(shunt_param);
-            //调度逻辑时间,毫秒时间戳
-            String cur_time=this.param.get("cur_time").toString();
 
-            if(dbConfig==null){
-                throw new Exception("数据库配置异常");
-            }
-
-            String base_path=dbConfig.get("file.path");
-            //解析参数,生成人群
 
             //生成参数
-            CalculateResult calculateResult = calculateResult(base_path, run_jsmind_data, param, strategyInstanceService);
+            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
 
@@ -126,8 +113,8 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                     if(rs.size()<shunt_value){
                         shunt_value = rs.size();
                     }
-                    logStr = StrUtil.format("task: {}, shunt_type: num, size: {}, num: {}", id, rs.size(), shunt_value);
-                    LogUtil.info(strategy_id, id, logStr);
+                    logStr = StrUtil.format("task: {}, shunt_type: num, size: {}, num: {}", strategyLogInfo.getStrategy_instance_id(), rs.size(), shunt_value);
+                    LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                     rs = rs.stream().limit(shunt_value).collect(Collectors.toSet());
                 }else if(shunt_type.equalsIgnoreCase("rate")){
                     //按比例分流
@@ -148,8 +135,8 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                     }
                     //按任务组实例id+分流器code, 注册index范围,此处需要校验index是否重复
                     //addIndex(group_instance_id+"_"+shunt_code, index, index2);
-                    logStr = StrUtil.format("task: {}, shunt_type: rate, size: {}, start: {}, end: {}", id, rs.size(), start, end);
-                    LogUtil.info(strategy_id, id, logStr);
+                    logStr = StrUtil.format("task: {}, shunt_type: rate, size: {}, start: {}, end: {}", strategyLogInfo.getStrategy_instance_id(), rs.size(), start, end);
+                    LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                     rs = tmp;
                 }else if(shunt_type.equalsIgnoreCase("hash")){
                     //按hash一致性分流
@@ -167,19 +154,17 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                             tmp.add(l.get(i));
                         }
                     }
-                    logStr = StrUtil.format("task: {}, shunt_type: rate, size: {}, start: {}, end: {}", id, rs.size(), start, end);
-                    LogUtil.info(strategy_id, id, logStr);
+                    logStr = StrUtil.format("task: {}, shunt_type: rate, size: {}, start: {}, end: {}", strategyLogInfo.getStrategy_instance_id(), rs.size(), start, end);
+                    LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                     rs = tmp;
                 }
             }
-            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
-            LogUtil.info(strategy_id, id, logStr);
 
-            writeFileAndPrintLog(id,strategy_id, file_path, rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFile(file_path);
-            setStatus(id, Const.STATUS_ERROR);
-            LogUtil.error(strategy_id, id, e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

@@ -11,6 +11,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.FunctionInfo;
+import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
@@ -91,13 +92,8 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
     public void run() {
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path=getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取plugin code
@@ -105,35 +101,24 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             String rule_id=run_jsmind_data.getOrDefault("rule_id", "").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
-            //调度逻辑时间,毫秒时间戳
-            String cur_time=this.param.get("cur_time").toString();
-
-            if(dbConfig==null){
-                throw new Exception("数据库配置异常");
-            }
-            String base_path=dbConfig.get("file.path");
-            file_path=getFilePath(base_path,group_id,group_instance_id,id);
 
             //生成参数
             Gson gson=new Gson();
             List<Map> rule_params = gson.fromJson(run_jsmind_data.get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
 
             //生成参数
-            CalculateResult calculateResult = calculateResult(base_path, run_jsmind_data, param, strategyInstanceService);
+            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
-            String file_dir = calculateResult.getFile_dir();
-
-            file_path = getFilePath(file_dir, id);
 
             Map<String,Object> params = new HashMap<>();
-            params.put("strategy_instance_id", id);
+            params.put("strategy_instance_id", strategyLogInfo.getStrategy_instance_id());
             params.put("strategy_instance", this.param);
 
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用,不做操作
             }else{
+                LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数输入参数: "+gson.toJson(params));
                 Jinjava jinjava=new Jinjava();
-
                 //获取函数信息
                 FunctionServiceImpl functionService = new FunctionServiceImpl();
                 FunctionInfo functionInfo = functionService.selectByFunction(rule_id);
@@ -172,13 +157,11 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                 rs = rs3;
             }
 
-            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
-            LogUtil.info(strategy_id, id, logStr);
-            writeFileAndPrintLog(id,strategy_id, file_path, rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFile(file_path);
-            setStatus(id, Const.STATUS_ERROR);
-            LogUtil.error(strategy_id, id, e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

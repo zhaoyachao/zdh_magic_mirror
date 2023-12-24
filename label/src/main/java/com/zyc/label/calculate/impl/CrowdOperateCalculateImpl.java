@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.common.util.MybatisUtil;
@@ -87,25 +88,15 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
     public void run() {
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path = getFilePathByParam(this.param, this.dbConfig);
         try{
             String base_path=dbConfig.get("file.path");
             //客群运算id
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String crowd_operate_context=run_jsmind_data.get("crowd_operate_context").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
-            //调度逻辑时间,yyyy-MM-dd HH:mm:ss
-            String cur_time=this.param.get("cur_time").toString();
 
-            if(dbConfig==null){
-                throw new Exception("客群运算信息数据库配置异常");
-            }
             //获取上游任务
             String pre_tasks = this.param.get("pre_tasks").toString();
 
@@ -114,9 +105,10 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
                 //禁用任务不做处理,认为结果为空
                 rs = Sets.newHashSet();
             }else{
-                String file_dir= getFileDir(base_path,group_id,group_instance_id);
+                String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
+                        strategyLogInfo.getStrategy_group_instance_id());
                 if(!StringUtils.isEmpty(pre_tasks)){
-                    List<String> other = resetPreTasks(id,pre_tasks, crowd_operate_context);
+                    List<String> other = resetPreTasks(strategyLogInfo.getStrategy_instance_id(),pre_tasks, crowd_operate_context);
                     List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
                     //多个任务交并排逻辑
                     rs = calculate(other, file_dir, crowd_operate_context, strategyInstances);
@@ -124,16 +116,14 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
                     throw new Exception("运算符节点至少依赖一个父节点");
                 }
             }
-            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
-            LogUtil.info(strategy_id, id, logStr);
 
-            writeFileAndPrintLog(id,strategy_id, file_path,rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
 
         }catch (Exception e){
             atomicInteger.decrementAndGet();
-            writeEmptyFile(file_path);
-            setStatus(id, Const.STATUS_ERROR);
-            LogUtil.error(strategy_id, id, e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             e.printStackTrace();
         }
     }

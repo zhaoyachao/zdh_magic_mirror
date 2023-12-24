@@ -51,10 +51,14 @@ public class LabelServer {
                 config.load(LabelServer.class.getClassLoader().getResourceAsStream("application.properties"));
             }
 
+            if(config==null){
+                throw new Exception("标签信息数据库配置异常");
+            }
+
             logger.info(config.toString());
 
-            if(config.get("file.path") == null){
-                throw new Exception("配置信息缺失file.path参数");
+            if(config.get("file.path") == null || config.get("file.rocksdb.path") == null){
+                throw new Exception("配置信息缺失file.path, file.rocksdb.path参数");
             }
 
             JedisPoolUtil.connect(config);

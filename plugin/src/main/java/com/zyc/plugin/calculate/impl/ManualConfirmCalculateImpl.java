@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.zyc.common.entity.NoticeInfo;
 import com.zyc.common.entity.PermissionUserInfo;
+import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.service.impl.NoticeServiceImpl;
 import com.zyc.common.service.impl.PermissionUserServiceImpl;
 import com.zyc.common.util.Const;
@@ -84,32 +85,22 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
     public void run() {
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path="";
         try{
 
-            localVar.set(id);
+            localVar.set(strategyLogInfo.getStrategy_instance_id());
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String[] confirm_notice_types = run_jsmind_data.getOrDefault("confirm_notice_type","").toString().split(",");
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
-            //调度逻辑时间,毫秒时间戳
-            String cur_time=this.param.get("cur_time").toString();
 
-            if(dbConfig==null){
-                throw new Exception("标签信息数据库配置异常");
-            }
-            String base_path=dbConfig.get("file.path");
+
             String product_code=dbConfig.get("product.code");
 
-            file_path=getFilePath(base_path,group_id,group_instance_id,id);
 
-            CalculateResult calculateResult = calculateResult(base_path, run_jsmind_data, param, strategyInstanceService);
+
+            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
             boolean check = false;
@@ -123,7 +114,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
                     NoticeInfo noticeInfo = new NoticeInfo();
                     noticeInfo.setMsg_type("通知");
                     noticeInfo.setMsg_title("策略执行流程确认");
-                    noticeInfo.setMsg("策略实例"+id+",需要手动确认,操作路径智能营销>>智能策略>>执行记录>>子任务>>跳过");
+                    noticeInfo.setMsg("策略实例"+strategyLogInfo.getStrategy_instance_id()+",需要手动确认,操作路径智能营销>>智能策略>>执行记录>>子任务>>跳过");
                     noticeInfo.setMsg_url("");
                     noticeInfo.setIs_see("false");
                     noticeInfo.setOwner(owner);
@@ -132,8 +123,8 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
                         String account = getAccount(owner, confirm_notice_type, product_code);
                         boolean is_success = send(account, confirm_notice_type, noticeInfo);
                         if(is_success) check=true;
-                        logStr = StrUtil.format("task: {}, notice {} {}, owner: {}", id, confirm_notice_type, is_success, owner);
-                        LogUtil.info(strategy_id, id, logStr);
+                        logStr = StrUtil.format("task: {}, notice {} {}, owner: {}", strategyLogInfo.getStrategy_instance_id(), confirm_notice_type, is_success, owner);
+                        LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                     }
                 }
             }
@@ -142,18 +133,15 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
                 throw new Exception("send notice error");
             }
 
-            String save_path = writeFile(id,file_path, rs);
-            logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
-            LogUtil.info(strategy_id, id, logStr);
+            writeFileAndPrintLog(strategyLogInfo, rs);
             if(is_disenable.equalsIgnoreCase("true")){
-                setStatus(id, Const.STATUS_FINISH);
-                logStr = StrUtil.format("task: {}, update status finish", id);
-                LogUtil.info(strategy_id, id, logStr);
+                setStatus(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_FINISH);
+                logStr = StrUtil.format("task: {}, update status finish", strategyLogInfo.getStrategy_instance_id());
+                LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
             }
         }catch (Exception e){
-            writeEmptyFile(file_path);
-            setStatus(id, Const.STATUS_ERROR);
-            LogUtil.error(strategy_id, id, e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

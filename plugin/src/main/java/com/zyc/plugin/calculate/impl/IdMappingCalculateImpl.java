@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
@@ -78,13 +79,8 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
     public void run() {
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path=getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取标签code
@@ -93,25 +89,16 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
             String id_mapping_type=run_jsmind_data.getOrDefault("id_mapping_type","").toString();
             String data_engine=run_jsmind_data.getOrDefault("data_engine", "file").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
-            //调度逻辑时间,毫秒时间戳
-            String cur_time=this.param.get("cur_time").toString();
 
-            if(dbConfig==null){
-                throw new Exception("标签信息数据库配置异常");
-            }
-
-            String base_path=dbConfig.get("file.path");
-            //解析参数,生成人群
 
             //生成参数
-            logger.info("task: {}, merge upstream data start", id);
-            CalculateResult calculateResult = calculateResult(base_path, run_jsmind_data, param, strategyInstanceService);
+            logger.info("task: {}, merge upstream data start", strategyLogInfo.getStrategy_instance_id());
+            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
 
-            file_path = getFilePath(file_dir, id);
 
-            logger.info("task: {}, merge upstream data end, size: {}", id, rs.size());
+            logger.info("task: {}, merge upstream data end, size: {}", strategyLogInfo.getStrategy_instance_id(), rs.size());
             Set<String> rs2=Sets.newHashSet() ;//映射明细,每条记录的映射关系
             Set<String> rs3=Sets.newHashSet() ;//映射结果,映射成功的结果
             if(is_disenable.equalsIgnoreCase("true")){
@@ -119,10 +106,10 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
                 rs3=rs;
             }else{
                 //读取id_mapping
-                logger.info("task: {}, id mapping start", id);
+                logger.info("task: {}, id mapping start", strategyLogInfo.getStrategy_instance_id());
                 // todo 此处需要做调整根据mapping_code找到对应的数据文件
                 //选择id mapping 存储引擎
-                IdMappingEngine idMappingEngine = readIdMappingData(data_engine,base_path, id_mapping_code);
+                IdMappingEngine idMappingEngine = readIdMappingData(data_engine,strategyLogInfo.getBase_path(), id_mapping_code);
                 List<String> id_mappings = idMappingEngine.get();
                 Map<String,String> id_map = Maps.newHashMap();
                 for (String line:id_mappings){
@@ -138,20 +125,18 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
                         rs3.add(id_map.get(key));
                     }
                 }
+                rs = rs3;
             }
 
             //映射结果
-            String file_idmapping_path = getFilePath(file_dir, "idmapping_"+id);
-            String save_idmapping_path = writeFile(id,file_idmapping_path, rs2);
-            logStr = StrUtil.format("task: {}, id mapping end, size: {}", id, rs3.size());
-            LogUtil.info(strategy_id, id, logStr);
+            String file_idmapping_path = getFilePath(file_dir, "idmapping_"+strategyLogInfo.getStrategy_instance_id());
+            String save_idmapping_path = writeFile(strategyLogInfo.getStrategy_instance_id(),file_idmapping_path, rs2);
 
-            writeFileAndPrintLog(id,strategy_id, file_path, rs3);
-
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFile(file_path);
-            setStatus(id, Const.STATUS_ERROR);
-            LogUtil.error(strategy_id, id, e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

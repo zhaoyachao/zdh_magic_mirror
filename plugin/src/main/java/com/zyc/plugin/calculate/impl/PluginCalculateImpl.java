@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.common.entity.PluginInfo;
+import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.plugin.PluginParam;
 import com.zyc.common.plugin.PluginResult;
 import com.zyc.common.plugin.PluginService;
@@ -86,13 +87,8 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         PluginServiceImpl pluginService=new PluginServiceImpl();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path=getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取plugin code
@@ -100,20 +96,13 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
             String rule_id=run_jsmind_data.get("rule_id").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
-            //调度逻辑时间,毫秒时间戳
-            String cur_time=this.param.get("cur_time").toString();
-
-            if(dbConfig==null){
-                throw new Exception("标签信息数据库配置异常");
-            }
-            String base_path=dbConfig.get("file.path");
 
             //生成参数
             Gson gson=new Gson();
             List<Map> rule_params = gson.fromJson(run_jsmind_data.get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
 
             //生成参数
-            CalculateResult calculateResult = calculateResult(base_path, run_jsmind_data, param, strategyInstanceService);
+            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
 
@@ -124,7 +113,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
                 PluginInfo pluginInfo = pluginService.selectById(rule_id);
                 PluginService pluginServiceImpl = getPluginService(rule_id);
                 //读取已经推送的信息
-                List<String> his = readFile(file_dir+"/"+rule_id+"_"+id);
+                List<String> his = readFile(file_dir+"/"+rule_id+"_"+strategyLogInfo.getStrategy_instance_id());
                 Set<String> his2 = his.stream().map(str->str.split(",")[0]).collect(Collectors.toSet());
                 Set<String> hisSet = Sets.newHashSet(his2);
 
@@ -135,16 +124,15 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
                     PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, s);
                     rs3.add(s+","+result.getCode()+","+JSON.toJSONString(result.getResult())+","+System.currentTimeMillis());
                 }
-                writeFile(id,file_dir+"/"+rule_id+"_"+id, rs3);
+                writeFile(strategyLogInfo.getStrategy_instance_id(),file_dir+"/"+rule_id+"_"+strategyLogInfo.getStrategy_instance_id(), rs3);
             }
 
-            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
-            LogUtil.info(strategy_id, id, logStr);
-            writeFileAndPrintLog(id,strategy_id, file_path, rs3);
+            rs = rs3;
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFile(file_path);
-            setStatus(id, Const.STATUS_ERROR);
-            LogUtil.error(strategy_id, id, e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

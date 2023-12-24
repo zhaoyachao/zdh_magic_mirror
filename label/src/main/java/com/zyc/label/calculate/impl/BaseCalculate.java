@@ -5,11 +5,14 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
 import com.zyc.common.util.LogUtil;
+import com.zyc.common.util.RocksDBUtil;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
 import org.apache.commons.lang3.StringUtils;
+import org.rocksdb.RocksDB;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -19,6 +22,34 @@ import java.sql.Timestamp;
 import java.util.*;
 
 public class BaseCalculate {
+
+
+    /**
+     * 初始化基础参数
+     * @param param
+     * @param dbConfig
+     * @return
+     */
+    public StrategyLogInfo init(Map<String,Object> param, Map<String,String> dbConfig){
+        String id=param.get("id").toString();
+        String group_id=param.get("group_id").toString();
+        String strategy_id=param.get("strategy_id").toString();
+        String group_instance_id=param.get("group_instance_id").toString();
+        String cur_time=param.get("cur_time").toString();
+        String base_path=dbConfig.get("file.path");
+        String file_path=getFilePathByParam(param, dbConfig);
+        String file_rocksdb_path = getRocksdbFileDirByParam(param, dbConfig);
+        StrategyLogInfo strategyLogInfo = new StrategyLogInfo();
+        strategyLogInfo.setStrategy_instance_id(id);
+        strategyLogInfo.setStrategy_group_instance_id(group_instance_id);
+        strategyLogInfo.setStrategy_group_id(group_id);
+        strategyLogInfo.setStrategy_id(strategy_id);
+        strategyLogInfo.setCur_time(new Timestamp(Long.valueOf(cur_time)));
+        strategyLogInfo.setBase_path(base_path);
+        strategyLogInfo.setFile_path(file_path);
+        strategyLogInfo.setFile_rocksdb_path(file_rocksdb_path);
+        return strategyLogInfo;
+    }
 
     /**
      * 根据策略配置和系统配置目录获取文件写入地址
@@ -33,6 +64,19 @@ public class BaseCalculate {
         String strategy_id=param.get("strategy_id").toString();
         String group_instance_id=param.get("group_instance_id").toString();
         return getFilePath(base_path,group_id,group_instance_id,id);
+    }
+
+    /**
+     * 根据策略配置和系统配置目录获取rocksdb文件写入地址
+     * @param param
+     * @param dbConfig
+     * @return
+     */
+    public String getRocksdbFileDirByParam(Map param, Map dbConfig){
+        String base_path=dbConfig.get("file.rocksdb.path").toString();
+        String group_id=param.get("group_id").toString();
+        String group_instance_id=param.get("group_instance_id").toString();
+        return getFileDir(base_path,group_id,group_instance_id);
     }
 
     /**
@@ -84,6 +128,11 @@ public class BaseCalculate {
         }
         FileUtil.flush(bw);
         return f.getAbsolutePath();
+    }
+
+    public void writeEmptyFileAndStatus(StrategyLogInfo strategyLogInfo){
+        writeEmptyFile(strategyLogInfo.getFile_path());
+        setStatus(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_ERROR);
     }
 
     public String writeEmptyFile(String file_path){
@@ -300,18 +349,54 @@ public class BaseCalculate {
 
     /**
      * 统一写入文件并打印日志
+     * @param strategyLogInfo
+     * @param rs
+     * @throws IOException
+     */
+    public void writeFileAndPrintLogAndUpdateStatus2Finish(StrategyLogInfo strategyLogInfo,  Set<String> rs) throws IOException {
+        String logStr = StrUtil.format("task: {}, calculate finish size: {}", strategyLogInfo.getStrategy_instance_id(), rs.size());
+        LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
+        writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo.getStrategy_instance_id(),strategyLogInfo.getStrategy_id(), strategyLogInfo.getFile_path(), rs);
+    }
+
+    /**
+     * 统一写入文件并打印日志
      * @param id
      * @param strategy_id
      * @param file_path
      * @param rs
      * @throws IOException
      */
-    public void writeFileAndPrintLog(String id,String strategy_id, String file_path, Set<String> rs) throws IOException {
+    public void writeFileAndPrintLogAndUpdateStatus2Finish(String id,String strategy_id, String file_path, Set<String> rs) throws IOException {
         String save_path = writeFile(id,file_path, rs);
         String logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
         LogUtil.info(strategy_id, id, logStr);
         setStatus(id, Const.STATUS_FINISH);
         logStr = StrUtil.format("task: {}, update status finish", id);
         LogUtil.info(strategy_id, id, logStr);
+    }
+
+    /**
+     * 结果写入rocksdb
+     * @param file_rocksdb_path
+     * @param id
+     * @param rs
+     * @param status
+     * @throws Exception
+     */
+    public void writeRocksdb(String file_rocksdb_path, String id, Set<String> rs, String status) throws Exception {
+
+        File file = new File(file_rocksdb_path);
+        if(!file.exists()){
+            file.mkdirs();
+        }
+        RocksDB rocksDB = RocksDBUtil.getConnection(file_rocksdb_path);
+        if(rs != null && rs.size() > 0){
+            for (String r: rs){
+                String key = r+"_"+id;
+                rocksDB.put(key.getBytes(), status.getBytes());
+            }
+        }
+        rocksDB.close();
     }
 }

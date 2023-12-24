@@ -2,6 +2,7 @@ package com.zyc.label.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.label.calculate.CrowdRuleCalculate;
@@ -78,13 +79,8 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
     @Override
     public void run() {
         atomicInteger.incrementAndGet();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path = getFilePathByParam(this.param, this.dbConfig);
         try{
             //客群id
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
@@ -106,16 +102,12 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
                 //解析客群,生成标签任务
                 throw new Exception("暂时不支持客群任务计算");
             }
-            writeFileAndPrintLog(id,strategy_id, file_path,rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
             atomicInteger.decrementAndGet();
-            writeEmptyFile(file_path);
-            try{
-                setStatus(id, Const.STATUS_ERROR);
-                LogUtil.error(strategy_id, id, e.getMessage());
-            }catch (Exception ex){
-
-            }
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             e.printStackTrace();
         }
 

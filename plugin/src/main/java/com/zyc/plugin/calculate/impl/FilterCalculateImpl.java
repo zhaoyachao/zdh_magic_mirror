@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.FilterInfo;
+import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
 import com.zyc.common.util.LogUtil;
@@ -66,6 +67,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
     private Map<String,Object> param=new HashMap<String, Object>();
     private AtomicInteger atomicInteger;
     private Map<String,String> dbConfig=new HashMap<String, String>();
+    private StrategyLogInfo strategyLogInfo;
 
     public FilterCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
         this.param=param;
@@ -83,31 +85,19 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         FilterServiceImpl filterService=new FilterServiceImpl();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path=getFilePathByParam(this.param, this.dbConfig);
         try{
-
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String[] filter_codes=run_jsmind_data.getOrDefault("filter","").toString().split(",");
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
-            //调度逻辑时间,毫秒时间戳
-            String cur_time=this.param.get("cur_time").toString();
 
-            if(dbConfig==null){
-                throw new Exception("标签信息数据库配置异常");
-            }
-            String base_path=dbConfig.get("file.path");
 
             List<FilterInfo> filterInfos=new ArrayList<>();
 
 
-            CalculateResult calculateResult = calculateResult(base_path, run_jsmind_data, param, strategyInstanceService);
+            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
 
@@ -125,22 +115,18 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
                 for (FilterInfo filterInfo:filterInfos){
                     filterInfo.getFilter_name();
                     //加载过滤集
-                    Set<String> filterDataFrame = loadFilters(filterInfo, base_path);
+                    Set<String> filterDataFrame = loadFilters(filterInfo, strategyLogInfo.getBase_path());
 
                     //此处使用排除法
                     rs = Sets.difference(rs, filterDataFrame);
                 }
             }
 
-            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
-            LogUtil.info(strategy_id, id, logStr);
-
-            writeFileAndPrintLog(id,strategy_id, file_path, rs);
-
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFile(file_path);
-            setStatus(id, Const.STATUS_ERROR);
-            LogUtil.error(strategy_id, id, e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {

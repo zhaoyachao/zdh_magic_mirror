@@ -12,6 +12,12 @@ public class StrategyLogInfo {
 
     private String strategy_id;
 
+    private String base_path;
+
+    private String file_path;
+
+    private String file_rocksdb_path;
+
     private Timestamp cur_time;
 
     private String instance_type;
@@ -54,6 +60,30 @@ public class StrategyLogInfo {
 
     public void setStrategy_id(String strategy_id) {
         this.strategy_id = strategy_id;
+    }
+
+    public String getBase_path() {
+        return base_path;
+    }
+
+    public void setBase_path(String base_path) {
+        this.base_path = base_path;
+    }
+
+    public String getFile_path() {
+        return file_path;
+    }
+
+    public void setFile_path(String file_path) {
+        this.file_path = file_path;
+    }
+
+    public String getFile_rocksdb_path() {
+        return file_rocksdb_path;
+    }
+
+    public void setFile_rocksdb_path(String file_rocksdb_path) {
+        this.file_rocksdb_path = file_rocksdb_path;
     }
 
     public Timestamp getCur_time() {

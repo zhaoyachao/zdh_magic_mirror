@@ -95,7 +95,7 @@ public class KillCalculateImpl extends BaseCalculate implements KillCalculate {
         while (true){
             try{
                 //获取要杀死的任务
-                List<StrategyInstance> strategyInstanceList = strategyInstanceService.selectByStatus(new String[]{"kill"}, new String[]{"filter","shunt","touch","id_mapping","plugin", "manual_confirm","code_block", "tn"});
+                List<StrategyInstance> strategyInstanceList = strategyInstanceService.selectByStatus(new String[]{"kill"}, new String[]{"rights","filter","shunt","touch","id_mapping","plugin", "manual_confirm","code_block", "tn"});
 
                 if(strategyInstanceList != null && strategyInstanceList.size()>0){
                     for (StrategyInstance strategyInstance: strategyInstanceList){

@@ -95,33 +95,14 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
     public void run() {
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        //唯一任务ID
-        String id=this.param.get("id").toString();
-        String group_id=this.param.get("group_id").toString();
-        String strategy_id=this.param.get("strategy_id").toString();
-        String group_instance_id=this.param.get("group_instance_id").toString();
-        StrategyLogInfo strategyLogInfo = new StrategyLogInfo();
-        strategyLogInfo.setStrategy_group_id(group_id);
-        strategyLogInfo.setStrategy_id(strategy_id);
-        strategyLogInfo.setStrategy_instance_id(id);
-        strategyLogInfo.setStrategy_group_instance_id(group_instance_id);
+        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
-        String file_path = getFilePathByParam(this.param, this.dbConfig);
         try{
 
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String label_code=run_jsmind_data.get("rule_id").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
-
-            //调度逻辑时间,yyyy-MM-dd HH:mm:ss
-            String cur_time=this.param.get("cur_time").toString();
-
-            if(dbConfig==null){
-                throw new Exception("标签信息数据库配置异常");
-            }
-
-            String base_path=dbConfig.get("file.path");
 
 
             Set<String> rowsStr = Sets.newHashSet();
@@ -131,8 +112,8 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
             }else{
                 //生成参数
                 String name_list_str = run_jsmind_data.getOrDefault("name_list","").toString();
-                logStr = StrUtil.format("task: {}, param: {}", id, name_list_str);
-                LogUtil.info(strategy_id, id, logStr);
+                logStr = StrUtil.format("task: {}, param: {}", strategyLogInfo.getStrategy_instance_id(), name_list_str);
+                LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                 String[] name_list = name_list_str.split(",");
                 if(name_list!=null && name_list.length>0){
                     rowsStr.addAll(Lists.newArrayList(name_list));
@@ -140,20 +121,17 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
             }
 
             Set<String> rs=Sets.newHashSet();
-            String file_dir= getFileDir(base_path,group_id,group_instance_id);
+            String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
+                    strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
             rs = calculateCommon(rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
-            logStr = StrUtil.format("task: {}, calculate finish size: {}", id, rs.size());
-            LogUtil.info(strategy_id, id, logStr);
-            writeFileAndPrintLog(id,strategy_id, file_path,rs);
-            strategyLogInfo.setStatus("1");
-            strategyLogInfo.setSuccess_num(String.valueOf(rs.size()));
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
 
         }catch (Exception e){
-            writeEmptyFile(file_path);
-            setStatus(id, Const.STATUS_ERROR);
-            LogUtil.error(strategy_id, id, e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {
