@@ -41,4 +41,11 @@ public class RedisClientImpl implements RedisClient{
     public String getKey(String key) {
         return null;
     }
+
+    @Override
+    public void close() {
+        redissonClient.shutdown();
+    }
+
+
 }

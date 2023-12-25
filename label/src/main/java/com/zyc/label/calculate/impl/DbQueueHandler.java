@@ -20,7 +20,7 @@ public class DbQueueHandler implements QueueHandler {
     private static Logger logger= LoggerFactory.getLogger(DbQueueHandler.class);
     private StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
 
-    private String[] instanceTypes = new String[]{InstanceType.LABEL.getCode(),InstanceType.CROWD_OPERATE.getCode(),InstanceType.CROWD_FILE.getCode(),
+    public static String[] instanceTypes = new String[]{InstanceType.LABEL.getCode(),InstanceType.CROWD_OPERATE.getCode(),InstanceType.CROWD_FILE.getCode(),
             InstanceType.CROWD_RULE.getCode(),InstanceType.CUSTOM_LIST.getCode()};
     private String[] status = new String[]{"check_dep_finish"};
 

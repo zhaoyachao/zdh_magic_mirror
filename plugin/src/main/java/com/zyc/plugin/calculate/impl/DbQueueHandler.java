@@ -20,7 +20,7 @@ public class DbQueueHandler implements QueueHandler {
     private static Logger logger= LoggerFactory.getLogger(DbQueueHandler.class);
     private StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
 
-    private String[] instanceTypes = new String[]{
+    public static String[] instanceTypes = new String[]{
             InstanceType.FILTER.getCode(),InstanceType.SHUNT.getCode(),InstanceType.TOUCH.getCode(),InstanceType.PLUGIN.getCode(),
             InstanceType.ID_MAPPING.getCode(),InstanceType.MANUAL_CONFIRM.getCode(),InstanceType.RIGHTS.getCode(),InstanceType.CODE_BLOCK.getCode(),
             InstanceType.TN.getCode(), InstanceType.FUNCTION.getCode()};

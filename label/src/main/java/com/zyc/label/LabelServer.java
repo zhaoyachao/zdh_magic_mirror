@@ -5,6 +5,7 @@ import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.queue.QueueHandler;
 import com.zyc.common.redis.JedisPoolUtil;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.label.calculate.impl.*;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
@@ -71,11 +72,21 @@ public class LabelServer {
             ThreadPoolExecutor threadPoolExecutor=new ThreadPoolExecutor(10, 100, 20, TimeUnit.MINUTES, new LinkedBlockingDeque<Runnable>());
             //提交一个监控杀死任务线程
             threadPoolExecutor.execute(new KillCalculateImpl(null, config));
+            resetStatus();
             while (true){
                 if(atomicInteger.get()>limit){
                     Thread.sleep(1000);
                     continue;
                 }
+
+                Object flag_stop = JedisPoolUtil.redisClient().get(Const.ZDH_STOP_FLAG_KEY);
+                if(flag_stop != null && flag_stop.toString().equalsIgnoreCase("true")){
+                    if(atomicInteger.get()==0){
+                        break;
+                    }
+                    continue;
+                }
+
                 Map m = queueHandler.handler();
                 if(m != null){
                     logger.info("task : "+JSON.toJSONString(m));
@@ -111,6 +122,9 @@ public class LabelServer {
                 Thread.sleep(1000);
             }
 
+            threadPoolExecutor.shutdownNow();
+
+            JedisPoolUtil.close();
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -126,6 +140,11 @@ public class LabelServer {
             throw new Exception("加载配置文件异常,",e.getCause());
         }
         return prop;
+    }
+
+    public static void resetStatus(){
+        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
+        strategyInstanceService.updateStatus2CheckFinish(Const.STATUS_ETL, DbQueueHandler.instanceTypes);
     }
 
     public static void setStatus(String task_id,String status){

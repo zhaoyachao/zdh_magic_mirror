@@ -15,4 +15,6 @@ public interface RedisClient {
     public Map<Object, Object> hGetAll(String key);
 
     public String getKey(String key);
+
+    public void close();
 }

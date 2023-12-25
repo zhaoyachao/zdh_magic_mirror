@@ -10,5 +10,7 @@ public class Const {
     public static String STATUS_FINISH="finish";
     public static String STATUS_ERROR="error";
 
+    public static String ZDH_STOP_FLAG_KEY="zdh_stop_flag";
+
 
 }

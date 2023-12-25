@@ -82,4 +82,27 @@ public class StrategyInstanceServiceImpl {
         }
     }
 
+    public int updateStatus2CheckFinish(String status, String[] instance_types){
+        SqlSession sqlSession=null;
+        try {
+            sqlSession=MybatisUtil.getSqlSession();
+            StrategyInstanceMapper strategyInstanceMappler = sqlSession.getMapper(StrategyInstanceMapper.class);
+            int result = strategyInstanceMappler.updateStatus2CheckFinish(status, instance_types);
+            return result;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 0;
+        }finally {
+            if(sqlSession != null){
+                try {
+                    sqlSession.getConnection().close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                sqlSession.close();
+            }
+        }
+    }
+
 }

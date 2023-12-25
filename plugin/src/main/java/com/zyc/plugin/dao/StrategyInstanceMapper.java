@@ -47,4 +47,18 @@ public interface StrategyInstanceMapper {
     })
     public List<StrategyInstance> selectByStatus(@Param("statusAry") String[] status, @Param("instance_types") String[] instance_type, @Param("group_type") String group_type);
 
+    @Update({
+            "<script>",
+            "update strategy_instance set status='check_dep_finish'",
+            "where ",
+            "status=#{status}",
+            " and instance_type in ",
+            "<foreach collection='instance_types' item='instance_type' open='(' separator=',' close=')'>",
+            "#{instance_type}",
+            "</foreach>",
+            "and group_type='offline'",
+            "</script>"
+    }
+    )
+    public int updateStatus2CheckFinish(@Param("status")String status, @Param("instance_types") String[] instance_types);
 }

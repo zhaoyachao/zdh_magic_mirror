@@ -22,6 +22,10 @@ public class JedisPoolUtil {
         }
     }
 
+    public static void close(){
+        redisClient.close();
+    }
+
     public static void single(Properties properties){
         String host = properties.getProperty("redis.host");
         int port = Integer.valueOf(properties.getProperty("redis.port"));
