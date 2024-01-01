@@ -119,10 +119,12 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
 
                     //此处使用排除法
                     rs = Sets.difference(rs, filterDataFrame);
+
                 }
             }
 
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
+            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
@@ -138,7 +140,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
     private Set<String> loadFilters(FilterInfo filterInfo,String base_path) throws Exception {
         if(filterInfo.getEngine_type().equalsIgnoreCase("file")){
             String filter_path=base_path+"/filter/"+filterInfo.getFilter_code();
-            List<String> list = FileUtil.readStringSplit(new File(filter_path), Charset.forName("utf-8"));
+            List<String> list = FileUtil.readStringSplit(new File(filter_path), Charset.forName("utf-8"), "3");
             Set<String> filterDataFrame = Sets.newHashSet();
             filterDataFrame.addAll(list);
             return filterDataFrame;

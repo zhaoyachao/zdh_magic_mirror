@@ -12,5 +12,8 @@ public class Const {
 
     public static String ZDH_STOP_FLAG_KEY="zdh_stop_flag";
 
+    public static String FILE_STATUS_SUCCESS = "1";//成功
+    public static String FILE_STATUS_FAIL = "2";//失败
+    public static String FILE_STATUS_ALL = "3";//不区分
 
 }

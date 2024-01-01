@@ -175,11 +175,12 @@ public class BaseCalculate {
         String pre_tasks = param.get("pre_tasks").toString();
         List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
         String operate=run_jsmind_data.get("operate").toString();
+        String status=run_jsmind_data.getOrDefault("data_status",Const.FILE_STATUS_SUCCESS).toString();//依赖数据状态,1:成功,2:失败,3:不区分
         List<String> pre_tasks_list = Lists.newArrayList();
         if(!StringUtils.isEmpty(pre_tasks)){
             pre_tasks_list = Lists.newArrayList(pre_tasks.split(","));
         }
-        return calculate(file_dir, pre_tasks_list, operate, currentRows, strategyInstances, is_disenable);
+        return calculate(file_dir, pre_tasks_list, operate, currentRows, strategyInstances, is_disenable, status);
     }
 
     /**
@@ -194,7 +195,8 @@ public class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculate(String file_dir, List<String> pre_tasks, String operate, Set<String> cur_rows, List<StrategyInstance> strategyInstances,String is_disenable) throws IOException {
+    public Set<String> calculate(String file_dir, List<String> pre_tasks, String operate, Set<String> cur_rows, List<StrategyInstance> strategyInstances,
+                                 String is_disenable, String status) throws IOException {
 
         //无上游,则直接返回当前结果集
         if(pre_tasks==null || pre_tasks.size()== 0){
@@ -222,7 +224,7 @@ public class BaseCalculate {
                     //skip 任务逻辑修改,跳过/禁用任务,采用上游数据
                    //continue;
                 }
-                List<String> lines = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"));
+                List<String> lines = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
                 Set<String> set = Sets.newHashSet(lines);
                 result = Sets.difference(result, set);
             }
@@ -236,7 +238,7 @@ public class BaseCalculate {
                 if(map.get(task).getStatus().equalsIgnoreCase("skip")){
                    //continue;
                 }
-                List<String> lines = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"));
+                List<String> lines = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
                 Set<String> set = Sets.newHashSet(lines);
                 if(result == null){
                     result = set;
@@ -257,7 +259,7 @@ public class BaseCalculate {
                 if(map.get(task).getStatus().equalsIgnoreCase("skip")){
                     //continue;
                 }
-                List<String> lines = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"));
+                List<String> lines = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
                 Set<String> set = Sets.newHashSet(lines);
                 if(result == null){
                     result = set;
@@ -294,7 +296,7 @@ public class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculate(List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances) throws IOException {
+    public Set<String> calculate(List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances, String status) throws IOException {
         if(operate.equalsIgnoreCase("not_use")){
             return Sets.newHashSet();
         }
@@ -312,7 +314,7 @@ public class BaseCalculate {
             for(String task:pre_tasks){
                 Map run_jsmind_data = JSON.parseObject(map.get(task).getRun_jsmind_data(), Map.class);
                 if(run_jsmind_data.getOrDefault("is_base","false").equals("true")){
-                    List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"));
+                    List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
                     result =Sets.newHashSet(rows);
                     pre_tasks.remove(task);
                     break ;
@@ -325,7 +327,7 @@ public class BaseCalculate {
             if(map.get(task).getStatus().equalsIgnoreCase("skip")){
                 //continue;
             }
-            List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"));
+            List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
             Set<String> set=Sets.newHashSet(rows);
             if(result==null){
                 //第一次赋值

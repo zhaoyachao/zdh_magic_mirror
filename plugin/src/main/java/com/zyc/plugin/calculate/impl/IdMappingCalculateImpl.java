@@ -101,6 +101,8 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
             logger.info("task: {}, merge upstream data end, size: {}", strategyLogInfo.getStrategy_instance_id(), rs.size());
             Set<String> rs2=Sets.newHashSet() ;//映射明细,每条记录的映射关系
             Set<String> rs3=Sets.newHashSet() ;//映射结果,映射成功的结果
+            Set<String> rs_error=Sets.newHashSet() ;//映射结果,映射成功的结果
+
             if(is_disenable.equalsIgnoreCase("true")){
                 rs2=rs;
                 rs3=rs;
@@ -123,6 +125,8 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
                     if(id_map.containsKey(key)){
                         rs2.add(id_map.get(key)+","+key);
                         rs3.add(id_map.get(key));
+                    }else{
+                        rs_error.add(key);
                     }
                 }
                 rs = rs3;
@@ -132,7 +136,7 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
             String file_idmapping_path = getFilePath(file_dir, "idmapping_"+strategyLogInfo.getStrategy_instance_id());
             String save_idmapping_path = writeFile(strategyLogInfo.getStrategy_instance_id(),file_idmapping_path, rs2);
 
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);

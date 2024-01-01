@@ -24,7 +24,7 @@ public class FileIdMappingEngineImpl implements IdMappingEngine {
     public List<String> get() throws Exception {
         File f=new File(file_path);
         if(f.exists() && f.isFile()){
-            return FileUtil.readStringSplit(f, Charset.forName("utf-8"));
+            return FileUtil.readStringSplit(f, Charset.forName("utf-8"), "3");
         }
         return new ArrayList<>();
     }

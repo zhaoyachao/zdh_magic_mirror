@@ -2,6 +2,7 @@ package com.zyc.plugin.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.common.entity.StrategyLogInfo;
@@ -109,7 +110,9 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
                 //遍历权益,发放失败从rs集合中删除用户
                 throw new Exception("当前权益模块未实现");
             }
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
+
+            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);

@@ -96,6 +96,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String crowd_operate_context=run_jsmind_data.get("crowd_operate_context").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
+            String status=run_jsmind_data.getOrDefault("data_status",Const.FILE_STATUS_SUCCESS).toString();//依赖数据状态,1:成功,2:失败,3:不区分
 
             //获取上游任务
             String pre_tasks = this.param.get("pre_tasks").toString();
@@ -111,7 +112,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
                     List<String> other = resetPreTasks(strategyLogInfo.getStrategy_instance_id(),pre_tasks, crowd_operate_context);
                     List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
                     //多个任务交并排逻辑
-                    rs = calculate(other, file_dir, crowd_operate_context, strategyInstances);
+                    rs = calculate(other, file_dir, crowd_operate_context, strategyInstances,status);
                 }else{
                     throw new Exception("运算符节点至少依赖一个父节点");
                 }

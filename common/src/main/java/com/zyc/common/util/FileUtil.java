@@ -21,6 +21,11 @@ public class FileUtil {
        bw.newLine();
     }
 
+    public static void appendString(BufferedWriter bw,String line) throws IOException {
+        bw.append(line);
+        bw.newLine();
+    }
+
     public static void flush(BufferedWriter bw) throws IOException {
         bw.flush();
         bw.close();
@@ -31,11 +36,32 @@ public class FileUtil {
         return Files.readLines(file, charset);
     }
 
-    public static List<String> readStringSplit(File file, Charset charset) throws IOException {
+    /**
+     * 读取文件解析
+     * 当前函数仅适用于用于读取策略结果
+     * 文件内容格式 按逗号分割,依次如下, uid,status,start_time
+     * @param file
+     * @param charset
+     * @param status
+     * @return
+     * @throws IOException
+     */
+    public static List<String> readStringSplit(File file, Charset charset, String status) throws IOException {
         List<String> result = new ArrayList<>();
         List<String> tmp = Files.readLines(file, charset);
         for (String line: tmp){
-            result.add(line.split(",")[0]);
+            String[] row = line.split(",");
+            if(row.length>2){
+                if(status == Const.FILE_STATUS_ALL){
+                    result.add(row[0]);
+                }else{
+                    if(row[1] == status){
+                        result.add(row[0]);
+                    }
+                }
+            }else{
+                result.add(row[0]);
+            }
         }
         return result;
     }

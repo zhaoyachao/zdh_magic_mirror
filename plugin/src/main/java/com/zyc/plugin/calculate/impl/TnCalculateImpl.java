@@ -115,7 +115,10 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
 
             }
 
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
+            //tn操作为整体操作,全部成功或者全部失败
+            Set<String> rs_error = Sets.newHashSet();
+            //Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
@@ -124,19 +127,6 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
-        }
-    }
-
-
-    private Set<String> loadFilters(FilterInfo filterInfo,String base_path) throws Exception {
-        if(filterInfo.getEngine_type().equalsIgnoreCase("file")){
-            String filter_path=base_path+"/filter/"+filterInfo.getFilter_code();
-            List<String> list = FileUtil.readStringSplit(new File(filter_path), Charset.forName("utf-8"));
-            Set<String> filterDataFrame = Sets.newHashSet();
-            filterDataFrame.addAll(list);
-            return filterDataFrame;
-        }else{
-            throw new Exception("暂不支持的计算引擎");
         }
     }
 

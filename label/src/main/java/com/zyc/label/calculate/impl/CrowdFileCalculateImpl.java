@@ -118,7 +118,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                 sftpUtil.download(directory, crowd_file, file_sftp_path);
 
                 //读取本地文件
-                List<String> rows = FileUtil.readStringSplit(new File(file_sftp_path), Charset.forName("utf-8"));
+                List<String> rows = FileUtil.readStringSplit(new File(file_sftp_path), Charset.forName("utf-8"), Const.FILE_STATUS_SUCCESS);
                 rowsStr = Sets.newHashSet(rows);
             }
 

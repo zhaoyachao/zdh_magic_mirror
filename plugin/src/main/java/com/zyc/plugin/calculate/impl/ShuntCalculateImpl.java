@@ -160,7 +160,8 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                 }
             }
 
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
+            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);

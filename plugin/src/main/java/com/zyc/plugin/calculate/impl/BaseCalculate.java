@@ -164,8 +164,9 @@ public abstract class BaseCalculate {
         //检查标签上游
         CalculateCommomParam calculateCommomParam = resovlePreTask(param, strategyInstanceService);
         String operate = getOperate(run_jsmind_data);
+        String status=run_jsmind_data.getOrDefault("data_status",Const.FILE_STATUS_SUCCESS).toString();//依赖数据状态,1:成功,2:失败,3:不区分
         String file_dir= getFileDir(base_path,calculateCommomParam.getGroup_id(),calculateCommomParam.getGroup_instance_id());
-        rs = calculatePreTasks(calculateCommomParam.getPre_tasks(), file_dir, operate,calculateCommomParam.getStrategyInstanceList());
+        rs = calculatePreTasks(calculateCommomParam.getPre_tasks(), file_dir, operate,calculateCommomParam.getStrategyInstanceList(), status);
 
         CalculateResult calculateResult=new CalculateResult.Builder()
                 .calculateCommomParam(calculateCommomParam)
@@ -183,10 +184,10 @@ public abstract class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculatePreTasks(String pre_tasks, String file_dir, String operator, List<StrategyInstance> strategyInstances) throws Exception {
+    public Set<String> calculatePreTasks(String pre_tasks, String file_dir, String operator, List<StrategyInstance> strategyInstances, String status) throws Exception {
         Set<String> rs=Sets.newHashSet() ;
         if(!StringUtils.isEmpty(pre_tasks)){
-            rs = calculate(Lists.newArrayList(pre_tasks.split(",")), file_dir, operator, strategyInstances);
+            rs = calculate(Lists.newArrayList(pre_tasks.split(",")), file_dir, operator, strategyInstances, status);
         }else{
             //如果上游为空,则过滤无效 todo
         }
@@ -215,6 +216,19 @@ public abstract class BaseCalculate {
         return f.getAbsolutePath();
     }
 
+    public String appendFileByError(String task_id, String file_path, Set<String> rows) throws IOException {
+        File f=new File(file_path);
+        if(!new File(f.getParent()).exists()){
+            new File(f.getParent()).mkdirs();
+        }
+        BufferedWriter bw = FileUtil.createBufferedWriter(f, Charset.forName("utf-8"));
+        for (String line:rows){
+            FileUtil.appendString(bw, line+","+Const.FILE_STATUS_FAIL);
+        }
+        FileUtil.flush(bw);
+        return f.getAbsolutePath();
+    }
+
     public void writeEmptyFileAndStatus(StrategyLogInfo strategyLogInfo){
         writeEmptyFile(strategyLogInfo.getFile_path());
         setStatus(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_ERROR);
@@ -238,7 +252,7 @@ public abstract class BaseCalculate {
     public List<String> readFile(String file_path) throws IOException {
         File f=new File(file_path);
         if(f.exists() && f.isFile()){
-            return FileUtil.readStringSplit(f, Charset.forName("utf-8"));
+            return FileUtil.readStringSplit(f, Charset.forName("utf-8"),Const.FILE_STATUS_ALL);
         }
         return new ArrayList<>();
     }
@@ -259,7 +273,7 @@ public abstract class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculate(List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances) throws Exception {
+    public Set<String> calculate(List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances, String status) throws Exception {
 
         if(operate.equalsIgnoreCase("not_use")){
             return Sets.newHashSet();
@@ -276,7 +290,7 @@ public abstract class BaseCalculate {
             if(map.get(task).getStatus().equalsIgnoreCase("skip")){
                 //continue;
             }
-            List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"));
+            List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
             Set<String> set=Sets.newHashSet(rows);
             if(result==null){
                 //第一次赋值
@@ -308,10 +322,10 @@ public abstract class BaseCalculate {
      * @param rs
      * @throws IOException
      */
-    public void writeFileAndPrintLogAndUpdateStatus2Finish(StrategyLogInfo strategyLogInfo,  Set<String> rs) throws IOException {
+    public void writeFileAndPrintLogAndUpdateStatus2Finish(StrategyLogInfo strategyLogInfo,  Set<String> rs, Set<String> rs_error) throws IOException {
         String logStr = StrUtil.format("task: {}, calculate finish size: {}", strategyLogInfo.getStrategy_instance_id(), rs.size());
         LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
-        writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo.getStrategy_instance_id(),strategyLogInfo.getStrategy_id(), strategyLogInfo.getFile_path(), rs);
+        writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo.getStrategy_instance_id(),strategyLogInfo.getStrategy_id(), strategyLogInfo.getFile_path(), rs, rs_error);
     }
 
     /**
@@ -322,8 +336,9 @@ public abstract class BaseCalculate {
      * @param rs
      * @throws IOException
      */
-    public void writeFileAndPrintLogAndUpdateStatus2Finish(String id,String strategy_id, String file_path, Set<String> rs) throws IOException {
+    public void writeFileAndPrintLogAndUpdateStatus2Finish(String id,String strategy_id, String file_path, Set<String> rs, Set<String> rs_error) throws IOException {
         String save_path = writeFile(id,file_path, rs);
+        appendFileByError(id,file_path, rs_error);
         String logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
         LogUtil.info(strategy_id, id, logStr);
         setStatus(id, Const.STATUS_FINISH);
