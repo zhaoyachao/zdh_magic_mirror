@@ -2,9 +2,7 @@ package com.zyc.ship.engine.impl;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.lang.JarClassLoader;
 import cn.hutool.core.util.ArrayUtil;
-import cn.hutool.core.util.ClassLoaderUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -17,6 +15,7 @@ import com.zyc.common.entity.FunctionInfo;
 import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.groovy.GroovyFactory;
+import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipExecutor;
 import com.zyc.ship.disruptor.ShipResult;
@@ -26,8 +25,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class RiskShipExecutorImpl implements ShipExecutor {
@@ -51,6 +48,8 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             logger.info("executor: "+strategyInstance.getStrategy_context());
             shipResult1.setStrategyName(strategyInstance.getStrategy_context());
             String uid = ((ShipCommonInputParam)shipEvent.getInputParam()).getUid();
+            String product_code = ((ShipCommonInputParam)shipEvent.getInputParam()).getProduct_code();
+            String data_node = ((ShipCommonInputParam)shipEvent.getInputParam()).getData_node();
             Map<String,Object> labelVaues = shipEvent.getLabelValues();
             String instance_type = strategyInstance.getInstance_type();
             JSONObject run_jsmind_data =  JSON.parseObject(strategyInstance.getRun_jsmind_data());
@@ -62,8 +61,25 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                         tmp = "error";
                     }
                 }
-            }else if(instance_type.equalsIgnoreCase(InstanceType.DATA_NODE.getCode())){
+            }else if(instance_type.equalsIgnoreCase(InstanceType.CROWD_RULE.getCode())){
+                //不支持人群规则
+                tmp = "error";
+            }else if(instance_type.equalsIgnoreCase(InstanceType.CROWD_OPERATE.getCode())){
+                //到执行器时的运算符,都是可执行的,master disruptor会提前判断
                 tmp = "success";
+            }else if(instance_type.equalsIgnoreCase(InstanceType.CROWD_FILE.getCode())){
+                //不支持大批量人群文件
+                tmp = "error";
+                String crowd_file_id = run_jsmind_data.getOrDefault("crowd_file","").toString();
+                //key: {product_code}_{crowd_file_id}_{uid}
+                String key = StringUtils.join(product_code,"_", crowd_file_id, "_", uid);
+                Object value = JedisPoolUtil.redisClient().get(key);
+                if(value != null){
+                    tmp = "success";
+                }
+            }else if(instance_type.equalsIgnoreCase(InstanceType.CUSTOM_LIST.getCode())){
+                String name_list_str = run_jsmind_data.getOrDefault("name_list","").toString();
+                tmp = String.valueOf(Sets.newHashSet(name_list_str.split(",")).contains(uid));
             }else if(instance_type.equalsIgnoreCase(InstanceType.FILTER.getCode())){
                 String[] filters = run_jsmind_data.getString("filter").split(",");
                 tmp = "success";
@@ -76,16 +92,8 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 if(!shunt(null, strategyInstance, uid)){
                     tmp = "error";
                 }
-            }else if(instance_type.equalsIgnoreCase(InstanceType.RISK.getCode())){
-                //决策信息
-                String event_code = run_jsmind_data.getString("rule_id");
-                String event_code_result = run_jsmind_data.getString("rule_param");
-                tmp = "success";
-                shipResult1.setRiskStrategyEventResult(new RiskStrategyEventResult(event_code, event_code_result));
             }else if(instance_type.equalsIgnoreCase(InstanceType.TOUCH.getCode())){
                 //触达
-            }else if(instance_type.equalsIgnoreCase(InstanceType.PLUGIN.getCode())){
-                //插件
             }else if(instance_type.equalsIgnoreCase(InstanceType.ID_MAPPING.getCode())){
                 String mapping_code = run_jsmind_data.getString("id_mapping_code");
                 String tag_key = "tag_"+mapping_code;
@@ -95,12 +103,15 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 }
                 shipEvent.getRunParam().put(mapping_code, value);
                 tmp = "success";
-            }else if(instance_type.equalsIgnoreCase(InstanceType.CROWD_OPERATE.getCode())){
-                //到执行器时的运算符,都是可执行的,master disruptor会提前判断
-                tmp = "success";
-            }else if(instance_type.equalsIgnoreCase(InstanceType.CUSTOM_LIST.getCode())){
-                String name_list_str = run_jsmind_data.getOrDefault("name_list","").toString();
-                tmp = String.valueOf(Sets.newHashSet(name_list_str.split(",")).contains(uid));
+            }else if(instance_type.equalsIgnoreCase(InstanceType.PLUGIN.getCode())){
+                //不支持
+                tmp = "error";
+            }else if(instance_type.equalsIgnoreCase(InstanceType.MANUAL_CONFIRM.getCode())){
+                //不支持
+                tmp = "error";
+            }else if(instance_type.equalsIgnoreCase(InstanceType.RIGHTS.getCode())){
+                //不支持
+                tmp = "error";
             }else if(instance_type.equalsIgnoreCase(InstanceType.CODE_BLOCK.getCode())){
                 String code_type=run_jsmind_data.getOrDefault("code_type", "").toString();
                 String command=run_jsmind_data.getOrDefault("command", "").toString();
@@ -113,6 +124,22 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                     boolean result =(boolean) GroovyFactory.execExpress(command, params);
                     tmp = String.valueOf(result);
                 }
+            }else if(instance_type.equalsIgnoreCase(InstanceType.DATA_NODE.getCode())){
+                //节点
+                tmp = "error";
+                String s_data_node = run_jsmind_data.getOrDefault("data_node","").toString();
+                if(data_node.equalsIgnoreCase(s_data_node)){
+                    tmp = "success";
+                }
+            }else if(instance_type.equalsIgnoreCase(InstanceType.RISK.getCode())){
+                //决策信息
+                String event_code = run_jsmind_data.getString("rule_id");
+                String event_code_result = run_jsmind_data.getString("rule_param");
+                tmp = "success";
+                shipResult1.setRiskStrategyEventResult(new RiskStrategyEventResult(event_code, event_code_result));
+            }else if(instance_type.equalsIgnoreCase(InstanceType.TN.getCode())){
+                //根据TN生成,任务(暂不支持,在线策略是否新增一个延迟插件)
+                tmp = "error";
             }else if(instance_type.equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
                 String function_name = run_jsmind_data.getString("rule_id");
                 Gson gson=new Gson();

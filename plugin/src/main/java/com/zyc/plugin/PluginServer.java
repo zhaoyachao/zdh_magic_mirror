@@ -78,7 +78,7 @@ public class PluginServer {
                     Thread.sleep(1000);
                     continue;
                 }
-                Object flag_stop = JedisPoolUtil.redisClient().get(Const.ZDH_STOP_FLAG_KEY);
+                Object flag_stop = JedisPoolUtil.redisClient().get(Const.ZDH_PLUGIN_STOP_FLAG_KEY);
                 if(flag_stop != null && flag_stop.toString().equalsIgnoreCase("true")){
                     if(atomicInteger.get()==0){
                         break;
