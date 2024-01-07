@@ -1,6 +1,7 @@
 package com.zyc.ship;
 
 import com.zyc.common.redis.JedisPoolUtil;
+import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.ship.disruptor.DisruptorManager;
 import com.zyc.ship.disruptor.ShipMasterEventWorkHandler;
 import com.zyc.ship.disruptor.ShipWorkerEventWorkHandler;
@@ -40,6 +41,9 @@ public class ShipServer {
             }
             logger.info("加载配置文件路径:{}", conf_path);
 
+            SnowflakeIdWorker.init(Integer.valueOf(properties.getProperty("work.id", "1")),
+                    Integer.valueOf(properties.getProperty("data.center.id", "1"))
+                    );
             JedisPoolUtil.connect(properties);
 
             LabelHttpUtil.init(properties);
@@ -75,7 +79,7 @@ public class ShipServer {
             nettyServer.start(properties);
 
         }catch (Exception e){
-
+            e.printStackTrace();
         }
 
     }

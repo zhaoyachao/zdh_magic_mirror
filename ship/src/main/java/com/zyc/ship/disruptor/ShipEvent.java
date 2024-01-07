@@ -23,7 +23,7 @@ public class ShipEvent {
     /**
      * 唯一请求id
      */
-    private long value;
+    private long requestId;
 
     /**
      * 策略组内日志id
@@ -108,12 +108,12 @@ public class ShipEvent {
         this.inputParam = inputParam;
     }
 
-    public long getValue() {
-        return value;
+    public long getRequestId() {
+        return requestId;
     }
 
-    public void setValue(long value) {
-        this.value = value;
+    public void setRequestId(long requestId) {
+        this.requestId = requestId;
     }
 
     public long getLogGroupId() {

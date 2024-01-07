@@ -73,6 +73,8 @@ public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
 
     public ShipEvent reBuildShipEvent(ShipEvent shipEvent, String strategyId){
         ShipEvent shipEvent1 = new ShipEvent();
+        shipEvent1.setRequestId(shipEvent.getRequestId());
+        shipEvent1.setLogGroupId(shipEvent.getLogGroupId());
         shipEvent1.setStrategyInstanceId(strategyId);
         shipEvent1.setStrategyInstance(shipEvent.getStrategyInstanceMap().get(strategyId));
         shipEvent1.setStrategyInstanceMap(shipEvent.getStrategyInstanceMap());

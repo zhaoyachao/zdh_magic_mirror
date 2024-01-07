@@ -2,6 +2,7 @@ package com.zyc.ship.engine.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.entity.*;
@@ -45,6 +46,8 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
 
             String uuid = UUID.randomUUID().toString();
 
+            long request_id= SnowflakeIdWorker.getInstance().nextId();
+
             int flow = shipCommonInputParam.getFlow();
             //检测是否存在小流量区间,不存在则创建默认小流量区间 todo 默认根据uid hash
 
@@ -69,7 +72,7 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
             Map<String, Map<String, ShipResult>> result = new ConcurrentHashMap<>();
             CountDownLatch groupCountDownLatch = new CountDownLatch(hit_strategy_groups.size());
             Map<String, ShipEvent> shipEventMap = new ConcurrentHashMap<>();
-            executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch, shipEventMap, result);
+            executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch, shipEventMap, result, request_id);
 
             //30秒超时,关闭线程
             if(!groupCountDownLatch.await(1000*1000, TimeUnit.MILLISECONDS)){

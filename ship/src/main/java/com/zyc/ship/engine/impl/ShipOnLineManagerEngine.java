@@ -7,6 +7,7 @@ import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.util.DAG;
+import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.ship.antlr4.SRLexer;
 import com.zyc.ship.antlr4.SRParser;
 import com.zyc.ship.antlr4.ShipSRListener;
@@ -54,10 +55,11 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
         try{
             ShipOnLineManagerEngine shipOnLineManagerEngine = this;
             String uuid = UUID.randomUUID().toString();
+
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
-
+                    long request_id= SnowflakeIdWorker.getInstance().nextId();
                     try{
                         //解析参数
                         ShipCommonInputParam shipCommonInputParam = (ShipCommonInputParam) inputParam;
@@ -87,7 +89,8 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                         CountDownLatch groupCountDownLatch = new CountDownLatch(hit_strategy_groups.size());
                         Map<String, ShipEvent> shipEventMap = new ConcurrentHashMap<>();
 
-                        shipOnLineManagerEngine.executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch, shipEventMap, result);
+                        shipOnLineManagerEngine.executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch,
+                                shipEventMap, result, request_id);
                     }catch (Exception e){
                         e.printStackTrace();
                     }

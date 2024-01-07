@@ -8,11 +8,14 @@ import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.util.DAG;
+import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.ship.common.Const;
 import com.zyc.ship.conf.ShipConf;
 import com.zyc.ship.disruptor.*;
 import com.zyc.ship.engine.Engine;
 import com.zyc.ship.entity.*;
+import com.zyc.ship.log.CommonLog;
+import com.zyc.ship.log.ShipOnlineRiskLog;
 import com.zyc.ship.service.StrategyService;
 import com.zyc.ship.util.FilterHttpUtil;
 import com.zyc.ship.util.LabelHttpUtil;
@@ -47,13 +50,24 @@ public class ShipCommonEngine implements Engine {
         List<StrategyGroupInstance> hit_strategy_groups = new ArrayList<>();
         //校验分流
         for (StrategyGroupInstance strategyGroupInstance: strategy_groups){
+            CommonLog commonLog = new CommonLog();
+            commonLog.setStrategy_group_instance_id(strategyGroupInstance.getId());
+            commonLog.setStage_code("check_flows");
             if(!StringUtils.isEmpty(strategyGroupInstance.getSmall_flow_rate())){
                 String[] flows = strategyGroupInstance.getSmall_flow_rate().split(",",2);
                 if(flows.length != 2){
+                    //策略组分流{strategy_group_instance_id: ,is_hit: false, code: 1001}
+                    commonLog.setReason("not hit strategy_group, flows is error");
+                    commonLog.setStatus("2");//1成功,2失败
+                    ShipOnlineRiskLog.info(commonLog);
                     continue;
                 }
                 if(flow >= Integer.valueOf(flows[0]) && flow <= Integer.valueOf(flows[1])){
                     hit_strategy_groups.add(strategyGroupInstance);
+                }else{
+                    commonLog.setReason("not hit strategy_group, not hit flows");
+                    commonLog.setStatus("2");//1成功,2失败
+                    ShipOnlineRiskLog.info(commonLog);
                 }
             }
         }
@@ -226,13 +240,15 @@ public class ShipCommonEngine implements Engine {
      */
     public void executeStrategyGroups(List<StrategyGroupInstance> strategy_groups, Map<String, Object> labels, Map<String, Object> filters,
                                       ShipCommonInputParam shipCommonInputParam, String data_node, CountDownLatch groupCountDownLatch,
-                                      Map<String, ShipEvent> shipEventMap, Map<String, Map<String, ShipResult>> result) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+                                      Map<String, ShipEvent> shipEventMap, Map<String, Map<String, ShipResult>> result, long request_id) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+
         for (StrategyGroupInstance strategy_group: strategy_groups) {
 
             Map<String, ShipResult> shipResultMap = new HashMap<>();
             ShipEvent shipEvent = new ShipEvent();
 
-            //shipEvent.setLogGroupId(1);
+            shipEvent.setRequestId(request_id);
+            shipEvent.setLogGroupId(SnowflakeIdWorker.getInstance().nextId());
             StopFlag stopFlag = new StopFlag();
             shipEvent.setLabelValues(labels);
             shipEvent.setFilterValues(filters);

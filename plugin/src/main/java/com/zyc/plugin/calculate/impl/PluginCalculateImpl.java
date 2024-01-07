@@ -14,6 +14,7 @@ import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.PluginCalculate;
+import com.zyc.plugin.impl.HttpPluginServiceImpl;
 import com.zyc.plugin.impl.KafkaPluginServiceImpl;
 import com.zyc.plugin.impl.PluginServiceImpl;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
@@ -122,7 +123,11 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
                 for (String s: diff){
                     PluginParam pluginParam = pluginServiceImpl.getPluginParam(rule_params);
                     PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, s);
-                    rs3.add(s+","+result.getCode()+","+JSON.toJSONString(result.getResult())+","+System.currentTimeMillis());
+                    String status=Const.FILE_STATUS_FAIL;
+                    if(result.getCode() == 0){
+                        status = Const.FILE_STATUS_SUCCESS;
+                    }
+                    rs3.add(s+","+status+","+","+System.currentTimeMillis()+JSON.toJSONString(result.getResult()));
                 }
                 writeFile(strategyLogInfo.getStrategy_instance_id(),file_dir+"/"+rule_id+"_"+strategyLogInfo.getStrategy_instance_id(), rs3);
             }
@@ -145,6 +150,8 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
     public PluginService getPluginService(String plugin_code){
         if(plugin_code.equalsIgnoreCase("kafka")){
             return new KafkaPluginServiceImpl();
+        }else if(plugin_code.equalsIgnoreCase("http")){
+            return new HttpPluginServiceImpl();
         }
         return null;
     }

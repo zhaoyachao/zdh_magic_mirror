@@ -64,6 +64,11 @@ public class DisruptorManager {
         return new EventTranslator<ShipEvent>() {
             @Override
             public void translateTo(ShipEvent event, long sequence) {
+
+                event.setRequestId(shipEvent.getRequestId());
+                event.setLogId(shipEvent.getLogId());
+                event.setLogGroupId(shipEvent.getLogGroupId());
+
                 event.setWorkerDisruptor(shipEvent.getWorkerDisruptor());
                 event.setMasterDisruptor(shipEvent.getMasterDisruptor());
                 event.setDag(shipEvent.getDag());
@@ -74,8 +79,7 @@ public class DisruptorManager {
                 event.setStrategyInstanceId(shipEvent.getStrategyInstanceId());
                 event.setStrategyInstanceMap(shipEvent.getStrategyInstanceMap());
                 event.setShipResultMap(shipEvent.getShipResultMap());
-                event.setLogId(shipEvent.getLogId());
-                event.setLogGroupId(shipEvent.getLogGroupId());
+
                 event.setCdl(shipEvent.getCdl());
                 event.setGroupCdl(shipEvent.getGroupCdl());
                 event.setInputParam(shipEvent.getInputParam());
