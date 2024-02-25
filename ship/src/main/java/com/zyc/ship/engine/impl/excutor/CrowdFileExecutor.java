@@ -11,7 +11,7 @@ public class CrowdFileExecutor {
         try{
             String crowd_file_id = run_jsmind_data.getOrDefault("crowd_file","").toString();
             //key: {product_code}_{crowd_file_id}_{uid}
-            String key = StringUtils.join(product_code,"_", crowd_file_id, "_", uid);
+            String key = StringUtils.join(product_code,"_crowd_file_", crowd_file_id, "_", uid);
             Object value = JedisPoolUtil.redisClient().get(key);
             if(value != null){
                 tmp = "success";

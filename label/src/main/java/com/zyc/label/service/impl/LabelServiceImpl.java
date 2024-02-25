@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public class LabelServiceImpl {
 
-    public LabelInfo selectByCode(String label_code){
+    public LabelInfo selectByCode(String label_code, String label_use_type){
         SqlSession sqlSession=null;
         try {
             sqlSession = MybatisUtil.getSqlSession();
@@ -18,6 +18,7 @@ public class LabelServiceImpl {
             LabelInfo labelInfo=new LabelInfo();
             labelInfo.setLabel_code(label_code);
             labelInfo.setIs_delete("0");
+            labelInfo.setLabel_use_type(label_use_type);
             labelInfo = labelMapper.selectOne(label_code);
             return labelInfo;
 

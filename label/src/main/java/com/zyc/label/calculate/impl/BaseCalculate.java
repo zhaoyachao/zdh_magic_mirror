@@ -162,6 +162,7 @@ public class BaseCalculate {
 
     /**
      * 解析上游任务和当前节点任务做运算-入口
+     * @param label_use_type offline: 离线处理,online:在线处理
      * @param currentRows
      * @param is_disenable
      * @param file_dir
@@ -171,7 +172,7 @@ public class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculateCommon(Set<String> currentRows,String is_disenable, String file_dir, Map param,Map run_jsmind_data, StrategyInstanceServiceImpl strategyInstanceService) throws IOException {
+    public Set<String> calculateCommon(String label_use_type,Set<String> currentRows,String is_disenable, String file_dir, Map param,Map run_jsmind_data, StrategyInstanceServiceImpl strategyInstanceService) throws Exception {
         String pre_tasks = param.get("pre_tasks").toString();
         List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
         String operate=run_jsmind_data.get("operate").toString();
@@ -180,7 +181,12 @@ public class BaseCalculate {
         if(!StringUtils.isEmpty(pre_tasks)){
             pre_tasks_list = Lists.newArrayList(pre_tasks.split(","));
         }
-        return calculate(file_dir, pre_tasks_list, operate, currentRows, strategyInstances, is_disenable, status);
+        if(label_use_type.equalsIgnoreCase("offline")){
+            return calculate(file_dir, pre_tasks_list, operate, currentRows, strategyInstances, is_disenable, status);
+        }else if(label_use_type.equalsIgnoreCase("online")){
+            return calculatePreTasksByOnlineLabel(pre_tasks_list ,file_dir, operate, strategyInstances, status);
+        }
+        throw new Exception("不支持的标签类型");
     }
 
     /**
@@ -341,6 +347,60 @@ public class BaseCalculate {
                     result = Sets.intersection(result, set);
                 }else if(operate.equalsIgnoreCase("not")){
                     result = Sets.difference(result, set);
+                }else if(operate.equalsIgnoreCase("not_use")){
+                    return Sets.newHashSet();
+                }
+            }
+        }
+        return result;
+    }
+
+
+    /**
+     *  人查值标签 使用
+     * @param pre_tasks
+     * @param file_dir
+     * @param operate
+     * @param strategyInstances
+     * @param status
+     * @return
+     * @throws IOException
+     */
+    public Set<String> calculatePreTasksByOnlineLabel(List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances, String status) throws Exception {
+        if(operate.equalsIgnoreCase("not_use")){
+            return Sets.newHashSet();
+        }
+
+        Map<String,StrategyInstance> map=new HashMap<>();
+        for (StrategyInstance strategyInstance: strategyInstances){
+            map.put(strategyInstance.getId(), strategyInstance);
+        }
+
+        if(pre_tasks.size()==0){
+            throw new Exception("使用实时标签,必须存在上游标签");
+        }
+        Set<String> result=Sets.newHashSet();
+
+        //多个任务交并排逻辑
+        for(String task:pre_tasks){
+            if(map.get(task).getStatus().equalsIgnoreCase("skip")){
+                //continue;
+            }
+            List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
+            Set<String> set=Sets.newHashSet(rows);
+            if(result==null){
+                //第一次赋值
+                result = set;
+            }else{
+                if(operate.equalsIgnoreCase("or")){
+                    //计算并集
+                    result = Sets.union(result, set);
+                }else if(operate.equalsIgnoreCase("and")){
+                    //计算交集
+                    result = Sets.intersection(result, set);
+                }else if(operate.equalsIgnoreCase("not")){
+                    //此处使用交集
+                    result = Sets.intersection(result, set);
                 }else if(operate.equalsIgnoreCase("not_use")){
                     return Sets.newHashSet();
                 }

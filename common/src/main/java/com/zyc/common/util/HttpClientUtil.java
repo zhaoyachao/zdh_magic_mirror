@@ -1,4 +1,4 @@
-package com.zyc.ship.util;
+package com.zyc.common.util;
 
 import com.alibaba.fastjson.JSON;
 import org.apache.http.HttpEntity;

@@ -1,6 +1,7 @@
 package com.zyc.ship.util;
 
 import com.alibaba.fastjson.JSON;
+import com.zyc.common.util.HttpClientUtil;
 
 import java.util.HashMap;
 import java.util.Map;

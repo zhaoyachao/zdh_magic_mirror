@@ -125,7 +125,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
             String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                     strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
-            rs = calculateCommon(rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+            rs = calculateCommon("offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
 
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
