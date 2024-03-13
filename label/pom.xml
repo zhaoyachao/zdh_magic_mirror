@@ -56,10 +56,10 @@
 
         <dependency>
             <groupId>com.zyc</groupId>
-            <artifactId>zdh_queue</artifactId>
+            <artifactId>zdh_rqueue</artifactId>
             <scope>system</scope>
             <version>1.0-SNAPSHOT</version>
-            <systemPath>${basedir}/../lib/zdh_queue.jar</systemPath>
+            <systemPath>${basedir}/../lib/zdh_rqueue.jar</systemPath>
         </dependency>
 
         <dependency>

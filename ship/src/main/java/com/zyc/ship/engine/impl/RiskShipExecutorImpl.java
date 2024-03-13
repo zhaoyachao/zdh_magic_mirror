@@ -100,7 +100,9 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 tmp = riskExecutor.execute(run_jsmind_data, shipResult1);
             }else if(instance_type.equalsIgnoreCase(InstanceType.TN.getCode())){
                 //根据TN生成,任务(暂不支持,在线策略是否新增一个延迟插件)
-                tmp = "error";
+                TnExecutor tnExecutor = new TnExecutor();
+
+                tmp = tnExecutor.execute(run_jsmind_data, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
                 FunctionExecutor functionExecutor = new FunctionExecutor();
                 tmp = functionExecutor.execute(run_jsmind_data);

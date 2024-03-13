@@ -9,6 +9,7 @@ import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.label.calculate.impl.*;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
+import com.zyc.rqueue.RQueueManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +64,8 @@ public class LabelServer {
             }
 
             JedisPoolUtil.connect(config);
+
+            initRQueue(config);
 
             int limit = Integer.valueOf(config.getProperty("task.max.num", "50"));
 
@@ -140,6 +143,17 @@ public class LabelServer {
             throw new Exception("加载配置文件异常,",e.getCause());
         }
         return prop;
+    }
+
+    public static void initRQueue(Properties config){
+        String host = config.getProperty("redis.host");
+        String port = config.getProperty("redis.port");
+        String auth = config.getProperty("redis.password");
+        if(config.getProperty("redis.mode", "single").equalsIgnoreCase("cluster")){
+            RQueueManager.buildDefault(host, auth);
+        }else{
+            RQueueManager.buildDefault(host+":"+port, auth);
+        }
     }
 
     public static void resetStatus(){
