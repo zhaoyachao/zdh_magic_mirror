@@ -2,6 +2,7 @@ package com.zyc.ship;
 
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
+import com.zyc.rqueue.RQueueManager;
 import com.zyc.ship.disruptor.DisruptorManager;
 import com.zyc.ship.disruptor.ShipMasterEventWorkHandler;
 import com.zyc.ship.disruptor.ShipWorkerEventWorkHandler;
@@ -46,6 +47,7 @@ public class ShipServer {
                     );
             JedisPoolUtil.connect(properties);
 
+            initRQueue(properties);
             LabelHttpUtil.init(properties);
             FilterHttpUtil.init(properties);
             CacheStrategyServiceImpl cacheStrategyService = new CacheStrategyServiceImpl();
@@ -80,6 +82,22 @@ public class ShipServer {
 
         }catch (Exception e){
             e.printStackTrace();
+        }
+
+    }
+
+    /**
+     * 初始化分布式优先级队列
+     * @param properties
+     */
+    public static void initRQueue(Properties properties){
+        String host = properties.getProperty("redis.host");
+        String auth = properties.getProperty("redis.password");
+        String port = properties.getProperty("redis.port");
+        if(properties.getProperty("redis.mode", "single").equalsIgnoreCase("cluster")){
+            RQueueManager.buildDefault(host, auth);
+        }else{
+            RQueueManager.buildDefault(host+":"+port, auth);
         }
 
     }

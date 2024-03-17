@@ -80,14 +80,14 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 IdMappingExecutor idMappingExecutor = new IdMappingExecutor();
                 idMappingExecutor.execute(run_jsmind_data, labelVaues, shipEvent, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.PLUGIN.getCode())){
-                //不支持
-                tmp = "error";
+                PluginExecutor pluginExecutor = new PluginExecutor();
+                tmp = pluginExecutor.execute(run_jsmind_data, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.MANUAL_CONFIRM.getCode())){
                 //不支持
                 tmp = "error";
             }else if(instance_type.equalsIgnoreCase(InstanceType.RIGHTS.getCode())){
-                //不支持
-                tmp = "error";
+                RightsExecutor rightsExecutor = new RightsExecutor();
+                tmp = rightsExecutor.execute(run_jsmind_data, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.CODE_BLOCK.getCode())){
                 CodeBlockExecutor codeBlockExecutor = new CodeBlockExecutor();
                 tmp = codeBlockExecutor.execute(run_jsmind_data, strategyInstance);

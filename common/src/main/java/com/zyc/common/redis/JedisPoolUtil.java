@@ -1,5 +1,6 @@
 package com.zyc.common.redis;
 
+import org.apache.commons.lang3.StringUtils;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.codec.StringCodec;
@@ -30,6 +31,9 @@ public class JedisPoolUtil {
         String host = properties.getProperty("redis.host");
         int port = Integer.valueOf(properties.getProperty("redis.port"));
         String auth = properties.getProperty("redis.password");
+        if(StringUtils.isEmpty(auth)){
+            auth = null;
+        }
         int poolTimeOut = 0;
         Config config = new Config();
         config.useSingleServer().
@@ -46,6 +50,9 @@ public class JedisPoolUtil {
         Config config = new Config();
         String[] hosts = properties.getProperty("redis.host").split(",");
         String auth = properties.getProperty("redis.password");
+        if(StringUtils.isEmpty(auth)){
+            auth = null;
+        }
         //redis 集群模式
         ClusterServersConfig clusterServersConfig = config.useClusterServers();
         for(String hp:hosts){
