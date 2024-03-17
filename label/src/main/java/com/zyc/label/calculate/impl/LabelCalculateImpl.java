@@ -394,7 +394,8 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
 
     public List<Map<String,Object>> execute_sql(String sql, Map<String,Object> label, DataSourcesInfo dataSourcesInfo) throws Exception {
         String engine = label.getOrDefault("engine", "mysql").toString();
-        if(engine.equalsIgnoreCase("mysql")){
+        if(engine.equalsIgnoreCase("mysql") || engine.equalsIgnoreCase("hive")
+                || engine.equalsIgnoreCase("presto") || engine.equalsIgnoreCase("spark")){
 
             String sparkDriver=dataSourcesInfo.getDriver();
             String sparkUrl=dataSourcesInfo.getUrl();
