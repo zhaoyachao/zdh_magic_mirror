@@ -116,7 +116,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String label_code=run_jsmind_data.get("rule_id").toString();
-            String label_use_type=run_jsmind_data.getOrDefault("label_use_type", "offline").toString();
+            String label_use_type=run_jsmind_data.getOrDefault("label_use_type", "batch").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
             String driver=dbConfig.get("driver");
@@ -139,7 +139,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                     throw new Exception("标签未启用");
                 }
 
-                if(label_use_type.equalsIgnoreCase("offline")){
+                if(label_use_type.equalsIgnoreCase("batch")){
                     rowsStr = offlineLabel(is_disenable, run_jsmind_data, labelInfo, strategyLogInfo);
                 }
             }
@@ -148,11 +148,11 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                     strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
-            if(label_use_type.equalsIgnoreCase("offline")) {
-                rs = calculateCommon(label_use_type,rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
-            }else if(label_use_type.equalsIgnoreCase("online")){
+            if(label_use_type.equalsIgnoreCase("batch")) {
+                rs = calculateCommon("offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+            }else if(label_use_type.equalsIgnoreCase("single")){
                 //使用实时标签,需要确保当前标签是子层标签
-                rs = calculateCommon(label_use_type,rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+                rs = calculateCommon("online",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
                 if(rs == null || rs.size()==0){
 
