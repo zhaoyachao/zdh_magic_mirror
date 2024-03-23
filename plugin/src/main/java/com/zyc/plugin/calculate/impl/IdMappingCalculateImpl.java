@@ -1,8 +1,6 @@
 package com.zyc.plugin.calculate.impl;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
@@ -68,6 +66,12 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
         this.param=param;
         this.atomicInteger=atomicInteger;
         this.dbConfig=new HashMap<>((Map)dbConfig);
+        getSftpUtil(this.dbConfig);
+    }
+
+    @Override
+    public boolean checkSftp() {
+        return Boolean.valueOf(this.dbConfig.getOrDefault("sftp.enable", "false"));
     }
 
     @Override
@@ -112,13 +116,8 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
                 // todo 此处需要做调整根据mapping_code找到对应的数据文件
                 //选择id mapping 存储引擎
                 IdMappingEngine idMappingEngine = readIdMappingData(data_engine,strategyLogInfo.getBase_path(), id_mapping_code);
-                List<String> id_mappings = idMappingEngine.get();
-                Map<String,String> id_map = Maps.newHashMap();
-                for (String line:id_mappings){
-                    String[] idm = line.split(",",2);
-                    id_map.put(idm[0], idm[1]);
-                }
-
+                IdMappingEngine.IdMappingResult idMappingResult = idMappingEngine.getMap(rs);
+                Map<String,String> id_map = idMappingResult.rs;
                 Iterator<String> rs1 = rs.iterator();
                 while (rs1.hasNext()){
                     String key = rs1.next();
@@ -161,6 +160,8 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
         }else if(data_engine.equalsIgnoreCase("jdbc")){
 
         }else if(data_engine.equalsIgnoreCase("es")){
+
+        }else if(data_engine.equalsIgnoreCase("redis")){
 
         }
         throw new Exception("不支持的id mapping计算引擎");

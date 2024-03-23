@@ -74,6 +74,12 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
         this.param=param;
         this.atomicInteger=atomicInteger;
         this.dbConfig=new HashMap<>((Map)dbConfig);
+        getSftpUtil(this.dbConfig);
+    }
+
+    @Override
+    public boolean checkSftp() {
+        return Boolean.valueOf(this.dbConfig.getOrDefault("sftp.enable", "false"));
     }
 
     @Override

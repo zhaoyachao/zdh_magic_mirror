@@ -1,6 +1,5 @@
 package com.zyc.label.calculate.impl;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyLogInfo;
@@ -84,6 +83,12 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
         this.param=param;
         this.atomicInteger=atomicInteger;
         this.dbConfig=new HashMap<>((Map)dbConfig);
+        getSftpUtil(this.dbConfig);
+    }
+
+    @Override
+    public boolean checkSftp() {
+        return Boolean.valueOf(this.dbConfig.getOrDefault("sftp.enable", "false"));
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.zyc.common.redis;
 
+import org.redisson.api.RLock;
+
 import java.util.Map;
 
 public interface RedisClient {
@@ -17,4 +19,7 @@ public interface RedisClient {
     public String getKey(String key);
 
     public void close();
+
+    public RLock rLock(String lockName);
+
 }

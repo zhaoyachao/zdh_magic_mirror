@@ -46,7 +46,8 @@ public interface StrategyInstanceMapper {
             "order by priority desc,start_time asc",
             "</script>"
     })
-    public List<StrategyInstance> selectByStatus(@Param("statusAry") String[] status, @Param("instance_types") String[] instance_type, @Param("group_type") String group_type);
+    public List<StrategyInstance> selectByStatus(@Param("statusAry") String[] status, @Param("instance_types") String[] instance_type,
+                                                 @Param("group_type") String group_type);
 
 
     @Update({

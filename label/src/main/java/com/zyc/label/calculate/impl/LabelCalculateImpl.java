@@ -26,7 +26,6 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -101,6 +100,12 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
         this.param=param;
         this.atomicInteger=atomicInteger;
         this.dbConfig=new HashMap<>((Map)dbConfig);
+        getSftpUtil(this.dbConfig);
+    }
+
+    @Override
+    public boolean checkSftp() {
+        return Boolean.valueOf(this.dbConfig.getOrDefault("sftp.enable", "false"));
     }
 
     @Override
@@ -139,7 +144,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                     throw new Exception("标签未启用");
                 }
 
-                if(label_use_type.equalsIgnoreCase("offline")){
+                if(label_use_type.equalsIgnoreCase("batch")){
                     rowsStr = offlineLabel(is_disenable, run_jsmind_data, labelInfo, strategyLogInfo);
                 }
             }
@@ -148,11 +153,11 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                     strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
-            if(label_use_type.equalsIgnoreCase("offline")) {
-                rs = calculateCommon(label_use_type,rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
-            }else if(label_use_type.equalsIgnoreCase("online")){
+            if(label_use_type.equalsIgnoreCase("batch")) {
+                rs = calculateCommon("offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+            }else if(label_use_type.equalsIgnoreCase("single")){
                 //使用实时标签,需要确保当前标签是子层标签
-                rs = calculateCommon(label_use_type,rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+                rs = calculateCommon("online",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
                 if(rs == null || rs.size()==0){
 
@@ -356,6 +361,14 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                         }else if(labelInfo.getLabel_engine().equalsIgnoreCase("hive")){
                             HivesqlEngineImpl hivesqlEngine = new HivesqlEngineImpl();
                             String expr = hivesqlEngine.buildExpr(param_value, param_type, code, operate);
+                            jinJavaParam.put(code,expr);
+                        }else if(labelInfo.getLabel_engine().equalsIgnoreCase("presto")){
+                            PrestosqlEngineImpl prestosqlEngine = new PrestosqlEngineImpl();
+                            String expr = prestosqlEngine.buildExpr(param_value, param_type, code, operate);
+                            jinJavaParam.put(code,expr);
+                        }else if(labelInfo.getLabel_engine().equalsIgnoreCase("spark")){
+                            SparksqlEngineImpl sparksqlEngine = new SparksqlEngineImpl();
+                            String expr = sparksqlEngine.buildExpr(param_value, param_type, code, operate);
                             jinJavaParam.put(code,expr);
                         }else{
                             throw new Exception("暂不支持其他计算引擎");

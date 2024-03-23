@@ -1,6 +1,5 @@
 package com.zyc.plugin.calculate.impl;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
@@ -70,6 +69,12 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
         this.param=param;
         this.atomicInteger=atomicInteger;
         this.dbConfig=new HashMap<>((Map)dbConfig);
+        getSftpUtil(this.dbConfig);
+    }
+
+    @Override
+    public boolean checkSftp() {
+        return Boolean.valueOf(this.dbConfig.getOrDefault("sftp.enable", "false"));
     }
 
     @Override

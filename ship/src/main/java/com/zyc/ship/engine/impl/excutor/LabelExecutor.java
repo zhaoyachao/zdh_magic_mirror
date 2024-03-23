@@ -119,8 +119,9 @@ public class LabelExecutor {
                 return diffDateValue(lValue.toString(),uValue.toString(),operate);
             }else if(value_type.equalsIgnoreCase("string")){
                 return diffStringValue(lValue.toString(),uValue.toString(),operate);
+            }else{
+                return diffStringValue(lValue.toString(),uValue.toString(),operate);
             }
-            return false;
         }catch (Exception e){
             return false;
         }

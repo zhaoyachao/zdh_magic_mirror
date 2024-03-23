@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.zyc.common.queue.QueueHandler;
 import com.zyc.rqueue.RQueueManager;
 
-
 import java.util.Map;
 import java.util.Properties;
 

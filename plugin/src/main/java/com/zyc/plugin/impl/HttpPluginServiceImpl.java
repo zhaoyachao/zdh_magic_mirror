@@ -8,9 +8,6 @@ import com.zyc.common.plugin.PluginService;
 import com.zyc.common.util.HttpUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 
 import java.util.ArrayList;
 import java.util.List;

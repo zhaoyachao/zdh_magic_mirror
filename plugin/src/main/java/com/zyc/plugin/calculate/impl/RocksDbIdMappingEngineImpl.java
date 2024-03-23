@@ -1,12 +1,15 @@
 package com.zyc.plugin.calculate.impl;
 
+import com.google.common.collect.Maps;
 import com.zyc.common.util.RocksDBUtil;
 import com.zyc.plugin.calculate.IdMappingEngine;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksIterator;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * rocksdb, idmapping
@@ -31,5 +34,27 @@ public class RocksDbIdMappingEngineImpl implements IdMappingEngine {
             list.add(key+","+value);
         }
         return list;
+    }
+
+    @Override
+    public IdMappingResult getMap(Collection<String> rs) throws Exception {
+        IdMappingResult idMappingResult = new IdMappingResult();
+        Map<String,String> id_map_rs = Maps.newHashMap();
+        Map<String,String> id_map_rs_error = Maps.newHashMap();
+        RocksDB rocksDB = RocksDBUtil.getReadOnlyConnection(this.file_path);
+
+        for (String id: rs){
+            byte[] value = rocksDB.get(id.getBytes());
+            if(value != null && value.length>0){
+                id_map_rs.put(id, new String(value));
+            } else{
+                id_map_rs_error.put(id, "");
+            }
+        }
+
+        idMappingResult.setRs(id_map_rs);
+        idMappingResult.setRs_error(id_map_rs_error);
+
+        return idMappingResult;
     }
 }

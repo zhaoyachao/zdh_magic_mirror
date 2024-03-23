@@ -1,7 +1,9 @@
 package com.zyc.plugin.calculate.impl;
 
 import com.google.common.collect.Maps;
+import com.zyc.common.entity.FilterInfo;
 import com.zyc.common.util.FileUtil;
+import com.zyc.plugin.calculate.FilterEngine;
 import com.zyc.plugin.calculate.IdMappingEngine;
 
 import java.io.File;
@@ -12,14 +14,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 本地文件idmapping
+ * 本地文件过滤集
  * 适用于不变动的场景
  */
-public class FileIdMappingEngineImpl implements IdMappingEngine {
+public class FileFilterEngineImpl implements FilterEngine {
 
     private String file_path;
+    private FilterInfo filterInfo;
 
-    public FileIdMappingEngineImpl(String file_path){
+    public FileFilterEngineImpl(FilterInfo filterInfo, String file_path){
+        this.filterInfo = filterInfo;
         this.file_path = file_path;
     }
 
@@ -33,12 +37,12 @@ public class FileIdMappingEngineImpl implements IdMappingEngine {
     }
 
     @Override
-    public IdMappingResult getMap(Collection<String> rs) throws Exception {
+    public FilterResult getMap(Collection<String> rs) throws Exception {
         File f=new File(file_path);
         Map<String,String> id_map = Maps.newHashMap();
         Map<String,String> id_map_rs = Maps.newHashMap();
         Map<String,String> id_map_rs_error = Maps.newHashMap();
-        IdMappingResult idMappingResult = new IdMappingResult();
+        FilterResult idMappingResult = new FilterResult();
         if(f.exists() && f.isFile()){
             List<String> id_mappings = FileUtil.readStringSplit(f, Charset.forName("utf-8"), "3");
             for (String line:id_mappings){
@@ -48,10 +52,10 @@ public class FileIdMappingEngineImpl implements IdMappingEngine {
         }
 
         for (String id: rs){
-            if(id_map.containsKey(id)){
-                id_map_rs.put(id, id_map.get(id));
+            if(!id_map.containsKey(id)){
+                id_map_rs.put(id, "");
             }else{
-                id_map_rs_error.put(id, "");
+                id_map_rs_error.put(id, this.filterInfo.getFilter_code());
             }
         }
 

@@ -1,5 +1,6 @@
 package com.zyc.plugin;
 
+import cn.hutool.core.util.NumberUtil;
 import com.alibaba.fastjson.JSON;
 import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
@@ -9,6 +10,7 @@ import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.impl.*;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
+import org.redisson.api.RLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +60,8 @@ public class PluginServer {
 
             logger.info(config.toString());
 
+            checkConfig(config);
+
             JedisPoolUtil.connect(config);
 
             if(config.get("file.path") == null || config.get("file.rocksdb.path") == null){
@@ -90,6 +94,14 @@ public class PluginServer {
                 if(m != null){
                     logger.info("task : "+JSON.toJSONString(m));
                     StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
+                    //加锁防重执行
+                    RLock rLock = JedisPoolUtil.redisClient().rLock(m.get("id").toString());
+
+                    if(!rLock.tryLock(1L, 5L, TimeUnit.SECONDS)){
+                        logger.info("task: {} ,try lock error: ", m.getOrDefault("id", ""));
+                        continue;
+                    }
+
                     //更新状态为执行中
                     StrategyInstance strategyInstance=new StrategyInstance();
                     strategyInstance.setId(m.get("id").toString());
@@ -153,6 +165,28 @@ public class PluginServer {
         }
         return prop;
     }
+
+    public static void checkConfig(Properties config) throws Exception {
+
+        if(config.get("file.path") == null || config.get("file.rocksdb.path") == null){
+            throw new Exception("配置信息缺失file.path, file.rocksdb.path参数");
+        }
+
+        int slot_num = Integer.valueOf(config.getProperty("task.slot.total.num", "0"));
+        String slot = config.getProperty("task.slot", "0");
+        if(!slot.contains(",") || slot.split(",").length != 2){
+            throw new Exception("任务分配槽位信息配置格式异常,example: 0,99");
+        }
+
+        if(!NumberUtil.isInteger(slot.split(",")[0])){
+            throw new Exception("任务分配槽位信息配置只可填写数字");
+        }
+        if(!NumberUtil.isInteger(slot.split(",")[1])){
+            throw new Exception("任务分配槽位信息配置只可填写数字");
+        }
+
+    }
+
 
     public static void resetStatus(){
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();

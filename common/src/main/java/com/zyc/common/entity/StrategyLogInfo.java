@@ -14,6 +14,9 @@ public class StrategyLogInfo {
 
     private String base_path;
 
+    /**
+     * 本地文件写入完整路径
+     */
     private String file_path;
 
     private String file_rocksdb_path;

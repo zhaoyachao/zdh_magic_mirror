@@ -3,12 +3,10 @@ package com.zyc.plugin.calculate.impl;
 import cn.hutool.core.util.StrUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.jcraft.jsch.SftpException;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.entity.StrategyLogInfo;
-import com.zyc.common.util.Const;
-import com.zyc.common.util.FileUtil;
-import com.zyc.common.util.LogUtil;
-import com.zyc.common.util.RocksDBUtil;
+import com.zyc.common.util.*;
 import com.zyc.plugin.calculate.CalculateCommomParam;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
@@ -32,6 +30,29 @@ public abstract class BaseCalculate {
 
     public abstract String getOperate(Map run_jsmind_data);
 
+
+    private SFTPUtil sftpUtil;
+
+    public SFTPUtil getSftpUtil(Map<String,String> dbConfig){
+        if(!dbConfig.getOrDefault("sftp.enable", "false").equalsIgnoreCase("true")){
+            return sftpUtil;
+        }
+        String directory = dbConfig.get("sftp.path");
+        String username=dbConfig.get("sftp.username");
+        String password=dbConfig.get("sftp.password");
+        String host=dbConfig.get("sftp.host");
+        int port=Integer.parseInt(dbConfig.get("sftp.port"));
+        sftpUtil=new SFTPUtil(username, password, host, port);
+        return sftpUtil;
+    }
+
+    /**
+     * 检查是否开启sftp,默认不开启,如果需要开启需要重写子类checkSftp
+     * @return
+     */
+    public boolean checkSftp(){
+        return false;
+    }
 
     /**
      * 初始化基础参数
@@ -197,19 +218,21 @@ public abstract class BaseCalculate {
 
     /**
      * 返回文件绝对路径
-     * @param task_id
      * @param file_path
      * @param rows
      * @return
      * @throws IOException
      */
-    public String writeFile(String task_id, String file_path, Set<String> rows) throws IOException {
+    public String writeFile(String file_path, Set<String> rows) throws IOException {
         File f=new File(file_path);
         if(!new File(f.getParent()).exists()){
             new File(f.getParent()).mkdirs();
         }
         BufferedWriter bw = FileUtil.createBufferedWriter(f, Charset.forName("utf-8"));
         for (String line:rows){
+            if(!line.contains(",")){
+                line = line+","+Const.FILE_STATUS_SUCCESS;
+            }
             FileUtil.writeString(bw, line);
         }
         FileUtil.flush(bw);
@@ -247,6 +270,24 @@ public abstract class BaseCalculate {
             e.printStackTrace();
         }
         return "";
+    }
+
+    public String writeFtpFile(String file_path, SFTPUtil sftpUtil) throws IOException, SftpException {
+        File f=new File(file_path);
+        sftpUtil.login();
+        String direct = removeLastComponent(file_path);
+        sftpUtil.mkdirs(direct);
+        sftpUtil.upload(direct, file_path);
+        sftpUtil.logout();
+        return f.getAbsolutePath();
+    }
+
+    private static String removeLastComponent(String path) {
+        int lastIndex = path.lastIndexOf('/');
+        if (lastIndex != -1) {
+            return path.substring(0, lastIndex);
+        }
+        return path;
     }
 
     public List<String> readFile(String file_path) throws IOException {
@@ -322,7 +363,7 @@ public abstract class BaseCalculate {
      * @param rs
      * @throws IOException
      */
-    public void writeFileAndPrintLogAndUpdateStatus2Finish(StrategyLogInfo strategyLogInfo,  Set<String> rs, Set<String> rs_error) throws IOException {
+    public void writeFileAndPrintLogAndUpdateStatus2Finish(StrategyLogInfo strategyLogInfo,  Set<String> rs, Set<String> rs_error) throws Exception {
         String logStr = StrUtil.format("task: {}, calculate finish size: {}", strategyLogInfo.getStrategy_instance_id(), rs.size());
         LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
         writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo.getStrategy_instance_id(),strategyLogInfo.getStrategy_id(), strategyLogInfo.getFile_path(), rs, rs_error);
@@ -336,18 +377,63 @@ public abstract class BaseCalculate {
      * @param rs
      * @throws IOException
      */
-    public void writeFileAndPrintLogAndUpdateStatus2Finish(String id,String strategy_id, String file_path, Set<String> rs, Set<String> rs_error) throws IOException {
-        String save_path = writeFile(id,file_path, rs);
+    public void writeFileAndPrintLogAndUpdateStatus2Finish(String id,String strategy_id, String file_path, Set<String> rs, Set<String> rs_error) throws Exception {
+        String save_path = writeFile(file_path, rs);
         appendFileByError(id,file_path, rs_error);
         String logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
         LogUtil.info(strategy_id, id, logStr);
+
+        //判断是否写入ftp
+        if(checkSftp()){
+            //失败-重试3次
+            int retry = 0;
+            while (true){
+                try{
+                    if(retry > 3){
+                        logStr = StrUtil.format("task: {}, 上传ftp失败, file: {}", id, file_path);
+                        LogUtil.info(strategy_id, id, logStr);
+                        throw new Exception("上传ftp失败");
+                    }
+                    writeFtpFile(file_path, sftpUtil);
+                    break;
+                }catch (Exception e){
+                    if(retry > 3){
+                        throw e;
+                    }
+                    e.printStackTrace();
+                    retry+=1;
+                }
+            }
+        }
         setStatus(id, Const.STATUS_FINISH);
         logStr = StrUtil.format("task: {}, update status finish", id);
         LogUtil.info(strategy_id, id, logStr);
     }
 
-    public void writeFileAndPrintLog(StrategyLogInfo strategyLogInfo,  Set<String> rs) throws IOException {
-        String save_path = writeFile(strategyLogInfo.getStrategy_instance_id(),strategyLogInfo.getFile_path(), rs);
+    public void writeFileAndPrintLog(StrategyLogInfo strategyLogInfo,  Set<String> rs) throws Exception {
+        String save_path = writeFile(strategyLogInfo.getFile_path(), rs);
+        //判断是否写入ftp
+        if(checkSftp()){
+            //失败-重试3次
+            int retry = 0;
+            while (true){
+                try{
+                    if(retry > 3){
+                        String logStr = StrUtil.format("task: {}, 上传ftp失败, file: {}", strategyLogInfo.getStrategy_instance_id(), save_path);
+                        LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
+                        throw new Exception("上传ftp失败");
+                    }
+                    writeFtpFile(strategyLogInfo.getFile_path(), sftpUtil);
+                    break;
+                }catch (Exception e){
+                    e.printStackTrace();
+                    if(retry > 3){
+                        throw e;
+                    }
+                    retry+=1;
+                }
+            }
+        }
         String logStr = StrUtil.format("task: {}, write finish, file: {}", strategyLogInfo.getStrategy_instance_id(), save_path);
         LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
     }

@@ -2,6 +2,7 @@ package com.zyc.common.util;
 
 import com.jcraft.jsch.*;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -231,6 +232,31 @@ public class SFTPUtil {
      */
     public void rename(String oldPath, String newPath) throws SftpException {
         sftp.rename(oldPath,newPath);
+    }
+
+
+    /**
+     * 递归创建目录
+     * @param direct
+     * @throws SftpException
+     */
+    public void mkdirs(String direct) throws SftpException {
+        log.warn("directory: {}, mkdirs", direct);
+        String[] directs = direct.split("/");
+        String direct_path = "";
+        for (String path: directs){
+            try {
+                if(StringUtils.isEmpty(path)){
+                    continue;
+                }
+                direct_path = direct_path+"/"+path;
+                sftp.cd(direct_path);
+            } catch (SftpException e) {
+                log.warn("directory is not exist");
+                sftp.mkdir(direct_path);
+                sftp.cd(direct_path);
+            }
+        }
     }
        
     /** 

@@ -1,5 +1,6 @@
 package com.zyc.label.calculate.impl;
 
+import cn.hutool.core.util.NumberUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.zyc.common.entity.InstanceType;
@@ -18,6 +19,8 @@ import java.util.Properties;
  */
 public class DbQueueHandler implements QueueHandler {
     private static Logger logger= LoggerFactory.getLogger(DbQueueHandler.class);
+
+    private Properties config;
     private StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
 
     public static String[] instanceTypes = new String[]{InstanceType.LABEL.getCode(),InstanceType.CROWD_OPERATE.getCode(),InstanceType.CROWD_FILE.getCode(),
@@ -27,10 +30,20 @@ public class DbQueueHandler implements QueueHandler {
     @Override
     public Map<String,Object> handler() {
         try {
+            int slot_num = Integer.valueOf(config.getProperty("task.slot.total.num", "0"));
+            String[] slot = config.getProperty("task.slot", "0").split(",");
+            int start_slot =  Integer.valueOf(slot[0]);
+            int end_slot =  Integer.valueOf(slot[1]);
             List<StrategyInstance> strategyInstances = strategyInstanceService.selectByStatus(status,instanceTypes);
             if(strategyInstances!=null && strategyInstances.size()>0){
-                return JSON.parseObject(JSON.toJSONString(strategyInstances.get(0)), new TypeReference<Map<String, Object>>() {
-                });
+                for (StrategyInstance strategyInstance: strategyInstances){
+                    if(!NumberUtil.isLong(strategyInstance.getStrategy_id())){
+                        continue ;
+                    }
+                    if(Long.valueOf(strategyInstance.getStrategy_id())%slot_num >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num < end_slot){
+                        return JSON.parseObject(JSON.toJSONString(strategyInstance), new TypeReference<Map<String, Object>>() {});
+                    }
+                }
             }
            return null;
         } catch (Exception e) {
@@ -41,6 +54,6 @@ public class DbQueueHandler implements QueueHandler {
 
     @Override
     public void setProperties(Properties properties) {
-
+        this.config = properties;
     }
 }

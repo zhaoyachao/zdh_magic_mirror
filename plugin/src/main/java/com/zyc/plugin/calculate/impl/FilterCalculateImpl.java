@@ -1,6 +1,5 @@
 package com.zyc.plugin.calculate.impl;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.FilterInfo;
@@ -10,6 +9,7 @@ import com.zyc.common.util.FileUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.FilterCalculate;
+import com.zyc.plugin.calculate.FilterEngine;
 import com.zyc.plugin.impl.FilterServiceImpl;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
@@ -73,6 +73,12 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
         this.param=param;
         this.atomicInteger=atomicInteger;
         this.dbConfig=new HashMap<>((Map)dbConfig);
+        getSftpUtil(this.dbConfig);
+    }
+
+    @Override
+    public boolean checkSftp() {
+        return Boolean.valueOf(this.dbConfig.getOrDefault("sftp.enable", "false"));
     }
 
     @Override
@@ -93,14 +99,12 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
             String[] filter_codes=run_jsmind_data.getOrDefault("filter","").toString().split(",");
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
-
             List<FilterInfo> filterInfos=new ArrayList<>();
-
 
             CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
-
+            Set<String> rs_error = Sets.newHashSet();
             if(is_disenable.equalsIgnoreCase("true")){
 
             }else{
@@ -114,16 +118,13 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
                 //执行过滤
                 for (FilterInfo filterInfo:filterInfos){
                     filterInfo.getFilter_name();
-                    //加载过滤集
-                    Set<String> filterDataFrame = loadFilters(filterInfo, strategyLogInfo.getBase_path());
-
-                    //此处使用排除法
-                    rs = Sets.difference(rs, filterDataFrame);
-
+                    FilterEngine filterEngine = getFilterEngine(filterInfo, strategyLogInfo.getBase_path());
+                    FilterEngine.FilterResult filterResult = filterEngine.getMap(rs);
+                    rs = Sets.newHashSet(filterResult.getRs().keySet());
+                    rs_error = Sets.union(rs_error, filterResult.getRs_error().keySet());
                 }
             }
 
-            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
@@ -144,6 +145,16 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
             Set<String> filterDataFrame = Sets.newHashSet();
             filterDataFrame.addAll(list);
             return filterDataFrame;
+        }else{
+            throw new Exception("暂不支持的计算引擎");
+        }
+    }
+
+    private FilterEngine getFilterEngine(FilterInfo filterInfo,String base_path) throws Exception {
+        if(filterInfo.getEngine_type().equalsIgnoreCase("file")){
+            String filter_path=base_path+"/filter/"+filterInfo.getFilter_code();
+            FilterEngine filterEngine = new FileFilterEngineImpl(filterInfo, filter_path);
+            return filterEngine;
         }else{
             throw new Exception("暂不支持的计算引擎");
         }

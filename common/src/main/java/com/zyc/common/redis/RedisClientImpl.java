@@ -1,8 +1,10 @@
 package com.zyc.common.redis;
 
+import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class RedisClientImpl implements RedisClient{
 
@@ -47,5 +49,13 @@ public class RedisClientImpl implements RedisClient{
         redissonClient.shutdown();
     }
 
-
+    @Override
+    public RLock rLock(String lockName){
+        try{
+            RLock rLock = redissonClient.getLock(lockName);
+            return rLock;
+        }catch (Exception e){
+            throw e;
+        }
+    }
 }
