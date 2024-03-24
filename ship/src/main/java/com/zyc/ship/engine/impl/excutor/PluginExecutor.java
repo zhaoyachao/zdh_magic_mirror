@@ -1,9 +1,6 @@
 package com.zyc.ship.engine.impl.excutor;
 
 import com.alibaba.fastjson.JSONObject;
-import com.zyc.rqueue.RQueueClient;
-import com.zyc.rqueue.RQueueManager;
-import com.zyc.rqueue.RQueueMode;
 
 public class PluginExecutor {
 

@@ -3,27 +3,24 @@ package com.zyc.ship.netty;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.hubspot.jinjava.Jinjava;
-import com.zyc.ship.engine.impl.ShipOnLineManagerEngine;
 import com.zyc.ship.entity.OutputParam;
 import com.zyc.ship.entity.ShipCommonInputParam;
 import com.zyc.ship.seaport.Input;
 import com.zyc.ship.seaport.impl.ShipInput;
-import com.zyc.ship.service.impl.CacheStrategyServiceImpl;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.nio.charset.Charset;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;

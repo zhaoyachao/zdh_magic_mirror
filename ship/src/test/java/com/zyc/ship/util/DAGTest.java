@@ -6,11 +6,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.util.DAG;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import java.util.*;
-
-import static org.junit.Assert.*;
 
 
 public class DAGTest {

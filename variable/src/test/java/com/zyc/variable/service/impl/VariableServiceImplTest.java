@@ -3,8 +3,6 @@ package com.zyc.variable.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.redis.JedisPoolUtil;
-import com.zyc.variable.VariableServer;
-
 import org.junit.Test;
 
 import java.io.IOException;

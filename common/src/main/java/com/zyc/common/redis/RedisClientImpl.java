@@ -4,7 +4,6 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class RedisClientImpl implements RedisClient{
 

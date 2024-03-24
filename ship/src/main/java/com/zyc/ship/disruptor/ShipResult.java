@@ -1,6 +1,5 @@
 package com.zyc.ship.disruptor;
 
-import com.zyc.ship.entity.RiskStrategyEventResult;
 import com.zyc.ship.entity.StrategyEventResult;
 
 public interface ShipResult {

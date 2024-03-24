@@ -8,7 +8,6 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.Date;
 
 public class LogUtil {
 

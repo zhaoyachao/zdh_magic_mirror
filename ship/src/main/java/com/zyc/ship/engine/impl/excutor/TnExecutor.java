@@ -3,12 +3,8 @@ package com.zyc.ship.engine.impl.excutor;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSONObject;
-import com.zyc.rqueue.RQueueClient;
-import com.zyc.rqueue.RQueueManager;
-import com.zyc.rqueue.RQueueMode;
 
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 public class TnExecutor {
 

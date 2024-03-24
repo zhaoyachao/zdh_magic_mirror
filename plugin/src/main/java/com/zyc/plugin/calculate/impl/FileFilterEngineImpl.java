@@ -5,8 +5,6 @@ import com.zyc.common.entity.FilterInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
 import com.zyc.plugin.calculate.FilterEngine;
-import com.zyc.plugin.calculate.IdMappingEngine;
-import scala.collection.immutable.Stream;
 
 import java.io.File;
 import java.nio.charset.Charset;

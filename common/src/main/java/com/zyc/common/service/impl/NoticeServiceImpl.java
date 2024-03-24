@@ -7,7 +7,6 @@ import org.apache.ibatis.session.SqlSession;
 
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.Date;
 
 public class NoticeServiceImpl {
 
