@@ -24,8 +24,9 @@ public class Dag2Antlr {
             queue.addAll(childrens);
             while (true){
                 String children = queue.poll();
-                if(children==null)
+                if(children==null) {
                     break;
+                }
                 System.out.println("main children: "+children);
                 String str = checkParentInRunPath(children, dag.getParent(children),dag,runPath,nodeTypes, nodeOperates);
                 System.out.println("main: "+str);

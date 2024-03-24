@@ -128,7 +128,9 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
                     for (String confirm_notice_type: confirm_notice_types){
                         String account = getAccount(owner, confirm_notice_type, product_code);
                         boolean is_success = send(account, confirm_notice_type, noticeInfo);
-                        if(is_success) check=true;
+                        if(is_success) {
+                            check=true;
+                        }
                         logStr = StrUtil.format("task: {}, notice {} {}, owner: {}", strategyLogInfo.getStrategy_instance_id(), confirm_notice_type, is_success, owner);
                         LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                     }
@@ -151,6 +153,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
             //执行失败,更新标签任务失败
             e.printStackTrace();
         }finally {
+            localVar.remove();
             atomicInteger.decrementAndGet();
         }
     }

@@ -21,8 +21,9 @@ public class PermissionUserServiceImpl {
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
-            if(sqlSession != null)
+            if(sqlSession != null) {
                 sqlSession.close();
+            }
         }
         return null;
     }

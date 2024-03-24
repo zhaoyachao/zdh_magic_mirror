@@ -25,8 +25,9 @@ public class LabelServiceImpl {
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
-            if(sqlSession != null)
+            if(sqlSession != null) {
                 sqlSession.close();
+            }
         }
 
         return null;

@@ -10,10 +10,12 @@ import com.zyc.common.util.*;
 import com.zyc.plugin.calculate.CalculateCommomParam;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rocksdb.RocksDB;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -290,11 +292,42 @@ public abstract class BaseCalculate {
         return path;
     }
 
-    public List<String> readFile(String file_path) throws IOException {
-        File f=new File(file_path);
-        if(f.exists() && f.isFile()){
-            return FileUtil.readStringSplit(f, Charset.forName("utf-8"),Const.FILE_STATUS_ALL);
+    public List<String> readHisotryFile(String file_dir, String task, String status) throws Exception {
+        List<String> rows = new ArrayList<>();
+        if(cn.hutool.core.io.FileUtil.exist(file_dir + "/" + task)){
+            File f=new File(file_dir + "/" + task);
+            if(f.exists() && f.isFile()){
+                rows = FileUtil.readStringSplit(f, Charset.forName("utf-8"),Const.FILE_STATUS_ALL);
+                return rows;
+            }
+        }else{
+            if(checkSftp()){
+                sftpUtil.login();
+                byte[] bytes = sftpUtil.download(file_dir, task);
+                ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+                List<String> tmp = IOUtils.readLines(bais, "utf-8");
+
+                for (String line: tmp){
+                    String[] row = line.split(",");
+                    if(row.length>2){
+                        if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
+                            rows.add(row[0]);
+                        }else{
+                            if(row[1].equalsIgnoreCase(status)){
+                                rows.add(row[0]);
+                            }
+                        }
+                    }else{
+                        rows.add(row[0]);
+                    }
+                }
+                return rows;
+            }else{
+                throw new Exception("无法找到对应的数据文件");
+            }
         }
+
+
         return new ArrayList<>();
     }
 
@@ -331,7 +364,8 @@ public abstract class BaseCalculate {
             if(map.get(task).getStatus().equalsIgnoreCase("skip")){
                 //continue;
             }
-            List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
+            //List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
+            List<String> rows = readFile(file_dir, task, status);
             Set<String> set=Sets.newHashSet(rows);
             if(result==null){
                 //第一次赋值
@@ -459,5 +493,48 @@ public abstract class BaseCalculate {
             }
         }
         rocksDB.close();
+    }
+
+
+    /**
+     * 读取本地文件或者ftp文件内容
+     * 优先读取本地文件
+     * @param file_dir
+     * @param task
+     * @param status
+     * @return
+     * @throws Exception
+     */
+    public List<String> readFile(String file_dir, String task, String status) throws Exception {
+        List<String> rows = new ArrayList<>();
+        if(cn.hutool.core.io.FileUtil.exist(file_dir+"/"+task)){
+            rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
+        }else{
+            if(checkSftp()){
+                sftpUtil.login();
+                byte[] bytes = sftpUtil.download(file_dir, task);
+                ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+                List<String> tmp = IOUtils.readLines(bais, "utf-8");
+
+                for (String line: tmp){
+                    String[] row = line.split(",");
+                    if(row.length>2){
+                        if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
+                            rows.add(row[0]);
+                        }else{
+                            if(row[1].equalsIgnoreCase(status)){
+                                rows.add(row[0]);
+                            }
+                        }
+                    }else{
+                        rows.add(row[0]);
+                    }
+                }
+
+            }else{
+                throw new Exception("无法找到对应的数据文件");
+            }
+        }
+        return rows;
     }
 }

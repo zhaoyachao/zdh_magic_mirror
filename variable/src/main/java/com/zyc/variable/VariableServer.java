@@ -10,6 +10,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class VariableServer {
 
@@ -34,6 +38,11 @@ public class VariableServer {
             JedisPoolUtil.connect(properties);
 
             CacheLabelServiceImpl cacheLabelService = new CacheLabelServiceImpl();
+
+            ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1,
+                    1, 1000*60*60,
+                    TimeUnit.MICROSECONDS, new LinkedBlockingDeque<>(),
+                    Executors.defaultThreadFactory(), new ThreadPoolExecutor.AbortPolicy());
             Thread schedule = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -46,7 +55,7 @@ public class VariableServer {
                 }
             });
             schedule.setName("variable_schedule");
-            schedule.start();
+            threadPoolExecutor.execute(schedule);
 
             NettyServer nettyServer=new NettyServer();
             nettyServer.start(properties);

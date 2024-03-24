@@ -133,7 +133,7 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
 
             //映射结果
             String file_idmapping_path = getFilePath(file_dir, "idmapping_"+strategyLogInfo.getStrategy_instance_id());
-            String save_idmapping_path = writeFile(strategyLogInfo.getStrategy_instance_id(),file_idmapping_path, rs2);
+            String save_idmapping_path = writeFile(file_idmapping_path, rs2);
 
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);

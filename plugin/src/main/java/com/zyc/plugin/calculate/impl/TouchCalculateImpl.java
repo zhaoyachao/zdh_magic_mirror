@@ -147,32 +147,32 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
      * @param id
      * @throws IOException
      */
-    public void emailTouch(TouchConfigInfo touchConfigInfo,Set<String> rs,String file_dir, String id) throws IOException {
+    public void emailTouch(TouchConfigInfo touchConfigInfo,Set<String> rs,String file_dir, String id) throws Exception {
         EmailTouch emailTouch=new QQEmailTouch();
         emailTouch.init(new HashMap<String,Object>(this.dbConfig), touchConfigInfo);
         List<String> ccs=new ArrayList<>();
         for (String email:rs){
             if(!email.contains("@")){
                 rs.remove(email);
-                writeFile(id,file_dir+"/email_"+id, Sets.newHashSet(email+",format error,"+System.currentTimeMillis()));
+                writeFile(file_dir+"/email_"+id, Sets.newHashSet(email+",format error,"+System.currentTimeMillis()));
             }
         }
 
-        List<String> his = readFile(file_dir+"/email_"+id);
+        List<String> his = readHisotryFile(file_dir, "email_"+id, Const.FILE_STATUS_ALL);
         Set<String> hisSet = Sets.newHashSet(his);
         Set<String> diff = Sets.difference(rs, hisSet);
         Set<String> tmp = Sets.newHashSet();
         for(String account: diff){
             String result = emailTouch.send(account);
             tmp.add(account+","+result+","+System.currentTimeMillis());
-            writeFile(id,file_dir+"/email_"+id, tmp);
+            writeFile(file_dir+"/email_"+id, tmp);
         }
     }
 
     public void smsTouch(TouchConfigInfo touchConfigInfo,Set<String> rs,String file_dir, String id) throws Exception {
         List<List<String>> partitions = Lists.partition(new ArrayList<>(rs) , 1000);
         //读取已经推送的信息
-        List<String> his = readFile(file_dir+"/sms_"+id);
+        List<String> his = readHisotryFile(file_dir, "sms_"+id, Const.FILE_STATUS_ALL);
         Set<String> hisSet = Sets.newHashSet(his);
         for (List<String> partition: partitions){
             Set<String> now = Sets.newHashSet(partition);
@@ -190,7 +190,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
             for (String s: diff){
                 tmp.add(s+","+response.getCode()+","+response.getMessage()+","+JSON.toJSONString(response.getObject())+","+System.currentTimeMillis());
             }
-            writeFile(id,file_dir+"/sms_"+id, tmp);
+            writeFile(file_dir+"/sms_"+id, tmp);
         }
     }
 

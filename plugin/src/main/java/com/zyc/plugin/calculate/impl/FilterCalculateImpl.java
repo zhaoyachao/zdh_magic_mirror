@@ -141,7 +141,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
     private Set<String> loadFilters(FilterInfo filterInfo,String base_path) throws Exception {
         if(filterInfo.getEngine_type().equalsIgnoreCase("file")){
             String filter_path=base_path+"/filter/"+filterInfo.getFilter_code();
-            List<String> list = FileUtil.readStringSplit(new File(filter_path), Charset.forName("utf-8"), "3");
+            List<String> list = FileUtil.readStringSplit(new File(filter_path), Charset.forName("utf-8"), Const.FILE_STATUS_ALL);
             Set<String> filterDataFrame = Sets.newHashSet();
             filterDataFrame.addAll(list);
             return filterDataFrame;

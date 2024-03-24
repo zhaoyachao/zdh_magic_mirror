@@ -11,7 +11,7 @@ public class ShipConf {
     public static String ON_LINE_MANAGER_CORE_SIZE="on_line_manager_core_size";
 
     public ShipConf(Properties properties){
-        this.properties = properties;
+        ShipConf.properties = properties;
     }
 
     /**

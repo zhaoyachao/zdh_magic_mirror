@@ -17,14 +17,15 @@ public class NoticeServiceImpl {
         try {
             sqlSession = MybatisUtil.getSqlSession();
             NoticeMapper noticeMapper = sqlSession.getMapper(NoticeMapper.class);
-            noticeInfo.setCreate_time(new Timestamp(new Date().getTime()));
-            noticeInfo.setUpdate_time(new Timestamp(new Date().getTime()));
+            noticeInfo.setCreate_time(new Timestamp(System.currentTimeMillis()));
+            noticeInfo.setUpdate_time(new Timestamp(System.currentTimeMillis()));
             noticeMapper.insert(noticeInfo);
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
-            if(sqlSession != null)
+            if(sqlSession != null) {
                 sqlSession.close();
+            }
         }
 
     }

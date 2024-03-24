@@ -49,6 +49,7 @@ public class RiskStrategyExecuteResult implements StrategyExecuteResult{
         this.strategy_group_instance_id = strategy_group_instance_id;
     }
 
+    @Override
     public boolean isSuccess() {
         return isSuccess;
     }

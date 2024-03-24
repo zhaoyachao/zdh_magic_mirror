@@ -120,6 +120,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                 //下载sftp文件存储本地
                 String file_sftp_path = getFilePath(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                         strategyLogInfo.getStrategy_group_instance_id(), "sftp_"+strategyLogInfo.getStrategy_instance_id());
+                //此处直接使用directory目录是有风险的,人群文件最好单独设置一个目录,不和ftp的根目录共用
                 sftpUtil.download(directory, crowd_file, file_sftp_path);
 
                 //读取本地文件

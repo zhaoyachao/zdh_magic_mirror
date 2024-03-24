@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.concurrent.*;
 
 /**
  * ship server
@@ -52,6 +53,11 @@ public class ShipServer {
             FilterHttpUtil.init(properties);
             CacheStrategyServiceImpl cacheStrategyService = new CacheStrategyServiceImpl();
             CacheFunctionServiceImpl cacheFunctionService = new CacheFunctionServiceImpl();
+            ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(1,
+                    1, 1000*60*60,
+                    TimeUnit.MICROSECONDS, new LinkedBlockingDeque<>(),
+                    Executors.defaultThreadFactory(), new ThreadPoolExecutor.AbortPolicy());
+
             Thread schedule = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -69,7 +75,7 @@ public class ShipServer {
                 }
             });
             schedule.setName("ship_schedule");
-            schedule.start();
+            threadPoolExecutor.execute(schedule);
 
             //初始化disruptor
             int masterHandlerNum = Integer.valueOf(properties.getProperty("ship.disruptr.master.handler.num", "1"));

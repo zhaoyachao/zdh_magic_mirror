@@ -119,7 +119,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
                 PluginInfo pluginInfo = pluginService.selectById(rule_id);
                 PluginService pluginServiceImpl = getPluginService(rule_id);
                 //读取已经推送的信息
-                List<String> his = readFile(file_dir+"/"+rule_id+"_"+strategyLogInfo.getStrategy_instance_id());
+                List<String> his = readHisotryFile(file_dir, rule_id+"_"+strategyLogInfo.getStrategy_instance_id(), Const.FILE_STATUS_ALL);
                 Set<String> his2 = his.stream().map(str->str.split(",")[0]).collect(Collectors.toSet());
                 Set<String> hisSet = Sets.newHashSet(his2);
 
@@ -134,7 +134,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
                     }
                     rs3.add(s+","+status+","+","+System.currentTimeMillis()+JSON.toJSONString(result.getResult()));
                 }
-                writeFile(strategyLogInfo.getStrategy_instance_id(),file_dir+"/"+rule_id+"_"+strategyLogInfo.getStrategy_instance_id(), rs3);
+                writeFile(file_dir+"/"+rule_id+"_"+strategyLogInfo.getStrategy_instance_id(), rs3);
             }
 
             rs = rs3;

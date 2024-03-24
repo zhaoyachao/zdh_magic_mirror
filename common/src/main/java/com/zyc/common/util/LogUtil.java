@@ -99,7 +99,7 @@ public class LogUtil {
         zdhLogs.setLevel("ERROR");
         zdhLogs.setTask_logs_id(task_logs_id);
         zdhLogs.setMsg(msg);
-        zdhLogs.setLog_time(new Timestamp(new Date().getTime()));
+        zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
         send(zdhLogs);
     }
 
@@ -111,7 +111,7 @@ public class LogUtil {
         zdhLogs.setJob_id(job_id);
         zdhLogs.setTask_logs_id(task_logs_id);
         zdhLogs.setMsg(msg);
-        zdhLogs.setLog_time(new Timestamp(new Date().getTime()));
+        zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
         send(zdhLogs);
     }
 
@@ -122,7 +122,7 @@ public class LogUtil {
         zdhLogs.setLevel("DEBUG");
         zdhLogs.setTask_logs_id(task_logs_id);
         zdhLogs.setMsg(msg);
-        zdhLogs.setLog_time(new Timestamp(new Date().getTime()));
+        zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
         send(zdhLogs);
     }
 }

@@ -52,10 +52,10 @@ public class FileUtil {
         for (String line: tmp){
             String[] row = line.split(",");
             if(row.length>2){
-                if(status == Const.FILE_STATUS_ALL){
+                if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
                     result.add(row[0]);
                 }else{
-                    if(row[1] == status){
+                    if(row[1].equalsIgnoreCase(status)){
                         result.add(row[0]);
                     }
                 }

@@ -1,5 +1,8 @@
 package com.zyc.common.entity;
 
+/**
+ * 策略实例类型枚举
+ */
 public enum InstanceType {
 
     LABEL("label","label","标签任务","true"),//为了异步数据一致性

@@ -1,5 +1,8 @@
 package com.zyc.common.entity;
 
+/**
+ * 废弃,可使用InstanceType代替
+ */
 public enum InstanceTypeEnum {
 
     LABEL("label","label","标签"),

@@ -1,5 +1,8 @@
 package com.zyc.common.util;
 
+/**
+ * 常量
+ */
 public class Const {
     public static String STATUS_INIT="create";
     public static String STATUS_CHECK_DEP="check_dep";

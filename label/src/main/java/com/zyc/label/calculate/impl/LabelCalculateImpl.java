@@ -460,20 +460,34 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
         try{
 
             if(operate.equalsIgnoreCase(">")){
-                if(lValue>Integer.valueOf(uValue)) return true;
+                if(lValue>Integer.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("<")){
-                if(lValue<Integer.valueOf(uValue)) return true;
+                if(lValue<Integer.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase(">=")){
-                if(lValue>=Integer.valueOf(uValue)) return true;
+                if(lValue>=Integer.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("<=")){
-                if(lValue<=Integer.valueOf(uValue)) return true;
+                if(lValue<=Integer.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("=")){
-                if(lValue == Integer.valueOf(uValue)) return true;
+                if(lValue.intValue() == Integer.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("!=")){
-                if(lValue != Integer.valueOf(uValue)) return true;
+                if(lValue.intValue() != Integer.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("in")){
                 Set sets = Sets.newHashSet(uValue.split(";"));
-                if(sets.contains(lValue)) return true;
+                if(sets.contains(lValue)) {
+                    return true;
+                }
             }
             return false;
         }catch (Exception e){
@@ -491,20 +505,34 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
     public boolean diffDoubleValue(Double lValue, String uValue, String operate, String param_return_type){
         try{
             if(operate.equalsIgnoreCase(">")){
-                if(lValue>Double.valueOf(uValue)) return true;
+                if(lValue>Double.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("<")){
-                if(lValue<Double.valueOf(uValue)) return true;
+                if(lValue<Double.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase(">=")){
-                if(lValue>=Double.valueOf(uValue)) return true;
+                if(lValue>=Double.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("<=")){
-                if(lValue<=Double.valueOf(uValue)) return true;
+                if(lValue<=Double.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("=")){
-                if(lValue == Double.valueOf(uValue)) return true;
+                if(lValue.doubleValue() == Double.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("!=")){
-                if(lValue != Double.valueOf(uValue)) return true;
+                if(lValue.doubleValue() != Double.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("in")){
                 Set sets = Sets.newHashSet(uValue.split(";"));
-                if(sets.contains(lValue)) return true;
+                if(sets.contains(lValue)) {
+                    return true;
+                }
             }
             return false;
         }catch (Exception e){
@@ -522,20 +550,34 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
     public boolean diffLongValue(Long lValue, String uValue, String operate, String param_return_type){
         try{
             if(operate.equalsIgnoreCase(">")){
-                if(lValue>Long.valueOf(uValue)) return true;
+                if(lValue>Long.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("<")){
-                if(lValue<Long.valueOf(uValue)) return true;
+                if(lValue<Long.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase(">=")){
-                if(lValue>=Long.valueOf(uValue)) return true;
+                if(lValue>=Long.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("<=")){
-                if(lValue<=Long.valueOf(uValue)) return true;
+                if(lValue<=Long.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("=")){
-                if(lValue == Long.valueOf(uValue)) return true;
+                if(lValue.longValue() == Long.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("!=")){
-                if(lValue != Long.valueOf(uValue)) return true;
+                if(lValue.longValue() != Long.valueOf(uValue)) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("in")){
                 Set sets = Sets.newHashSet(uValue.split(";"));
-                if(sets.contains(lValue)) return true;
+                if(sets.contains(lValue)) {
+                    return true;
+                }
             }
             return false;
         }catch (Exception e){
@@ -599,17 +641,29 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             long o = DateUtil.parse(lValue, DatePattern.NORM_DATETIME_PATTERN).getTime();
             long t = DateUtil.parse(uValue, DatePattern.NORM_DATETIME_PATTERN).getTime();
             if(operate.equalsIgnoreCase(">")){
-                if(o>t) return true;
+                if(o>t) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("<")){
-                if(o<t) return true;
+                if(o<t) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase(">=")){
-                if(o>=t) return true;
+                if(o>=t) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("<=")){
-                if(o<=t) return true;
+                if(o<=t) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("=")){
-                if(o==t) return true;
+                if(o==t) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("!=")){
-                if(o!=t) return true;
+                if(o!=t) {
+                    return true;
+                }
             }
             return false;
         }catch (Exception e){
@@ -621,17 +675,29 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
         try{
             int r = lValue.compareTo(uValue);
             if(operate.equalsIgnoreCase(">")){
-                if(r<0) return true;
+                if(r<0) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("<")){
-                if(r>0) return true;
+                if(r>0) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase(">=")){
-                if(r<=0) return true;
+                if(r<=0) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("<=")){
-                if(r>=0) return true;
+                if(r>=0) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("=")){
-                if(r==0) return true;
+                if(r==0) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("!=")){
-                if(r!=0) return true;
+                if(r!=0) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("in")){
                 boolean in = Sets.newHashSet(uValue.split(";|,")).contains(lValue);
                 return in;

@@ -2,9 +2,11 @@ package com.zyc.plugin.calculate.impl;
 
 import com.google.common.collect.Maps;
 import com.zyc.common.entity.FilterInfo;
+import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
 import com.zyc.plugin.calculate.FilterEngine;
 import com.zyc.plugin.calculate.IdMappingEngine;
+import scala.collection.immutable.Stream;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -31,7 +33,7 @@ public class FileFilterEngineImpl implements FilterEngine {
     public List<String> get() throws Exception {
         File f=new File(file_path);
         if(f.exists() && f.isFile()){
-            return FileUtil.readStringSplit(f, Charset.forName("utf-8"), "3");
+            return FileUtil.readStringSplit(f, Charset.forName("utf-8"), Const.FILE_STATUS_ALL);
         }
         return new ArrayList<>();
     }
@@ -44,7 +46,7 @@ public class FileFilterEngineImpl implements FilterEngine {
         Map<String,String> id_map_rs_error = Maps.newHashMap();
         FilterResult idMappingResult = new FilterResult();
         if(f.exists() && f.isFile()){
-            List<String> id_mappings = FileUtil.readStringSplit(f, Charset.forName("utf-8"), "3");
+            List<String> id_mappings = FileUtil.readStringSplit(f, Charset.forName("utf-8"), Const.FILE_STATUS_ALL);
             for (String line:id_mappings){
                 String[] idm = line.split(",",2);
                 id_map.put(idm[0], idm[1]);

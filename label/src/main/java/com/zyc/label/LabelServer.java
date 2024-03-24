@@ -196,7 +196,7 @@ public class LabelServer {
         StrategyInstance strategyInstance=new StrategyInstance();
         strategyInstance.setId(task_id);
         strategyInstance.setStatus(status);
-        strategyInstance.setUpdate_time(new Timestamp(new Date().getTime()));
+        strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
         strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
     }
 

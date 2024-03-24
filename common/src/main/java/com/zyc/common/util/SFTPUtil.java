@@ -249,7 +249,7 @@ public class SFTPUtil {
                 if(StringUtils.isEmpty(path)){
                     continue;
                 }
-                direct_path = direct_path+"/"+path;
+                direct_path = direct_path + "/" + path;
                 sftp.cd(direct_path);
             } catch (SftpException e) {
                 log.warn("directory is not exist");
