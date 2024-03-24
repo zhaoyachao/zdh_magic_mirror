@@ -6,6 +6,8 @@ import com.alibaba.fastjson.TypeReference;
 import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.queue.QueueHandler;
+import com.zyc.common.util.Const;
+import com.zyc.common.util.LogUtil;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,9 @@ public class DbQueueHandler implements QueueHandler {
     @Override
     public Map<String,Object> handler() {
         try {
+            if(config == null){
+                throw new Exception("handler 未配置properties");
+            }
             int slot_num = Integer.valueOf(config.getProperty("task.slot.total.num", "0"));
             String[] slot = config.getProperty("task.slot", "0").split(",");
             int start_slot =  Integer.valueOf(slot[0]);
@@ -38,6 +43,9 @@ public class DbQueueHandler implements QueueHandler {
             if(strategyInstances!=null && strategyInstances.size()>0){
                 for (StrategyInstance strategyInstance: strategyInstances){
                     if(!NumberUtil.isLong(strategyInstance.getStrategy_id())){
+                        LogUtil.error("",strategyInstance.getId(), "当前任务配置信息异常");
+                        strategyInstance.setStatus(Const.STATUS_ERROR);
+                        strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
                         continue ;
                     }
                     if(Long.valueOf(strategyInstance.getStrategy_id())%slot_num >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num < end_slot){

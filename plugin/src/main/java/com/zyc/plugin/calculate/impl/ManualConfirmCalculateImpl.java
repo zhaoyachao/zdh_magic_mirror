@@ -103,6 +103,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
 
 
             String product_code=dbConfig.get("product.code");
+            String zdh_web_url=dbConfig.get("zdh_web_url");
 
 
 
@@ -120,7 +121,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
                     NoticeInfo noticeInfo = new NoticeInfo();
                     noticeInfo.setMsg_type("通知");
                     noticeInfo.setMsg_title("策略执行流程确认");
-                    noticeInfo.setMsg("策略实例"+strategyLogInfo.getStrategy_instance_id()+",需要手动确认,操作路径智能营销>>智能策略>>执行记录>>子任务>>跳过");
+                    noticeInfo.setMsg("策略组: "+strategyLogInfo.getStrategy_group_id()+", 策略组实例: "+strategyLogInfo.getStrategy_group_instance_id()+", 策略实例"+strategyLogInfo.getStrategy_instance_id()+",需要手动确认,操作路径智能营销>>智能策略>>执行记录>>子任务>>跳过, 快速跳转地址: "+zdh_web_url+"/strategy_instance_index.html?strategy_group_instance_id="+strategyLogInfo.getStrategy_group_instance_id());
                     noticeInfo.setMsg_url("");
                     noticeInfo.setIs_see("false");
                     noticeInfo.setOwner(owner);

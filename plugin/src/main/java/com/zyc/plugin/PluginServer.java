@@ -70,6 +70,7 @@ public class PluginServer {
             int limit = Integer.valueOf(config.getProperty("task.max.num", "50"));
 
             QueueHandler queueHandler=new DbQueueHandler();
+            queueHandler.setProperties(config);
 
             AtomicInteger atomicInteger=new AtomicInteger(0);
             ThreadPoolExecutor threadPoolExecutor=new ThreadPoolExecutor(10, 100, 20, TimeUnit.MINUTES, new LinkedBlockingDeque<Runnable>());
