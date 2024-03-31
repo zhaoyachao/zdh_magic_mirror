@@ -47,7 +47,7 @@ public class ShipCommonEngine implements Engine {
         return new ArrayList<>();
     }
 
-    public List<StrategyGroupInstance> getHitStrategyGroups(int flow,List<StrategyGroupInstance> strategy_groups){
+    public List<StrategyGroupInstance> getHitStrategyGroups(int flow,List<StrategyGroupInstance> strategy_groups, HashSet<String> allocate_strategy_group_ids){
         List<StrategyGroupInstance> hit_strategy_groups = new ArrayList<>();
         //校验分流
         for (StrategyGroupInstance strategyGroupInstance: strategy_groups){
@@ -64,7 +64,12 @@ public class ShipCommonEngine implements Engine {
                     continue;
                 }
                 if(flow >= Integer.valueOf(flows[0]) && flow <= Integer.valueOf(flows[1])){
-                    hit_strategy_groups.add(strategyGroupInstance);
+                    //指定策略组id
+                    if( allocate_strategy_group_ids.size() >0 && allocate_strategy_group_ids.contains(strategyGroupInstance.getGroup_id())){
+                        hit_strategy_groups.add(strategyGroupInstance);
+                    }else{
+                        hit_strategy_groups.add(strategyGroupInstance);
+                    }
                 }else{
                     commonLog.setReason("not hit strategy_group, not hit flows");
                     commonLog.setStatus("2");//1成功,2失败

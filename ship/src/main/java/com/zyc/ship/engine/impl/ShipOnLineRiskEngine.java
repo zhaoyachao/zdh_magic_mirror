@@ -7,6 +7,7 @@ import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.entity.*;
 import com.zyc.ship.service.StrategyService;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,8 +54,13 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
             //获取需要校验的策略信息
             List<StrategyGroupInstance> strategy_groups = getStrategyGroups(this.strategyService,scene, data_node);
 
+            String allocate_strategy_group_ids = shipCommonInputParam.getAllocate_strategy_group_ids();
+            HashSet allocate_strategy_group_id_hashset = Sets.newHashSet();
+            if(!StringUtils.isEmpty(allocate_strategy_group_ids)){
+                allocate_strategy_group_id_hashset =  Sets.newHashSet(allocate_strategy_group_ids.split(","));
+            }
             //校验分流
-            List<StrategyGroupInstance> hit_strategy_groups = getHitStrategyGroups(flow, strategy_groups);
+            List<StrategyGroupInstance> hit_strategy_groups = getHitStrategyGroups(flow, strategy_groups, allocate_strategy_group_id_hashset);
             Set<StrategyGroupInstance> not_hit_strategy_groups = Sets.difference(Sets.newHashSet(strategy_groups), Sets.newHashSet(hit_strategy_groups));
             Set not_hit_strategy_group_ids = not_hit_strategy_groups.stream().map(strategyGroupInstance -> strategyGroupInstance.getId()).collect(Collectors.toSet());
 

@@ -1,19 +1,18 @@
 package com.zyc.ship.engine.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.entity.*;
 import com.zyc.ship.service.StrategyService;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -64,8 +63,13 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                         //获取需要校验的策略信息
                         List<StrategyGroupInstance> strategy_groups = getStrategyGroups(strategyService,scene, data_node);
 
+                        String allocate_strategy_group_ids = shipCommonInputParam.getAllocate_strategy_group_ids();
+                        HashSet allocate_strategy_group_id_hashset = Sets.newHashSet();
+                        if(!StringUtils.isEmpty(allocate_strategy_group_ids)){
+                            allocate_strategy_group_id_hashset =  Sets.newHashSet(allocate_strategy_group_ids.split(","));
+                        }
                         //校验分流
-                        List<StrategyGroupInstance> hit_strategy_groups = getHitStrategyGroups(flow, strategy_groups);
+                        List<StrategyGroupInstance> hit_strategy_groups = getHitStrategyGroups(flow, strategy_groups, allocate_strategy_group_id_hashset);
 
                         logger.info("uuid: {}, data_node: {}, hit strategy_groups: {}",uuid, data_node, JSON.toJSONString(hit_strategy_groups));
                         Map<String, Object> labels = new HashMap<>();

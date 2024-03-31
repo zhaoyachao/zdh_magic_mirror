@@ -52,6 +52,11 @@ public class ShipCommonInputParam implements InputParam{
      */
     private String param;
 
+    /**
+     * 指定策略组id,多个逗号分割
+     */
+    private String allocate_strategy_group_ids;
+
 
     public String getProduct_code() {
         return product_code;
@@ -112,6 +117,14 @@ public class ShipCommonInputParam implements InputParam{
     public int getFlow(){
 
         return uid.hashCode()%100+1;
+    }
+
+    public String getAllocate_strategy_group_ids() {
+        return allocate_strategy_group_ids;
+    }
+
+    public void setAllocate_strategy_group_ids(String allocate_strategy_group_ids) {
+        this.allocate_strategy_group_ids = allocate_strategy_group_ids;
     }
 
     @Override
