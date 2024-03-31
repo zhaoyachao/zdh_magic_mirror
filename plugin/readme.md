@@ -35,3 +35,5 @@
     v5.3.2 优化idmapping引擎
     v5.3.2 优化filter引擎
     v5.3.2 新增任务锁
+    v5.3.2 新增redis id mapping引擎
+    v5.3.2 新增redis filter引擎

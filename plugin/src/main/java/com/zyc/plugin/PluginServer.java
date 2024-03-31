@@ -2,6 +2,7 @@ package com.zyc.plugin;
 
 import cn.hutool.core.util.NumberUtil;
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Maps;
 import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.queue.QueueHandler;
@@ -60,6 +61,10 @@ public class PluginServer {
             logger.info(config.toString());
 
             checkConfig(config);
+
+            loadIdMappingConf(config);
+
+            loadFilterConf(config);
 
             JedisPoolUtil.connect(config);
 
@@ -187,6 +192,73 @@ public class PluginServer {
 
     }
 
+    /**
+     * id mapping 初始化redis引擎
+     * @param config
+     */
+    public static void loadIdMappingConf(Properties config){
+        //获取redis引擎的配置
+        Map<String, RedisIdMappingEngineImpl.RedisConf> mapping_code_conf = new HashMap<>();
+        for(String key: config.stringPropertyNames()){
+            if(key.startsWith("id_mapping_code.")){
+                String[] columns = key.split("\\.");
+                String id_mapping_code = columns[1];
+                String engine = columns[2];
+                String param = columns[3];
+                RedisIdMappingEngineImpl.RedisConf redisConf =new RedisIdMappingEngineImpl.RedisConf();
+                if(mapping_code_conf.containsKey(id_mapping_code)){
+                    redisConf = mapping_code_conf.get(id_mapping_code);
+                }else{
+                    mapping_code_conf.put(id_mapping_code, redisConf);
+                }
+                if(engine.equalsIgnoreCase("redis")){
+                  if(param.equalsIgnoreCase("mode")){
+                      redisConf.setMode(param);
+                  }else if(param.equalsIgnoreCase("url")){
+                      redisConf.setUrl(param);
+                  }else if(param.equalsIgnoreCase("passwd")){
+                      redisConf.setPasswd(param);
+                  }
+                }
+
+            }
+        }
+        RedisIdMappingEngineImpl.redisConfMap = mapping_code_conf;
+    }
+
+    /**
+     * filter 初始化redis引擎
+     * @param config
+     */
+    public static void loadFilterConf(Properties config){
+        //获取redis引擎的配置
+        Map<String, RedisFilterEngineImpl.RedisConf> mapping_code_conf = new HashMap<>();
+        for(String key: config.stringPropertyNames()){
+            if(key.startsWith("filter.")){
+                String[] columns = key.split("\\.");
+                String id_mapping_code = columns[1];
+                String engine = columns[2];
+                String param = columns[3];
+                RedisFilterEngineImpl.RedisConf redisConf =new RedisFilterEngineImpl.RedisConf();
+                if(mapping_code_conf.containsKey(id_mapping_code)){
+                    redisConf = mapping_code_conf.get(id_mapping_code);
+                }else{
+                    mapping_code_conf.put(id_mapping_code, redisConf);
+                }
+                if(engine.equalsIgnoreCase("redis")){
+                    if(param.equalsIgnoreCase("mode")){
+                        redisConf.setMode(param);
+                    }else if(param.equalsIgnoreCase("url")){
+                        redisConf.setUrl(param);
+                    }else if(param.equalsIgnoreCase("passwd")){
+                        redisConf.setPasswd(param);
+                    }
+                }
+
+            }
+        }
+        RedisFilterEngineImpl.redisConfMap = mapping_code_conf;
+    }
 
     public static void resetStatus(){
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();

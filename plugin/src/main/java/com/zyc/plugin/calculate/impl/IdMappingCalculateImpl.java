@@ -162,7 +162,9 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
         }else if(data_engine.equalsIgnoreCase("es")){
 
         }else if(data_engine.equalsIgnoreCase("redis")){
-
+            //根据id_mapping_code找到对应redis配置
+            RedisIdMappingEngineImpl idMappingEngine = new RedisIdMappingEngineImpl(id_mapping_code);
+            return idMappingEngine;
         }
         throw new Exception("不支持的id mapping计算引擎");
     }
