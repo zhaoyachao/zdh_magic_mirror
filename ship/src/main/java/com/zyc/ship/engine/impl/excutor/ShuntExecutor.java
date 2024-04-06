@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.hash.Hashing;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.entity.StrategyGroupInstance;
 
 import java.util.List;
@@ -12,11 +13,11 @@ import java.util.Map;
 public class ShuntExecutor {
 
     public String execute(StrategyInstance strategyInstance, String uid){
-        String tmp = "success";
+        String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
             //校验是否命中分流
             if(!shunt(null, strategyInstance, uid)){
-                tmp = "error";
+                tmp = ShipResultStatusEnum.ERROR.code;
             }
         }catch (Exception e){
 

@@ -2,17 +2,18 @@ package com.zyc.ship.engine.impl.excutor;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.ship.disruptor.ShipEvent;
+import com.zyc.ship.disruptor.ShipResultStatusEnum;
 
 import java.util.Map;
 
 public class FilterExecutor {
 
     public String executor(JSONObject run_jsmind_data, ShipEvent shipEvent, String uid){
-        String tmp = "success";
+        String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
             String[] filters = run_jsmind_data.getString("filter").split(",");
             if(!isHitFilter(filters, shipEvent.getFilterValues(), uid)){
-                tmp = "error";
+                tmp = ShipResultStatusEnum.ERROR.code;
             }
         }catch (Exception e){
 

@@ -7,6 +7,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.common.entity.FunctionInfo;
 import com.zyc.common.groovy.GroovyFactory;
+import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.service.impl.CacheFunctionServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 
@@ -18,7 +19,7 @@ import java.util.Map;
 public class FunctionExecutor {
 
     public String execute(JSONObject run_jsmind_data){
-        String tmp = "error";
+        String tmp = ShipResultStatusEnum.ERROR.code;
         try{
             String function_name = run_jsmind_data.getString("rule_id");
             Gson gson=new Gson();
@@ -34,9 +35,9 @@ public class FunctionExecutor {
             }
             Object res = functionExcute(functionInfo, param_value.toArray(new String[param_value.size()]));
             if(res == null){
-                tmp = "error";
+                tmp = ShipResultStatusEnum.ERROR.code;
             }else{
-                tmp = "success";
+                tmp = ShipResultStatusEnum.SUCCESS.code;
             }
         }catch (Exception e){
             e.printStackTrace();

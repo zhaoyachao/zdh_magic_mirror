@@ -9,4 +9,7 @@ public class Const {
 
     public static int ERROR_CODE_NOT_FOUND_STRATEGY_GROUP_INSTANCE_FLOW=1001;//策略组实例未配置分流
     public static int ERROR_CODE_NOT_HIT_STRATEGY_GROUP_INSTANCE=1002;//未命中分流
+
+    public static String TN_TYPE_RELATIVE="relative";
+    public static String TN_TYPE_ABSOLUTE="absolute";
 }

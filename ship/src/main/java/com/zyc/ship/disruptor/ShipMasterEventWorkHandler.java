@@ -44,7 +44,6 @@ public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
                 if(disruptor != null){
                     disruptor.publishEvent(eventEventTranslator);
                 }
-                //shipEvent.getCdl().countDown();
             }else if(status.equalsIgnoreCase(ShipConst.STATUS_WAIT)){
 
             }else if(status.equalsIgnoreCase(ShipConst.STATUS_CREATE)){
@@ -54,7 +53,6 @@ public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
                 if(disruptor != null){
                     disruptor.publishEvent(eventEventTranslator);
                 }
-                //shipEvent.getCdl().countDown();
             }
         }catch (Exception e){
             e.printStackTrace();

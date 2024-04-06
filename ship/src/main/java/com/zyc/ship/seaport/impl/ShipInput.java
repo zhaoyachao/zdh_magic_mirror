@@ -1,5 +1,6 @@
 package com.zyc.ship.seaport.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.zyc.ship.common.Const;
 import com.zyc.ship.engine.Engine;
 import com.zyc.ship.engine.impl.ShipOnLineManagerEngine;
@@ -7,6 +8,7 @@ import com.zyc.ship.engine.impl.ShipOnLineRiskEngine;
 import com.zyc.ship.entity.InputParam;
 import com.zyc.ship.entity.OutputParam;
 import com.zyc.ship.entity.ShipCommonInputParam;
+import com.zyc.ship.log.ShipOnlineRiskLog;
 import com.zyc.ship.seaport.Input;
 import com.zyc.ship.service.impl.CacheStrategyServiceImpl;
 import org.slf4j.Logger;
@@ -21,6 +23,8 @@ public class ShipInput implements Input {
     @Override
     public OutputParam accept(InputParam inputParam){
         try{
+            //提前写入队列/日志用于后期数据恢复
+            ShipOnlineRiskLog.putMessage2Queue(JSON.toJSONString(inputParam));
             //接入流量,以用户为参数
             ShipCommonInputParam shipCommonInputParam = (ShipCommonInputParam) inputParam;
             //校验参数

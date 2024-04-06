@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.entity.LabelValueConfig;
 import com.zyc.ship.entity.StrategyLabelParamConfig;
 import org.apache.commons.lang3.StringUtils;
@@ -19,18 +20,18 @@ public class LabelExecutor {
 
 
     public String execute(JSONObject run_jsmind_data,  Map<String,Object> labelVaues, String uid){
-        String tmp = "success";
+        String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
             List<LabelValueConfig> labelValueConfigs = labelParam2LableValueConfig(run_jsmind_data);
             for (LabelValueConfig labelValueConfig:labelValueConfigs){
                 if(!diffLable(labelValueConfig, labelVaues, uid)) {
-                    tmp = "error";
+                    tmp = ShipResultStatusEnum.ERROR.code;
                     break;
                 }
             }
         }catch (Exception e){
             e.printStackTrace();
-            tmp = "error";
+            tmp = ShipResultStatusEnum.ERROR.code;
         }
 
         return tmp;

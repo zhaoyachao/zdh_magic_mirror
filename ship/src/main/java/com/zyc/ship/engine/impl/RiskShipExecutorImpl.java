@@ -7,6 +7,7 @@ import com.zyc.common.entity.StrategyInstance;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipExecutor;
 import com.zyc.ship.disruptor.ShipResult;
+import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.excutor.*;
 import com.zyc.ship.entity.ShipCommonInputParam;
 import org.slf4j.Logger;
@@ -31,7 +32,7 @@ public class RiskShipExecutorImpl implements ShipExecutor {
     public ShipResult execute(StrategyInstance strategyInstance) {
         ShipResult shipResult1 = new RiskShipResultImpl();
         try{
-            String tmp = "create";
+            String tmp = ShipResultStatusEnum.CREATE.code;
             logger.info("executor: "+strategyInstance.getStrategy_context());
             shipResult1.setStrategyName(strategyInstance.getStrategy_context());
             String uid = ((ShipCommonInputParam)shipEvent.getInputParam()).getUid();
@@ -45,10 +46,12 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 tmp =labelExecutor.execute(run_jsmind_data, labelVaues, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.CROWD_RULE.getCode())){
                 //不支持人群规则
-                tmp = "error";
+                CrowdRuleExecutor crowdRuleExecutor = new CrowdRuleExecutor();
+                tmp = crowdRuleExecutor.execute(run_jsmind_data, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.CROWD_OPERATE.getCode())){
                 //到执行器时的运算符,都是可执行的,master disruptor会提前判断
-                tmp = "success";
+                CrowdOperateExecutor crowdOperateExecutor = new CrowdOperateExecutor();
+                tmp = crowdOperateExecutor.execute(run_jsmind_data, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.CROWD_FILE.getCode())){
                 //不支持大批量人群文件
                 CrowdFileExecutor crowdFileExecutor = new CrowdFileExecutor();
@@ -58,21 +61,22 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 tmp = customListExecutor.execute(run_jsmind_data, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.FILTER.getCode())){
                 FilterExecutor filterExecutor = new FilterExecutor();
-                filterExecutor.executor(run_jsmind_data, shipEvent, uid);
+                tmp = filterExecutor.executor(run_jsmind_data, shipEvent, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.SHUNT.getCode())){
                 ShuntExecutor shuntExecutor = new ShuntExecutor();
-                shuntExecutor.execute(strategyInstance, uid);
+                tmp = shuntExecutor.execute(strategyInstance, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.TOUCH.getCode())){
                 //触达
+                tmp = ShipResultStatusEnum.ERROR.code;
             }else if(instance_type.equalsIgnoreCase(InstanceType.ID_MAPPING.getCode())){
                 IdMappingExecutor idMappingExecutor = new IdMappingExecutor();
-                idMappingExecutor.execute(run_jsmind_data, labelVaues, shipEvent, uid);
+                tmp = idMappingExecutor.execute(run_jsmind_data, labelVaues, shipEvent, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.PLUGIN.getCode())){
                 PluginExecutor pluginExecutor = new PluginExecutor();
                 tmp = pluginExecutor.execute(run_jsmind_data, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.MANUAL_CONFIRM.getCode())){
                 //不支持
-                tmp = "error";
+                tmp = ShipResultStatusEnum.ERROR.code;
             }else if(instance_type.equalsIgnoreCase(InstanceType.RIGHTS.getCode())){
                 RightsExecutor rightsExecutor = new RightsExecutor();
                 tmp = rightsExecutor.execute(run_jsmind_data, uid);
@@ -89,15 +93,13 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             }else if(instance_type.equalsIgnoreCase(InstanceType.TN.getCode())){
                 //根据TN生成,任务(暂不支持,在线策略是否新增一个延迟插件)
                 TnExecutor tnExecutor = new TnExecutor();
-
-                tmp = tnExecutor.execute(run_jsmind_data, uid);
+                tmp = tnExecutor.execute(run_jsmind_data, uid, strategyInstance, shipEvent);
             }else if(instance_type.equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
                 FunctionExecutor functionExecutor = new FunctionExecutor();
                 tmp = functionExecutor.execute(run_jsmind_data);
             }else{
                 logger.error("暂不支持的经营类型: {}", instance_type);
-                shipResult1.setStatus("error");
-                tmp = "error";
+                tmp = ShipResultStatusEnum.ERROR.code;
             }
 
             shipResult1.setStatus(tmp);

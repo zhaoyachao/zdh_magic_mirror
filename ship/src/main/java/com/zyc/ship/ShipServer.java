@@ -66,7 +66,7 @@ public class ShipServer {
                 public void run() {
                     while (true){
                         try{
-                            logger.info("更新配置");
+                            logger.debug("更新配置");
                             cacheStrategyService.schedule();
                             cacheFunctionService.schedule();
                             Thread.sleep(1000*60);

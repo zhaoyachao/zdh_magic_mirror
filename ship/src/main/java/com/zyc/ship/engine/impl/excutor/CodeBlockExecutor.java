@@ -3,6 +3,7 @@ package com.zyc.ship.engine.impl.excutor;
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.groovy.GroovyFactory;
+import com.zyc.ship.disruptor.ShipResultStatusEnum;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +11,7 @@ import java.util.Map;
 public class CodeBlockExecutor {
 
     public String execute(JSONObject run_jsmind_data, StrategyInstance strategyInstance){
-        String tmp = "error";
+        String tmp = ShipResultStatusEnum.ERROR.code;
         try{
             String code_type=run_jsmind_data.getOrDefault("code_type", "").toString();
             String command=run_jsmind_data.getOrDefault("command", "").toString();
