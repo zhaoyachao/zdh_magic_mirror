@@ -176,6 +176,7 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 

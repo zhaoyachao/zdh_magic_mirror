@@ -156,6 +156,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
         }finally {
             localVar.remove();
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 

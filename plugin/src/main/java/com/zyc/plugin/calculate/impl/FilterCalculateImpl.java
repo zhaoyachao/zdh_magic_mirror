@@ -134,6 +134,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 
@@ -154,6 +155,9 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
         if(filterInfo.getEngine_type().equalsIgnoreCase("file")){
             String filter_path=base_path+"/filter/"+filterInfo.getFilter_code();
             FilterEngine filterEngine = new FileFilterEngineImpl(filterInfo, filter_path);
+            return filterEngine;
+        }else  if(filterInfo.getEngine_type().equalsIgnoreCase("redis")){
+            RedisFilterEngineImpl filterEngine = new RedisFilterEngineImpl(filterInfo.getFilter_code());
             return filterEngine;
         }else{
             throw new Exception("暂不支持的计算引擎");

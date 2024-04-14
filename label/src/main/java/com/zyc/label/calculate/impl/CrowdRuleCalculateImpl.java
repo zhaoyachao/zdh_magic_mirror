@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
+import com.zyc.label.LabelServer;
 import com.zyc.label.calculate.CrowdRuleCalculate;
 
 import java.util.HashMap;
@@ -111,10 +112,12 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            atomicInteger.decrementAndGet();
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             e.printStackTrace();
+        }finally {
+            atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
 
 

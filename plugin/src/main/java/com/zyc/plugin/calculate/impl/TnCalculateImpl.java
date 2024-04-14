@@ -129,6 +129,7 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 

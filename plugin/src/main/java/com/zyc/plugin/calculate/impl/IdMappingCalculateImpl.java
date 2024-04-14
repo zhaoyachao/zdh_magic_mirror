@@ -144,6 +144,7 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 

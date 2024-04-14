@@ -17,16 +17,21 @@ import com.zyc.common.util.Const;
 import com.zyc.common.util.DBUtil;
 import com.zyc.common.util.HttpClientUtil;
 import com.zyc.common.util.LogUtil;
+import com.zyc.label.LabelServer;
 import com.zyc.label.calculate.LabelCalculate;
 import com.zyc.label.service.impl.DataSourcesServiceImpl;
 import com.zyc.label.service.impl.LabelServiceImpl;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
+import com.zyc.rqueue.RQueueClient;
+import com.zyc.rqueue.RQueueManager;
+import com.zyc.rqueue.RQueueMode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -145,6 +150,19 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                 }
 
                 if(label_use_type.equalsIgnoreCase("batch")){
+                    //校验标签底层数据是否准备完成
+                    if(Boolean.valueOf(dbConfig.getOrDefault("label.check.dep", "false"))){
+                        boolean is_dep = checkLabelDep(labelInfo, DateUtil.format(strategyLogInfo.getCur_time(), DatePattern.NORM_DATETIME_PATTERN));
+                        if(!is_dep){
+                            //依赖未完成,直接返回,此处应该打印日志
+                            logger.warn("task: {}, labele: {} ,depend data is not found, please wait retry", strategyLogInfo.getStrategy_instance_id(), labelInfo.getLabel_code());
+                            //当前任务写入延迟队列,5分钟后重置状态
+                            RQueueClient rQueueClient = RQueueManager.getRQueueClient(Const.LABEL_DOUBLE_CHECK_DEPENDS_QUEUE_NAME, RQueueMode.DELAYEDQUEUE);
+                            rQueueClient.offer(strategyLogInfo.getStrategy_instance_id(), 5L, TimeUnit.MINUTES);
+                            return ;
+                        }
+                    }
+
                     rowsStr = offlineLabel(is_disenable, run_jsmind_data, labelInfo, strategyLogInfo);
                 }
             }
@@ -187,6 +205,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 
@@ -194,15 +213,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
     public Set<String> offlineLabel(String is_disenable, Map run_jsmind_data, LabelInfo labelInfo, StrategyLogInfo strategyLogInfo) throws Exception {
         Set<String> rowsStr = Sets.newHashSet();
         DataSourcesServiceImpl dataSourcesService=new DataSourcesServiceImpl();
-        //校验标签底层数据是否准备完成
-        if(Boolean.valueOf(dbConfig.getOrDefault("label.check.dep", "false"))){
-            boolean is_dep = checkLabelDep(labelInfo, DateUtil.format(strategyLogInfo.getCur_time(), DatePattern.NORM_DATETIME_PATTERN));
-            if(!is_dep){
-                //依赖未完成,直接返回,此处应该打印日志
-                logger.info("task: {}, labele: {} ,depend data is not found, please wait retry", strategyLogInfo.getStrategy_instance_id(), labelInfo.getLabel_code());
-                return rowsStr;
-            }
-        }
+
         //生成参数
         Gson gson=new Gson();
         List<Map> rule_params = gson.fromJson(run_jsmind_data.get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
@@ -291,7 +302,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             }else if(label_data_time_effect.equalsIgnoreCase("hour")){
                 format = "yyyy-MM-dd HH:00:00";
             }else if(label_data_time_effect.equalsIgnoreCase("sencod")){
-                format = "yyyy-MM-dd HH:mm:ss";
+                format = "yyyy-MM-dd HH:mm:00";
             }else{
 
             }
@@ -304,7 +315,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                 return true;
             }
         }catch (Exception e){
-            e.printStackTrace();
+            throw e;
         }
 
         return false;

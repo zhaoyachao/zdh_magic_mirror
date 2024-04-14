@@ -7,6 +7,7 @@ import com.jcraft.jsch.SftpException;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.*;
+import com.zyc.plugin.PluginServer;
 import com.zyc.plugin.calculate.CalculateCommomParam;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
@@ -536,5 +537,12 @@ public abstract class BaseCalculate {
             }
         }
         return rows;
+    }
+
+    public void removeTask(String key){
+        if(!StringUtils.isEmpty(key)){
+            PluginServer.tasks.remove(key);
+        }
+
     }
 }

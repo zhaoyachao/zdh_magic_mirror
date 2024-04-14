@@ -116,14 +116,15 @@ public class CodeBlockCalculateImpl extends BaseCalculate implements CodeBlockCa
                 LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "代码块输入参数: "+gson.toJson(params));
                 String code_type=run_jsmind_data.getOrDefault("code_type", "").toString();
                 String command=run_jsmind_data.getOrDefault("command", "").toString();
+                LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), command);
+                //入参 上游数据集
+                params.put("rs", rs);
                 Object result = null;
                 if(code_type.equalsIgnoreCase("java")){
-                    //入参 上游数据集
-                    params.put("rs", rs);
                     result = GroovyFactory.execJavaCode(command, params);
                 }else if(code_type.equalsIgnoreCase("groovy")){
+                    params.put("out", new HashMap<>());
                     result = GroovyFactory.execExpress(command, params);
-
                 }else{
                     throw new Exception("不支持的代码类型,目前仅支持java,groovy");
                 }
@@ -149,6 +150,7 @@ public class CodeBlockCalculateImpl extends BaseCalculate implements CodeBlockCa
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 }

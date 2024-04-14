@@ -8,6 +8,7 @@ import com.jcraft.jsch.SftpException;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.*;
+import com.zyc.label.LabelServer;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -578,5 +579,12 @@ public class BaseCalculate {
             }
         }
         return rows;
+    }
+
+    public void removeTask(String key){
+        if(!StringUtils.isEmpty(key)){
+            LabelServer.tasks.remove(key);
+        }
+
     }
 }

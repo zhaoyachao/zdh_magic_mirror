@@ -5,6 +5,7 @@ import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 
 import javax.script.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,17 +24,24 @@ public class GroovyFactory {
      */
     public static Object execJavaCode(String javaCode, Object param) throws Exception {
         GroovyClassLoader groovyClassLoader = new GroovyClassLoader();
-        Class<?> clazz = groovyClassLoader.parseClass(javaCode);
+        try{
+            Class<?> clazz = groovyClassLoader.parseClass(javaCode);
 
-        if(clazz != null){
-            Object instance = clazz.newInstance();
-            if(instance instanceof GroovyHandler){
-                Object result = ((GroovyHandler) instance).handler(param);
-                return result;
+            if(clazz != null){
+                Object instance = clazz.newInstance();
+                if(instance instanceof GroovyHandler){
+                    Object result = ((GroovyHandler) instance).handler(param, new HashMap<>());
+                    return result;
+                }
+                throw new Exception("执行java code 失败, java code 需要实现接口 com.zyc.common.groovy.GroovyHandler ");
             }
-            throw new Exception("执行java code 失败, java code 需要实现接口 com.zyc.common.groovy.GroovyHandler ");
+            throw new Exception("load java code class not found");
+        }catch (Exception e){
+            throw e;
+        }finally {
+            groovyClassLoader.close();
         }
-        throw new Exception("load java code class not found");
+
     }
 
     /**

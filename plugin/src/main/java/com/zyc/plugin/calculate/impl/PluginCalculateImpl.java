@@ -148,6 +148,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 

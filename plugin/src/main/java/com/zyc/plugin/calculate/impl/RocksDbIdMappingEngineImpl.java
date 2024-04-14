@@ -1,5 +1,6 @@
 package com.zyc.plugin.calculate.impl;
 
+import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Maps;
 import com.zyc.common.util.RocksDBUtil;
 import com.zyc.plugin.calculate.IdMappingEngine;
@@ -41,6 +42,10 @@ public class RocksDbIdMappingEngineImpl implements IdMappingEngine {
         IdMappingResult idMappingResult = new IdMappingResult();
         Map<String,String> id_map_rs = Maps.newHashMap();
         Map<String,String> id_map_rs_error = Maps.newHashMap();
+        if(!FileUtil.exist(this.file_path)){
+            FileUtil.mkParentDirs(this.file_path);
+            throw new Exception("未找到id_mapping依赖的文件: "+this.file_path);
+        }
         RocksDB rocksDB = RocksDBUtil.getReadOnlyConnection(this.file_path);
 
         for (String id: rs){

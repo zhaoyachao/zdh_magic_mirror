@@ -35,6 +35,11 @@ public class FileIdMappingEngineImpl implements IdMappingEngine {
 
     @Override
     public IdMappingResult getMap(Collection<String> rs) throws Exception {
+
+        if(!cn.hutool.core.io.FileUtil.exist(this.file_path)){
+            cn.hutool.core.io.FileUtil.mkParentDirs(this.file_path);
+            throw new Exception("未找到id_mapping依赖的文件: "+this.file_path);
+        }
         File f=new File(file_path);
         Map<String,String> id_map = Maps.newHashMap();
         Map<String,String> id_map_rs = Maps.newHashMap();

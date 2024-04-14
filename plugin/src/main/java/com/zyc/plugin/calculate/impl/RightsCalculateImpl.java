@@ -126,6 +126,7 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 

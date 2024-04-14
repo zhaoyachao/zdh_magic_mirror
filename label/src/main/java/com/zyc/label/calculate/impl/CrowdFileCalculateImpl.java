@@ -7,6 +7,7 @@ import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.common.util.SFTPUtil;
+import com.zyc.label.LabelServer;
 import com.zyc.label.calculate.CrowdFileCalculate;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
@@ -137,10 +138,12 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            atomicInteger.decrementAndGet();
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             e.printStackTrace();
+        }finally {
+            atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
 
     }

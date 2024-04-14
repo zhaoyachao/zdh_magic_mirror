@@ -141,7 +141,8 @@ public class PluginServer {
                     }
 
                     if(runnable != null){
-                        threadPoolExecutor.execute(runnable);
+                        Future future = threadPoolExecutor.submit(runnable);
+                        PluginServer.tasks.put(m.get("id").toString(), future);
                     }else{
                         logger.error("not found task impl: {}", JSON.toJSONString(m));
                     }

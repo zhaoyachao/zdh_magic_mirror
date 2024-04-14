@@ -136,6 +136,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 

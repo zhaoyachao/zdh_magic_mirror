@@ -10,7 +10,10 @@ import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.label.calculate.impl.*;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
+import com.zyc.rqueue.RQueueClient;
 import com.zyc.rqueue.RQueueManager;
+import com.zyc.rqueue.RQueueMode;
+import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +36,7 @@ public class LabelServer {
 
     public static Map<String, Future> tasks = new ConcurrentHashMap<>();
 
+    public static ExecutorService fixedExecutorService = Executors.newFixedThreadPool(1);
     public static void main(String[] args) {
         logger.info("初始化项目");
         Map<String,String> params=new HashMap<>();
@@ -66,6 +70,7 @@ public class LabelServer {
 
             initRQueue(config);
 
+            consumerLabelDoubleCheck();
             int limit = Integer.valueOf(config.getProperty("task.max.num", "50"));
 
             QueueHandler queueHandler=new DbQueueHandler();
@@ -199,4 +204,28 @@ public class LabelServer {
         strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
     }
 
+    /**
+     *
+     */
+    public static void consumerLabelDoubleCheck(){
+        fixedExecutorService.execute(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    while (true){
+                        RQueueClient rQueueClient = RQueueManager.getRQueueClient(Const.LABEL_DOUBLE_CHECK_DEPENDS_QUEUE_NAME, RQueueMode.DELAYEDQUEUE);
+                        Object o = rQueueClient.poll();
+                        if(o != null && !StringUtils.isEmpty(o.toString())){
+                            //重置实例状态为
+                            setStatus(o.toString(), Const.STATUS_CHECK_DEP_FINISH);
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+            }
+        });
+    }
 }

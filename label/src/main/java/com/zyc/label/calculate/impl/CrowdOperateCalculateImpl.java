@@ -7,6 +7,7 @@ import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.common.util.MybatisUtil;
+import com.zyc.label.LabelServer;
 import com.zyc.label.calculate.CrowdRuleCalculate;
 import com.zyc.label.dao.StrategyInstanceMapper;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
@@ -128,10 +129,12 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
 
         }catch (Exception e){
-            atomicInteger.decrementAndGet();
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             e.printStackTrace();
+        }finally {
+            atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 

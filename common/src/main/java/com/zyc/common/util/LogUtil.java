@@ -95,6 +95,7 @@ public class LogUtil {
         StackTraceElement caller = getCaller();
         log().log(LogUtil.class.getName(), Level.ERROR, msg, null);
         ZdhLogs zdhLogs=new ZdhLogs();
+        zdhLogs.setJob_id(job_id);
         zdhLogs.setLevel("ERROR");
         zdhLogs.setTask_logs_id(task_logs_id);
         zdhLogs.setMsg(msg);

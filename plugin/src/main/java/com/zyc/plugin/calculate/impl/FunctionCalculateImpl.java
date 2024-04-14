@@ -171,6 +171,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             e.printStackTrace();
         }finally {
             atomicInteger.decrementAndGet();
+            removeTask(strategyLogInfo.getStrategy_instance_id());
         }
     }
 

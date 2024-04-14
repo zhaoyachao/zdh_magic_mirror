@@ -27,7 +27,7 @@ public class DbQueueHandler implements QueueHandler {
 
     public static String[] instanceTypes = new String[]{InstanceType.LABEL.getCode(),InstanceType.CROWD_OPERATE.getCode(),InstanceType.CROWD_FILE.getCode(),
             InstanceType.CROWD_RULE.getCode(),InstanceType.CUSTOM_LIST.getCode()};
-    private String[] status = new String[]{"check_dep_finish"};
+    private String[] status = new String[]{Const.STATUS_CHECK_DEP_FINISH};
 
     @Override
     public Map<String,Object> handler() {

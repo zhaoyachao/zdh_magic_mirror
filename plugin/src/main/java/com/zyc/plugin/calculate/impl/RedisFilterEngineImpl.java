@@ -34,7 +34,7 @@ public class RedisFilterEngineImpl implements FilterEngine {
         RedissonClient redissonClient = redisConfMap.get(filter_code).redisson();
         try{
             List<String> list = new ArrayList<>();
-            //根据id_mapping_code找到对应配置
+            //根据filter_code找到对应配置
 
             RKeys rKeys = redissonClient.getKeys();
             Iterator<String> iterator = rKeys.getKeysByPattern("filter:"+filter_code+":*").iterator();
