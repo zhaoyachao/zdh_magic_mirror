@@ -23,6 +23,17 @@ public class KafkaPluginServiceImpl implements PluginService {
         try{
             System.out.println("用户: "+rs+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JSON.toJSONString(pluginParam));
             Properties props = getParams(pluginParam);
+
+            if (!props.containsKey("bootstrap.servers")) {
+                props.put("bootstrap.servers", props.getProperty("zk_url"));
+            }
+            if (!props.containsKey("key.serializer")) {
+                props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            }
+            if (!props.containsKey("value.serializer")) {
+                props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            }
+
             String topic = props.getProperty("topic","test");
             String msg = props.getProperty("message", "");
             KafkaProducer<String, String> producer = new KafkaProducer<>(props);

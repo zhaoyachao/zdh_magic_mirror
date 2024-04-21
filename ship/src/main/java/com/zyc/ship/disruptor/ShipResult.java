@@ -4,6 +4,11 @@ import com.zyc.ship.entity.StrategyEventResult;
 
 public interface ShipResult {
 
+
+    public String getStrategyInstanceId();
+
+    public void setStrategyInstanceId(String straategyInstanceId);
+
     /**
      * create, wait, success, error
      * 只会返回success, error

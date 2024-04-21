@@ -73,7 +73,7 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 tmp = idMappingExecutor.execute(run_jsmind_data, labelVaues, shipEvent, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.PLUGIN.getCode())){
                 PluginExecutor pluginExecutor = new PluginExecutor();
-                tmp = pluginExecutor.execute(run_jsmind_data, uid);
+                tmp = pluginExecutor.execute(run_jsmind_data, uid, strategyInstance);
             }else if(instance_type.equalsIgnoreCase(InstanceType.MANUAL_CONFIRM.getCode())){
                 //不支持
                 tmp = ShipResultStatusEnum.ERROR.code;

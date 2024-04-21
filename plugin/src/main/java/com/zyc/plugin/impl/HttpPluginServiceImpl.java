@@ -28,6 +28,10 @@ public class HttpPluginServiceImpl implements PluginService {
             String url = props.getProperty("url", "");
             String data_type = props.getProperty("data_type", "");
 
+            String return_param = props.getProperty("return_param", "");
+            String return_param_value = props.getProperty("return_param_value", "");
+            String return_value_type = props.getProperty("return_value_type", "json");
+
             String res = "";
             if(method.equalsIgnoreCase("post")){
                 if(!data_type.equalsIgnoreCase("json")){

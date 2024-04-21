@@ -5,11 +5,25 @@ import com.zyc.ship.entity.StrategyEventResult;
 
 public class RiskShipResultImpl implements ShipResult {
 
+
+    private String strategy_instance_id;
+
     private String status;
 
     private String strategyName;
 
     private StrategyEventResult riskStrategyEventResult;
+
+    @Override
+    public String getStrategyInstanceId() {
+        return strategy_instance_id;
+    }
+
+    @Override
+    public void setStrategyInstanceId(String straategyInstanceId) {
+        this.strategy_instance_id = straategyInstanceId;
+    }
+
     @Override
     public String getStatus() {
         return this.status;

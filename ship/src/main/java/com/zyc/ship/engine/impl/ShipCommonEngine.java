@@ -54,6 +54,8 @@ public class ShipCommonEngine implements Engine {
             CommonLog commonLog = new CommonLog();
             commonLog.setStrategy_group_instance_id(strategyGroupInstance.getId());
             commonLog.setStage_code("check_flows");
+            commonLog.setStatus("1");
+            commonLog.setReason("success");
             if(!StringUtils.isEmpty(strategyGroupInstance.getSmall_flow_rate())){
                 String[] flows = strategyGroupInstance.getSmall_flow_rate().split(",",2);
                 if(flows.length != 2){
@@ -68,8 +70,10 @@ public class ShipCommonEngine implements Engine {
                     if( allocate_strategy_group_ids.size() >0 && allocate_strategy_group_ids.contains(strategyGroupInstance.getGroup_id())){
                         hit_strategy_groups.add(strategyGroupInstance);
                     }else{
+                        commonLog.setReason("not hit strategy_group, hit flows, but allocate_strategy_group_id not equlas current group_id");
                         hit_strategy_groups.add(strategyGroupInstance);
                     }
+                    ShipOnlineRiskLog.info(commonLog);
                 }else{
                     commonLog.setReason("not hit strategy_group, not hit flows");
                     commonLog.setStatus("2");//1成功,2失败

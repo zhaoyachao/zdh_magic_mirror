@@ -188,16 +188,6 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
 
-            //根据计算引擎 执行,以spark sql 执行
-            //new_sql = "insert overwrite table label_detail PARTITION(task_id='"+id+"') "+new_sql;
-
-            String sparkDriver="org.apache.hive.jdbc.HiveDriver";
-            String sparkUrl="jdbc:hive2://192.168.110.10:10000/default";
-            String sparkUser="";
-            String sparkPassword="";
-
-            System.err.println("计算引擎执行待实现,当前以本地文件做存储");
-
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());

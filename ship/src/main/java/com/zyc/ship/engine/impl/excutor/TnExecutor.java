@@ -50,8 +50,6 @@ public class TnExecutor {
                     executeTime =DateUtil.offsetDay(new Date(), Integer.valueOf(tn_value)).toTimestamp();
                 }
 
-                //此处还少一个之前/之后参数,默认当前只支持之后
-
             }else if(tn_type.equalsIgnoreCase(Const.TN_TYPE_ABSOLUTE)){
 
                 //绝对时间
