@@ -109,7 +109,8 @@ public abstract class BaseCalculate {
         String base_path=dbConfig.get("file.rocksdb.path").toString();
         String group_id=param.get("group_id").toString();
         String group_instance_id=param.get("group_instance_id").toString();
-        return getFileDir(base_path,group_id,group_instance_id);
+        String id=param.get("id").toString();
+        return getFilePath(getFileDir(base_path,group_id,group_instance_id), id);
     }
 
     public String getFileDir(String base_path,String group_id, String group_instance_id){
