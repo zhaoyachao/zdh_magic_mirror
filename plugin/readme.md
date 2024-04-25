@@ -40,3 +40,5 @@
     
     v5.3.3 修复内存泄漏bug
     v5.3.3 优化idmapping
+    v5.3.4 修复function插件无法杀死bug
+    v5.3.4 升级function函数

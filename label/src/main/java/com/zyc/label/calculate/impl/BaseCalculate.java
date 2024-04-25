@@ -100,7 +100,8 @@ public class BaseCalculate {
         String base_path=dbConfig.get("file.rocksdb.path").toString();
         String group_id=param.get("group_id").toString();
         String group_instance_id=param.get("group_instance_id").toString();
-        return getFileDir(base_path,group_id,group_instance_id);
+        String id=param.get("id").toString();
+        return getFilePath(getFileDir(base_path,group_id,group_instance_id), id);
     }
 
     /**
@@ -523,7 +524,6 @@ public class BaseCalculate {
      * @throws Exception
      */
     public void writeRocksdb(String file_rocksdb_path, String id, Set<String> rs, String status) throws Exception {
-
         File file = new File(file_rocksdb_path);
         if(!file.exists()){
             file.mkdirs();

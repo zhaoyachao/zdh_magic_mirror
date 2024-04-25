@@ -109,7 +109,8 @@ public abstract class BaseCalculate {
         String base_path=dbConfig.get("file.rocksdb.path").toString();
         String group_id=param.get("group_id").toString();
         String group_instance_id=param.get("group_instance_id").toString();
-        return getFileDir(base_path,group_id,group_instance_id);
+        String id=param.get("id").toString();
+        return getFilePath(getFileDir(base_path,group_id,group_instance_id), id);
     }
 
     public String getFileDir(String base_path,String group_id, String group_instance_id){
@@ -534,6 +535,25 @@ public abstract class BaseCalculate {
 
             }else{
                 throw new Exception("无法找到对应的数据文件");
+            }
+        }
+        return rows;
+    }
+
+    public List<String> readFile(String file_path) throws Exception {
+        List<String> rows = new ArrayList<>();
+        if(cn.hutool.core.io.FileUtil.exist(file_path)){
+            rows = FileUtil.readString(new File(file_path), Charset.forName("utf-8"));
+        }else{
+            if(checkSftp()){
+                sftpUtil.login();
+                String file_dir = cn.hutool.core.io.FileUtil.getParent(file_path, 1);
+                String file_name = cn.hutool.core.io.FileUtil.getName(file_path);
+                byte[] bytes = sftpUtil.download(file_dir, file_name);
+                ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+                rows = IOUtils.readLines(bais, "utf-8");
+            }else{
+               
             }
         }
         return rows;

@@ -125,4 +125,8 @@ public class LogUtil {
         zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
         send(zdhLogs);
     }
+
+    public static void console(String job_id,String task_logs_id, String msg){
+        log().log(LogUtil.class.getName(), Level.INFO, "策略id: "+job_id+", 策略实例id: "+task_logs_id+", "+msg, null);
+    }
 }

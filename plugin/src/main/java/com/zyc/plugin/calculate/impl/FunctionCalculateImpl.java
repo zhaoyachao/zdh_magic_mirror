@@ -110,6 +110,11 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             //生成参数
             Gson gson=new Gson();
             List<Map> rule_params = gson.fromJson(run_jsmind_data.get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
+            String return_value_express = run_jsmind_data.getOrDefault("return_value_express", "ret").toString();
+            String return_diff_enable = run_jsmind_data.getOrDefault("return_diff_enable", "false").toString();
+            String return_value_type = run_jsmind_data.getOrDefault("return_value_type", "string").toString();
+            String return_operate = run_jsmind_data.getOrDefault("return_operate", "").toString();
+            String return_operate_value = run_jsmind_data.getOrDefault("return_operate_value", "").toString();
 
             //生成参数
             CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
@@ -122,7 +127,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用,不做操作
             }else{
-                LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数输入参数: "+gson.toJson(params));
+                LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数规则: "+gson.toJson(params));
                 Jinjava jinjava=new Jinjava();
                 //获取函数信息
                 FunctionServiceImpl functionService = new FunctionServiceImpl();
@@ -143,18 +148,34 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                             objectMap.put(param_code, new_param_value);
                             param_codes.add(param_code);
                         }
-                        Object ret = executeFunction(functionInfo, objectMap, param_codes);
-                        if(ret != null){
-                            if(functionInfo == null || Lists.newArrayList("int","long","string").contains(functionInfo.getReturn_type().toLowerCase())){
-                                rs3.add(ret.toString());
-                            }else if(Lists.newArrayList("array").contains(functionInfo.getReturn_type().toLowerCase())){
-                                rs3.add(StringUtils.join((Object[])ret, ","));
-                            }else if(Lists.newArrayList("map").contains(functionInfo.getReturn_type().toLowerCase())){
-                                rs3.add(StringUtils.join(((Map)ret).values(), ","));
-                            }else if(Lists.newArrayList("boolean").contains(functionInfo.getReturn_type().toLowerCase())){
+                        Object ret = executeFunction(strategyLogInfo,functionInfo, objectMap, param_codes);
+                        objectMap.put("ret", ret);
+                        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "新增结果变量ret, 需要从结果变量取值,可对ret进行操作");
+                        //判断是否有返回值diff
+                        Object ret_diff = execReturnDiffExpress(strategyLogInfo, return_value_express, return_operate, return_operate_value, return_diff_enable, objectMap);
+                        if(return_diff_enable.equalsIgnoreCase("true")){
+                            //开启对比,结果为true表示成功数据,false为失败数据
+                            if(ret_diff.toString().equalsIgnoreCase("true")){
                                 rs3.add(uid);
                             }
+                        }else{
+                            //未开启结果对比,直接返回表达式
+                            if(ret_diff != null){
+                                rs3.add(ret_diff.toString());
+                            }
                         }
+
+//                        if(ret != null){
+//                            if(functionInfo == null || Lists.newArrayList("int","long","string").contains(functionInfo.getReturn_type().toLowerCase())){
+//                                rs3.add(ret.toString());
+//                            }else if(Lists.newArrayList("array").contains(functionInfo.getReturn_type().toLowerCase())){
+//                                rs3.add(StringUtils.join((Object[])ret, ","));
+//                            }else if(Lists.newArrayList("map").contains(functionInfo.getReturn_type().toLowerCase())){
+//                                rs3.add(StringUtils.join(((Map)ret).values(), ","));
+//                            }else if(Lists.newArrayList("boolean").contains(functionInfo.getReturn_type().toLowerCase())){
+//                                rs3.add(uid);
+//                            }
+//                        }
                     }catch (Exception e){
                         e.printStackTrace();
                     }
@@ -175,7 +196,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
         }
     }
 
-    public Object executeFunction(FunctionInfo functionInfo, Map<String, Object> objectMap, List<String> param_codes) throws ClassNotFoundException, IllegalAccessException, InstantiationException, ScriptException, NoSuchMethodException {
+    public Object executeFunction(StrategyLogInfo strategyLogInfo,FunctionInfo functionInfo, Map<String, Object> objectMap, List<String> param_codes) throws ClassNotFoundException, IllegalAccessException, InstantiationException, ScriptException, NoSuchMethodException {
         String function_name = functionInfo.getFunction_name();
         String function_class = functionInfo.getFunction_class();
         String function_load_path = functionInfo.getFunction_load_path();
@@ -193,12 +214,14 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                 Object clsInstance = cls.newInstance();
                 objectMap.put(clsInstanceName, clsInstance);
                 function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
+                LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JSON.toJSONString(objectMap));
                 Object ret = GroovyFactory.execExpress(function_script, objectMap);
                 return ret;
             }else{
                 Object clsInstance = ClassLoaderUtil.loadClass(function_class).newInstance();
                 objectMap.put(clsInstanceName, clsInstance);
                 function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
+                LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JSON.toJSONString(objectMap));
                 Object ret = GroovyFactory.execExpress(function_script, objectMap);
                 return ret;
             }
@@ -207,11 +230,78 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             for (String param_code: param_codes){
                 stringObjectMap.put(param_code, objectMap.get(param_code));
             }
+            LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JSON.toJSONString(stringObjectMap));
             Object ret = GroovyFactory.execExpress(function_script, function_name, stringObjectMap);
             return ret;
         }
 
         return null;
     }
+
+    public Object execReturnDiffExpress(StrategyLogInfo strategyLogInfo,String return_value_express, String return_operate, String return_operate_value, String return_diff_enable, Map<String, Object> objectMap) throws ScriptException, NoSuchMethodException {
+
+        Jinjava jinjava=new Jinjava();
+        String function_name = "plugin_function_if_v1";
+        String str_pre="";
+        String str_suffix="";
+
+        //解析return_operate_value
+
+        String new_return_operate_value = jinjava.render(return_operate_value, objectMap);
+
+
+        String function_script = "if({{return_value_express}} {{operate}} new_return_operate_value) return true else return false";
+
+        if(return_operate.equalsIgnoreCase("in")){
+            function_name = "plugin_function_if_v2";
+            function_script = "if({{ret}}.contains(new_return_operate_value)) return true else return false";
+        }
+
+        if(return_operate.equalsIgnoreCase("neq")){
+            objectMap.put("operate", "!=");//取值表达式
+            function_script = "if({{return_value_express}} {{operate}} new_return_operate_value) return true else return false";
+        }
+        if(return_operate.equalsIgnoreCase("eq")){
+            objectMap.put("operate", "==");//取值表达式
+            function_script = "if({{return_value_express}} {{operate}} new_return_operate_value) return true else return false";
+        }
+        if(return_operate.equalsIgnoreCase("gt")){
+            objectMap.put("operate", ">");//取值表达式
+        }
+        if(return_operate.equalsIgnoreCase("lt")){
+            objectMap.put("operate", "<");//取值表达式
+        }
+        if(return_operate.equalsIgnoreCase("gte")){
+            objectMap.put("operate", ">=");//取值表达式
+        }
+        if(return_operate.equalsIgnoreCase("lte")){
+            objectMap.put("operate", "<=");//取值表达式
+        }
+
+        if(return_diff_enable.equalsIgnoreCase("true")){
+
+        }else{
+            //直接获取表达式
+            function_name = "plugin_function_if_v0";
+            function_script = "return new_return_operate_value";
+        }
+
+        objectMap.put("return_value_express", return_value_express);//取值表达式
+        if(StringUtils.isEmpty(return_value_express)){
+            objectMap.put("return_value_express", "ret");//取值表达式
+        }
+
+        objectMap.put("new_return_operate_value", new_return_operate_value);//diff值
+
+        function_script = jinjava.render(function_script, objectMap);//替换可变参数
+
+        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "结果对比函数: "+function_script+", 参数: "+JSON.toJSONString(objectMap));
+
+        Object ret = GroovyFactory.execExpress(function_script, objectMap);
+
+        return ret;
+
+    }
+
 
 }

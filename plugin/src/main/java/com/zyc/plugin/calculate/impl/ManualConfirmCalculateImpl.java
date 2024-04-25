@@ -2,6 +2,7 @@ package com.zyc.plugin.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Sets;
 import com.zyc.common.entity.NoticeInfo;
 import com.zyc.common.entity.PermissionUserInfo;
 import com.zyc.common.entity.StrategyLogInfo;
@@ -16,10 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -114,28 +112,38 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
             if(is_disenable.equalsIgnoreCase("true")){
                 check=true;
             }else{
-                //通知用户
-                String owner = this.param.getOrDefault("owner", "").toString();
-                if(!StringUtils.isEmpty(owner) && confirm_notice_types.length > 0){
-                    //根据账号查询,邮件,短信
-                    NoticeInfo noticeInfo = new NoticeInfo();
-                    noticeInfo.setMsg_type("通知");
-                    noticeInfo.setMsg_title("策略执行流程确认");
-                    noticeInfo.setMsg("策略组: "+strategyLogInfo.getStrategy_group_id()+", 策略组实例: "+strategyLogInfo.getStrategy_group_instance_id()+", 策略实例"+strategyLogInfo.getStrategy_instance_id()+",需要手动确认,操作路径智能营销>>智能策略>>执行记录>>子任务>>跳过, 快速跳转地址: "+zdh_web_url+"/strategy_instance_index.html?strategy_group_instance_id="+strategyLogInfo.getStrategy_group_instance_id());
-                    noticeInfo.setMsg_url("");
-                    noticeInfo.setIs_see("false");
-                    noticeInfo.setOwner(owner);
+                //读取历史done文件确认是否执行过
+                List<String> historys = readFile(strategyLogInfo.getFile_path()+"_done");
 
-                    for (String confirm_notice_type: confirm_notice_types){
-                        String account = getAccount(owner, confirm_notice_type, product_code);
-                        boolean is_success = send(account, confirm_notice_type, noticeInfo);
-                        if(is_success) {
-                            check=true;
+                if(historys == null || historys.size() == 0){
+                    //通知用户
+                    String owner = this.param.getOrDefault("owner", "").toString();
+                    if(!StringUtils.isEmpty(owner) && confirm_notice_types.length > 0){
+                        //根据账号查询,邮件,短信
+                        NoticeInfo noticeInfo = new NoticeInfo();
+                        noticeInfo.setMsg_type("通知");
+                        noticeInfo.setMsg_title("策略执行流程确认");
+                        noticeInfo.setMsg("策略组: "+strategyLogInfo.getStrategy_group_id()+", 策略组实例: "+strategyLogInfo.getStrategy_group_instance_id()+", 策略实例"+strategyLogInfo.getStrategy_instance_id()+",需要手动确认,操作路径智能营销>>智能策略>>执行记录>>子任务>>跳过, 快速跳转地址: "+zdh_web_url+"/strategy_instance_index.html?strategy_group_instance_id="+strategyLogInfo.getStrategy_group_instance_id());
+                        noticeInfo.setMsg_url("");
+                        noticeInfo.setIs_see("false");
+                        noticeInfo.setOwner(owner);
+
+                        for (String confirm_notice_type: confirm_notice_types){
+                            String account = getAccount(owner, confirm_notice_type, product_code);
+                            boolean is_success = send(account, confirm_notice_type, noticeInfo);
+                            if(is_success) {
+                                check=true;
+                            }
+                            logStr = StrUtil.format("task: {}, notice {} {}, owner: {}", strategyLogInfo.getStrategy_instance_id(), confirm_notice_type, is_success, owner);
+                            LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                         }
-                        logStr = StrUtil.format("task: {}, notice {} {}, owner: {}", strategyLogInfo.getStrategy_instance_id(), confirm_notice_type, is_success, owner);
-                        LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                     }
+                    //写入标识文件,标记当前任务执行过
+                    writeFile(strategyLogInfo.getFile_path()+"_done", Sets.newHashSet("done"));
+                }else{
+                    check=true;
                 }
+
             }
 
             if(!check){

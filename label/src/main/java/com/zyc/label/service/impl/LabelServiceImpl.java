@@ -19,7 +19,7 @@ public class LabelServiceImpl {
             labelInfo.setLabel_code(label_code);
             labelInfo.setIs_delete("0");
             labelInfo.setLabel_use_type(label_use_type);
-            labelInfo = labelMapper.selectOne(label_code);
+            labelInfo = labelMapper.selectOne(label_code, label_use_type);
             return labelInfo;
 
         } catch (IOException e) {
