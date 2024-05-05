@@ -22,22 +22,29 @@ public class RedisFilterEngineImpl implements FilterEngine {
 
     private String filter_code;
 
-    public RedisFilterEngineImpl(String filter_code) throws Exception {
+    private String product_code;
+
+    public RedisFilterEngineImpl(String filter_code, String product_code) throws Exception {
         this.filter_code = filter_code;
-        if(!redisConfMap.containsKey(filter_code)){
+        this.product_code = product_code;
+        if(!redisConfMap.containsKey(getFilterKey())){
             throw new Exception("redis引擎无法找到对应的filter配置");
         }
     }
 
+    private String getFilterKey(){
+        return product_code+"_"+filter_code;
+    }
+
     @Override
     public List<String> get() throws Exception {
-        RedissonClient redissonClient = redisConfMap.get(filter_code).redisson();
+        RedissonClient redissonClient = redisConfMap.get(getFilterKey()).redisson();
         try{
             List<String> list = new ArrayList<>();
             //根据filter_code找到对应配置
 
             RKeys rKeys = redissonClient.getKeys();
-            Iterator<String> iterator = rKeys.getKeysByPattern("filter:"+filter_code+":*").iterator();
+            Iterator<String> iterator = rKeys.getKeysByPattern(product_code+"_filter:"+filter_code+":*").iterator();
 
             while (iterator.hasNext()){
                 String key = iterator.next();
@@ -55,12 +62,11 @@ public class RedisFilterEngineImpl implements FilterEngine {
 
     @Override
     public FilterResult getMap(Collection<String> rs) throws Exception {
-        RedissonClient redissonClient = redisConfMap.get(filter_code).redisson();
+        RedissonClient redissonClient = redisConfMap.get(getFilterKey()).redisson();
         try{
             FilterResult filterResult = new FilterResult();
             Map<String,String> id_map_rs = Maps.newHashMap();
             Map<String,String> id_map_rs_error = Maps.newHashMap();
-
 
             for (String id: rs){
                 Object value = redissonClient.getBucket(id).get();

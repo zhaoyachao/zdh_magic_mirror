@@ -45,9 +45,10 @@ public class ShipCommonInputParam implements InputParam{
 
     /**
      * 参数,json 字符串
-     *
+     * user_param: 用户自定义参数
      * {
-     *     "tag_user_age": {"age": "20"}
+     *     "tag_user_age": {"age": "20"},
+     *     "user_param": {"xxx": "xxxx"}
      * }
      */
     private String param;

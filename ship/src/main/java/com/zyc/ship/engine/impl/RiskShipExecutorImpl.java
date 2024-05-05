@@ -38,12 +38,15 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             String uid = ((ShipCommonInputParam)shipEvent.getInputParam()).getUid();
             String product_code = ((ShipCommonInputParam)shipEvent.getInputParam()).getProduct_code();
             String data_node = ((ShipCommonInputParam)shipEvent.getInputParam()).getData_node();
+            String param = ((ShipCommonInputParam)shipEvent.getInputParam()).getParam();
+            JSONObject jsonObjectParam = JSONObject.parseObject(param).getJSONObject("user_param");
+
             Map<String,Object> labelVaues = shipEvent.getLabelValues();
             String instance_type = strategyInstance.getInstance_type();
             JSONObject run_jsmind_data =  JSON.parseObject(strategyInstance.getRun_jsmind_data());
             if(instance_type.equalsIgnoreCase(InstanceType.LABEL.getCode())){
                 LabelExecutor labelExecutor = new LabelExecutor();
-                tmp =labelExecutor.execute(run_jsmind_data, labelVaues, uid);
+                tmp =labelExecutor.execute(run_jsmind_data, labelVaues, uid, jsonObjectParam);
             }else if(instance_type.equalsIgnoreCase(InstanceType.CROWD_RULE.getCode())){
                 //不支持人群规则
                 CrowdRuleExecutor crowdRuleExecutor = new CrowdRuleExecutor();

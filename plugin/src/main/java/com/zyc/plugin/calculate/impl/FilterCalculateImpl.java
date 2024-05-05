@@ -157,7 +157,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
             FilterEngine filterEngine = new FileFilterEngineImpl(filterInfo, filter_path);
             return filterEngine;
         }else  if(filterInfo.getEngine_type().equalsIgnoreCase("redis")){
-            RedisFilterEngineImpl filterEngine = new RedisFilterEngineImpl(filterInfo.getFilter_code());
+            RedisFilterEngineImpl filterEngine = new RedisFilterEngineImpl(filterInfo.getFilter_code(), filterInfo.getProduct_code());
             return filterEngine;
         }else{
             throw new Exception("暂不支持的计算引擎");

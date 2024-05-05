@@ -66,6 +66,12 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
 
             logger.info("uuid: {}, data_node: {}, flow not hit strategy_groups: {}",uuid, data_node, JSON.toJSONString(not_hit_strategy_group_ids));
             logger.info("uuid: {}, data_node: {}, hit strategy_groups: {}",uuid, data_node, JSON.toJSONString(hit_strategy_groups));
+
+            if(hit_strategy_groups == null || hit_strategy_groups.size() <= 0){
+
+                return shipRiskOutputParam;
+            }
+
             Map<String, Object> labels = new HashMap<>();
             Map<String, Object> filters = new HashMap<>();
             loadBaseData(null, labels, filters, shipCommonInputParam);

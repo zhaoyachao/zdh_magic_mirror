@@ -180,6 +180,7 @@ public class PluginServer {
 
         int slot_num = Integer.valueOf(config.getProperty("task.slot.total.num", "0"));
         String slot = config.getProperty("task.slot", "0");
+        logger.info("服务总槽位: "+slot_num+", 服务分配槽位: "+slot);
         if(!slot.contains(",") || slot.split(",").length != 2){
             throw new Exception("任务分配槽位信息配置格式异常,example: 0,99");
         }

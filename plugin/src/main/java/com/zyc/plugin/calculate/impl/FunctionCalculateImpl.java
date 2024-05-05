@@ -149,10 +149,9 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                             param_codes.add(param_code);
                         }
                         Object ret = executeFunction(strategyLogInfo,functionInfo, objectMap, param_codes);
-                        objectMap.put("ret", ret);
                         LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "新增结果变量ret, 需要从结果变量取值,可对ret进行操作");
                         //判断是否有返回值diff
-                        Object ret_diff = execReturnDiffExpress(strategyLogInfo, return_value_express, return_operate, return_operate_value, return_diff_enable, objectMap);
+                        Object ret_diff = execReturnDiffExpress(strategyLogInfo, ret,  return_value_express, return_operate, return_operate_value, return_diff_enable, objectMap);
                         if(return_diff_enable.equalsIgnoreCase("true")){
                             //开启对比,结果为true表示成功数据,false为失败数据
                             if(ret_diff.toString().equalsIgnoreCase("true")){
@@ -238,44 +237,48 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
         return null;
     }
 
-    public Object execReturnDiffExpress(StrategyLogInfo strategyLogInfo,String return_value_express, String return_operate, String return_operate_value, String return_diff_enable, Map<String, Object> objectMap) throws ScriptException, NoSuchMethodException {
+    public Object execReturnDiffExpress(StrategyLogInfo strategyLogInfo,Object ret, String return_value_express, String return_operate, String return_operate_value, String return_diff_enable, Map<String, Object> objectMap) throws ScriptException, NoSuchMethodException {
 
+        Map<String, Object> tmp = new HashMap<>();
         Jinjava jinjava=new Jinjava();
         String function_name = "plugin_function_if_v1";
         String str_pre="";
         String str_suffix="";
 
+
+
         //解析return_operate_value
+        String new_return_operate_value = jinjava.render(return_operate_value, tmp);
 
-        String new_return_operate_value = jinjava.render(return_operate_value, objectMap);
+        objectMap.put("ret", ret);
+        objectMap.put(new_return_operate_value, new_return_operate_value);
 
-
-        String function_script = "if({{return_value_express}} {{operate}} new_return_operate_value) return true else return false";
+        String function_script = "if({{return_value_express}} {{operate}} "+new_return_operate_value+") return true else return false";
 
         if(return_operate.equalsIgnoreCase("in")){
             function_name = "plugin_function_if_v2";
-            function_script = "if({{ret}}.contains(new_return_operate_value)) return true else return false";
+            function_script = "if({{return_value_express}}.contains("+new_return_operate_value+")) return true else return false";
         }
 
         if(return_operate.equalsIgnoreCase("neq")){
-            objectMap.put("operate", "!=");//取值表达式
-            function_script = "if({{return_value_express}} {{operate}} new_return_operate_value) return true else return false";
+            tmp.put("operate", "!=");//取值表达式
+            function_script = "if({{return_value_express}} {{operate}} "+new_return_operate_value+") return true else return false";
         }
         if(return_operate.equalsIgnoreCase("eq")){
-            objectMap.put("operate", "==");//取值表达式
-            function_script = "if({{return_value_express}} {{operate}} new_return_operate_value) return true else return false";
+            tmp.put("operate", "==");//取值表达式
+            function_script = "if({{return_value_express}} {{operate}} "+new_return_operate_value+") return true else return false";
         }
         if(return_operate.equalsIgnoreCase("gt")){
-            objectMap.put("operate", ">");//取值表达式
+            tmp.put("operate", ">");//取值表达式
         }
         if(return_operate.equalsIgnoreCase("lt")){
-            objectMap.put("operate", "<");//取值表达式
+            tmp.put("operate", "<");//取值表达式
         }
         if(return_operate.equalsIgnoreCase("gte")){
-            objectMap.put("operate", ">=");//取值表达式
+            tmp.put("operate", ">=");//取值表达式
         }
         if(return_operate.equalsIgnoreCase("lte")){
-            objectMap.put("operate", "<=");//取值表达式
+            tmp.put("operate", "<=");//取值表达式
         }
 
         if(return_diff_enable.equalsIgnoreCase("true")){
@@ -283,23 +286,18 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
         }else{
             //直接获取表达式
             function_name = "plugin_function_if_v0";
-            function_script = "return new_return_operate_value";
+            function_script = "return "+new_return_operate_value;
         }
 
-        objectMap.put("return_value_express", return_value_express);//取值表达式
-        if(StringUtils.isEmpty(return_value_express)){
-            objectMap.put("return_value_express", "ret");//取值表达式
-        }
+        tmp.put("return_value_express", return_value_express);//取值表达式
 
-        objectMap.put("new_return_operate_value", new_return_operate_value);//diff值
+        function_script = jinjava.render(function_script, tmp);//替换可变参数
 
-        function_script = jinjava.render(function_script, objectMap);//替换可变参数
+        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "结果对比函数: "+function_name+", "+function_script+", 参数: "+JSON.toJSONString(objectMap));
 
-        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "结果对比函数: "+function_script+", 参数: "+JSON.toJSONString(objectMap));
+        Object obj = GroovyFactory.execExpress(function_script, objectMap);
 
-        Object ret = GroovyFactory.execExpress(function_script, objectMap);
-
-        return ret;
+        return obj;
 
     }
 

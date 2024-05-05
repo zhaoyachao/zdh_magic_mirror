@@ -72,6 +72,11 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                         List<StrategyGroupInstance> hit_strategy_groups = getHitStrategyGroups(flow, strategy_groups, allocate_strategy_group_id_hashset);
 
                         logger.info("uuid: {}, data_node: {}, hit strategy_groups: {}",uuid, data_node, JSON.toJSONString(hit_strategy_groups));
+
+                        if(hit_strategy_groups == null || hit_strategy_groups.size() <= 0){
+                            return ;
+                        }
+
                         Map<String, Object> labels = new HashMap<>();
                         Map<String, Object> filters = new HashMap<>();
                         shipOnLineManagerEngine.loadBaseData(null, labels, filters, shipCommonInputParam);

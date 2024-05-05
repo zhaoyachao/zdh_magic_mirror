@@ -14,6 +14,7 @@ public class ShipOnlineRiskLog {
 
     /**
      * 用于保存入口流量信息,用于异常数据恢复
+     * todo 待实现
      */
     public static void putMessage2Queue(String message){
         //此处待队列实现,建议接入kafka
