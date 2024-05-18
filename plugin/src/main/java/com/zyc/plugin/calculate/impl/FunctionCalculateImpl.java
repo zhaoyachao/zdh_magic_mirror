@@ -123,6 +123,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             Map<String,Object> params = new HashMap<>();
             params.put("strategy_instance_id", strategyLogInfo.getStrategy_instance_id());
             params.put("strategy_instance", this.param);
+            params.put("rule_params", rule_params);
 
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用,不做操作
@@ -158,8 +159,11 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                                 rs3.add(uid);
                             }
                         }else{
-                            //未开启结果对比,直接返回表达式
-                            if(ret_diff != null){
+                            if(return_value_type.equalsIgnoreCase("void")){
+                                //无返回值函数,不报错则认为成功
+                                rs3.add(uid);
+                            }else if(ret_diff != null){
+                                //未开启结果对比,直接返回表达式
                                 rs3.add(ret_diff.toString());
                             }
                         }
@@ -251,7 +255,9 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
         String new_return_operate_value = jinjava.render(return_operate_value, tmp);
 
         objectMap.put("ret", ret);
-        objectMap.put(new_return_operate_value, new_return_operate_value);
+        if(!StringUtils.isEmpty(new_return_operate_value)){
+            objectMap.put(new_return_operate_value, new_return_operate_value);
+        }
 
         String function_script = "if({{return_value_express}} {{operate}} "+new_return_operate_value+") return true else return false";
 
@@ -286,7 +292,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
         }else{
             //直接获取表达式
             function_name = "plugin_function_if_v0";
-            function_script = "return "+new_return_operate_value;
+            function_script = "return "+return_value_express;
         }
 
         tmp.put("return_value_express", return_value_express);//取值表达式

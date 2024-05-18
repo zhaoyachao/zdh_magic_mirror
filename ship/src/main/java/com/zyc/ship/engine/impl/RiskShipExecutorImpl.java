@@ -10,6 +10,7 @@ import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.excutor.*;
 import com.zyc.ship.entity.ShipCommonInputParam;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,11 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             String product_code = ((ShipCommonInputParam)shipEvent.getInputParam()).getProduct_code();
             String data_node = ((ShipCommonInputParam)shipEvent.getInputParam()).getData_node();
             String param = ((ShipCommonInputParam)shipEvent.getInputParam()).getParam();
-            JSONObject jsonObjectParam = JSONObject.parseObject(param).getJSONObject("user_param");
+            JSONObject jsonObjectParam = new JSONObject();
+
+            if(!StringUtils.isEmpty(param) && JSONObject.parseObject(param).containsKey("user_param")){
+                jsonObjectParam = JSONObject.parseObject(param).getJSONObject("user_param");
+            }
 
             Map<String,Object> labelVaues = shipEvent.getLabelValues();
             String instance_type = strategyInstance.getInstance_type();
@@ -99,7 +104,7 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 tmp = tnExecutor.execute(run_jsmind_data, uid, strategyInstance, shipEvent);
             }else if(instance_type.equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
                 FunctionExecutor functionExecutor = new FunctionExecutor();
-                tmp = functionExecutor.execute(run_jsmind_data);
+                tmp = functionExecutor.execute(run_jsmind_data, uid);
             }else{
                 logger.error("暂不支持的经营类型: {}", instance_type);
                 tmp = ShipResultStatusEnum.ERROR.code;

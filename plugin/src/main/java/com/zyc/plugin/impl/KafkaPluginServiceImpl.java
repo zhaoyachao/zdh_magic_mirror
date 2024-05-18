@@ -33,7 +33,16 @@ public class KafkaPluginServiceImpl implements PluginService {
             if (!props.containsKey("value.serializer")) {
                 props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
             }
-
+            if (!props.containsKey("request.timeout.ms")) {
+                props.put("request.timeout.ms", "1000");
+            }
+            if (!props.containsKey("timeout.ms")) {
+                props.put("timeout.ms", "1000");
+            }
+            if (!props.containsKey("max.block.ms")) {
+                //send发送时最大阻塞时间
+                props.put("max.block.ms", "1000");
+            }
             String topic = props.getProperty("topic","test");
             String msg = props.getProperty("message", "");
             KafkaProducer<String, String> producer = new KafkaProducer<>(props);
