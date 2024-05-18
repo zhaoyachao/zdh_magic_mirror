@@ -7,7 +7,8 @@ import com.zyc.common.entity.StrategyInstance;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.Properties;
 
 public class KafkaPlugin implements Plugin{
 
-
+    private static Logger logger= LoggerFactory.getLogger(KafkaPlugin.class);
     private String rule_id;
     private Object run_jsmind_data;
     private StrategyInstance strategyInstance;
@@ -69,7 +70,7 @@ public class KafkaPlugin implements Plugin{
             producer.send(new ProducerRecord<>(topic, msg));
             return true;
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship plugin kafka error: ", e);
         }
         return false;
     }

@@ -140,7 +140,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
-            e.printStackTrace();
+            logger.error("label crowdfile run error: ", e);
         }finally {
             atomicInteger.decrementAndGet();
             removeTask(strategyLogInfo.getStrategy_instance_id());

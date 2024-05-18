@@ -4,6 +4,8 @@ package com.zyc.variable.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.variable.service.VariableService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +15,8 @@ import java.util.Map;
  * 变量查询
  */
 public class VariableServiceImpl implements VariableService {
+
+    private static Logger logger= LoggerFactory.getLogger(VariableServiceImpl.class);
 
     @Override
     public Object get(String product_code, String uid, String variable) {
@@ -52,7 +56,7 @@ public class VariableServiceImpl implements VariableService {
             }
             return result;
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("variable variable getAll error: ", e);
         }
         return null;
     }
@@ -72,7 +76,7 @@ public class VariableServiceImpl implements VariableService {
             }
             return result;
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("variable variable getMul error: ", e);
         }
         return null;
     }

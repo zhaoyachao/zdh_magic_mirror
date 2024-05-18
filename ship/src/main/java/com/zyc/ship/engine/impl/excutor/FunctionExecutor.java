@@ -88,7 +88,7 @@ public class FunctionExecutor {
             }
 
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship excutor function error: ", e);
         }
         return tmp;
     }
@@ -134,7 +134,7 @@ public class FunctionExecutor {
                 return ret;
             }
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship excutor functionExecutor error: ", e);
         }
         return null;
     }

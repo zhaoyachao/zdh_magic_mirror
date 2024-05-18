@@ -156,7 +156,7 @@ public class PluginServer {
             threadPoolExecutor.shutdownNow();
             JedisPoolUtil.close();
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("plugin server error: ", e);
         }
     }
 

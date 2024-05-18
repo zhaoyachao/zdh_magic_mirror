@@ -113,7 +113,7 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             shipResult1.setStatus(tmp);
             return shipResult1;
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship exector execute error: ", e);
         }
 
         return shipResult1;

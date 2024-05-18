@@ -119,7 +119,7 @@ public class KillCalculateImpl extends BaseCalculate implements KillCalculate {
                 throw new RuntimeException(e);
             }catch (Exception e){
                 //执行失败,更新标签任务失败
-                e.printStackTrace();
+                logger.error("plugin kill run error: ", e);
             }finally {
 
             }

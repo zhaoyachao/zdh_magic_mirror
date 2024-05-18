@@ -180,7 +180,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
 //                            }
 //                        }
                     }catch (Exception e){
-                        e.printStackTrace();
+                        logger.error("plugin function functionexecute error: ", e);
                     }
                 }
                 rs = rs3;
@@ -192,7 +192,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
-            e.printStackTrace();
+            logger.error("plugin function run error: ", e);
         }finally {
             atomicInteger.decrementAndGet();
             removeTask(strategyLogInfo.getStrategy_instance_id());

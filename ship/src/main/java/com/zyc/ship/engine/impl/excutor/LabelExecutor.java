@@ -10,6 +10,8 @@ import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.entity.LabelValueConfig;
 import com.zyc.ship.entity.StrategyLabelParamConfig;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.List;
@@ -18,7 +20,7 @@ import java.util.Set;
 
 public class LabelExecutor {
 
-
+    private static Logger logger= LoggerFactory.getLogger(LabelExecutor.class);
     /**
      *
      * @param run_jsmind_data
@@ -39,8 +41,8 @@ public class LabelExecutor {
                 }
             }
         }catch (Exception e){
-            e.printStackTrace();
-            tmp = ShipResultStatusEnum.ERROR.code;
+           logger.error("ship excutor label error: ", e);
+           tmp = ShipResultStatusEnum.ERROR.code;
         }
 
         return tmp;
@@ -71,7 +73,7 @@ public class LabelExecutor {
                 }
             }
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship label labelParam2LableValueConfig error: ", e);
         }
         return labelValueConfigs;
     }
@@ -120,7 +122,7 @@ public class LabelExecutor {
             }
             return diffValue(r,value,value_type, operate);
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship label diffValue error: ", e);
         }
         return false;
     }

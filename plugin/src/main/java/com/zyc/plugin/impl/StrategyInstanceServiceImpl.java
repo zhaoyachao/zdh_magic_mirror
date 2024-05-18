@@ -5,6 +5,8 @@ import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.util.MybatisUtil;
 import com.zyc.plugin.dao.StrategyInstanceMapper;
 import org.apache.ibatis.session.SqlSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -12,7 +14,7 @@ import java.util.List;
 
 public class StrategyInstanceServiceImpl {
 
-
+    private static Logger logger= LoggerFactory.getLogger(FunctionServiceImpl.class);
     public int updateByPrimaryKeySelective(StrategyInstance strategyInstance){
         SqlSession sqlSession = null;
         try {
@@ -21,14 +23,14 @@ public class StrategyInstanceServiceImpl {
             int result = strategyInstanceMappler.update(strategyInstance);
             return result;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("plugin service updateByPrimaryKeySelective error: ", e);
             return 0;
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("plugin service updateByPrimaryKeySelective sqlSession error: ", e);
                 }
                 sqlSession.close();
             }
@@ -44,14 +46,14 @@ public class StrategyInstanceServiceImpl {
             List<StrategyInstance> result = strategyInstanceMappler.selectByStatus(status, instance_type,"offline");
             return result;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("plugin service selectByStatus error: ", e);
             return null;
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("plugin service selectByStatus sqlSession error: ", e);
                 }
                 sqlSession.close();
             }
@@ -68,14 +70,14 @@ public class StrategyInstanceServiceImpl {
             return result;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("plugin service selectByIds error: ", e);
             return null;
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("plugin service selectByIds sqlSession error: ", e);
                 }
                 sqlSession.close();
             }
@@ -91,14 +93,14 @@ public class StrategyInstanceServiceImpl {
             return result;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("plugin service updateStatus2CheckFinish error: ", e);
             return 0;
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("plugin service updateStatus2CheckFinish sqlSession error: ", e);
                 }
                 sqlSession.close();
             }

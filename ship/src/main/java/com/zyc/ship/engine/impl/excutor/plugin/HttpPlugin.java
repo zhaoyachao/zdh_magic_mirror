@@ -10,6 +10,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.Properties;
 
 public class HttpPlugin implements Plugin{
 
+    private static Logger logger= LoggerFactory.getLogger(HttpPlugin.class);
 
     private String rule_id;
     private Object run_jsmind_data;
@@ -76,7 +79,7 @@ public class HttpPlugin implements Plugin{
 
             return false;
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship plugin http error: ", e);
         }
         return false;
     }

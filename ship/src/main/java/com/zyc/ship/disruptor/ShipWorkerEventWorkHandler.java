@@ -60,7 +60,7 @@ public class ShipWorkerEventWorkHandler implements WorkHandler<ShipEvent> {
                 }
             }
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship worker handler error: ", e);
         }finally {
             shipEvent.getCdl().countDown();
             if(shipEvent.getCdl().getCount() == 0){

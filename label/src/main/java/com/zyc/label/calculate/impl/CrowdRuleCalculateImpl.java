@@ -5,8 +5,9 @@ import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
-import com.zyc.label.LabelServer;
 import com.zyc.label.calculate.CrowdRuleCalculate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleCalculate {
-
+    private static Logger logger= LoggerFactory.getLogger(CrowdRuleCalculateImpl.class);
     private Map<String,Object> param=new HashMap<String, Object>();
     private AtomicInteger atomicInteger;
     private Map<String,String> dbConfig=new HashMap<String, String>();
@@ -114,7 +115,7 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
-            e.printStackTrace();
+            logger.error("label crowdrule run error: ", e);
         }finally {
             atomicInteger.decrementAndGet();
             removeTask(strategyLogInfo.getStrategy_instance_id());

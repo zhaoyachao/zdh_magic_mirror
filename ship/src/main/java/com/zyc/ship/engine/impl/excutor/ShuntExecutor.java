@@ -6,11 +6,15 @@ import com.google.common.hash.Hashing;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.entity.StrategyGroupInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
 public class ShuntExecutor {
+
+    private static Logger logger= LoggerFactory.getLogger(ShuntExecutor.class);
 
     public String execute(StrategyInstance strategyInstance, String uid){
         String tmp = ShipResultStatusEnum.SUCCESS.code;
@@ -50,7 +54,7 @@ public class ShuntExecutor {
                 throw new Exception("不支持非hash方式之外的分流类型");
             }
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship excutor shunt error: ", e);
             return false;
         }
 

@@ -133,7 +133,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
-            e.printStackTrace();
+            logger.error("plugin touch run error: ", e);
         }finally {
             atomicInteger.decrementAndGet();
             removeTask(strategyLogInfo.getStrategy_instance_id());
@@ -202,11 +202,11 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
         try {
             return (SmsTouch) Class.forName(platform).newInstance();
         } catch (InstantiationException e) {
-            e.printStackTrace();
+            logger.error("plugin touch load platform error: ", e);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            logger.error("plugin touch load platform error: ", e);
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            logger.error("plugin touch load platform error: ", e);
         }
 
         throw new Exception("无法找到适配的短信服务,请检查短信平台参数配置是否正常");
@@ -221,7 +221,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
         try {
             return  new Properties();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("plugin touch run error: ", e);
         }
 
         throw new Exception("无法找到适配的短信服务,请检查短信平台参数配置是否正常");

@@ -10,6 +10,8 @@ import com.alibaba.fastjson.JSON;
 import com.zyc.common.entity.TouchConfigInfo;
 import com.zyc.plugin.touch.EmailTouch;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 public class QQEmailTouch implements EmailTouch {
+    private static Logger logger= LoggerFactory.getLogger(QQEmailTouch.class);
 
     private TouchConfigInfo touchConfigInfo;
     private MailAccount mailAccount;
@@ -68,7 +71,7 @@ public class QQEmailTouch implements EmailTouch {
             }
             return result;
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("plugin touch qqemail error: ", e);
         }
         return "fail";
     }

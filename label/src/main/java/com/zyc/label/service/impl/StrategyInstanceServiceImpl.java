@@ -4,6 +4,8 @@ import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.util.MybatisUtil;
 import com.zyc.label.dao.StrategyInstanceMapper;
 import org.apache.ibatis.session.SqlSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -11,6 +13,7 @@ import java.util.List;
 
 public class StrategyInstanceServiceImpl {
 
+    private static Logger logger= LoggerFactory.getLogger(StrategyInstanceServiceImpl.class);
 
     public int updateByPrimaryKeySelective(StrategyInstance strategyInstance){
         SqlSession sqlSession=null;
@@ -21,14 +24,14 @@ public class StrategyInstanceServiceImpl {
             return result;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("label service updateByPrimaryKeySelective error: ", e);
             return 0;
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("label service updateByPrimaryKeySelective sqlSession error: ", e);
                 }
                 sqlSession.close();
             }
@@ -45,14 +48,14 @@ public class StrategyInstanceServiceImpl {
             return result;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("label service selectByStatus error: ", e);
             return null;
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("label service selectByStatus sqlSession error: ", e);
                 }
                 sqlSession.close();
             }
@@ -68,14 +71,14 @@ public class StrategyInstanceServiceImpl {
             return result;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("label service selectByIds error: ", e);
             return null;
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("label service selectByIds error: ", e);
                 }
                 sqlSession.close();
             }
@@ -91,14 +94,14 @@ public class StrategyInstanceServiceImpl {
             return result;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("label service updateStatus2CheckFinish error: ", e);
             return 0;
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("label service updateStatus2CheckFinish sqlSession error: ", e);
                 }
                 sqlSession.close();
             }

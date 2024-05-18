@@ -11,6 +11,8 @@ import com.zyc.ship.dao.FunctionMapper;
 import com.zyc.ship.service.FunctionService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 public class CacheFunctionServiceImpl implements FunctionService {
+
+    private static Logger logger= LoggerFactory.getLogger(CacheFunctionServiceImpl.class);
 
     public static Map<String,FunctionInfo> cache=new HashMap<>();
     public static Map<String,Object> cacheFunctionInstance=new HashMap<>();
@@ -34,13 +38,13 @@ public class CacheFunctionServiceImpl implements FunctionService {
             List<FunctionInfo> rows = functionMapper.selectAll();
             return rows;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("ship service selectAll error: ", e);
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("ship service selectAll sqlSession error: ", e);
                 }
                 sqlSession.close();
             }
@@ -58,7 +62,7 @@ public class CacheFunctionServiceImpl implements FunctionService {
             }
             return null;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("ship service selectByFunctionCode error: ", e);
             return null;
         }finally {
 
@@ -101,18 +105,18 @@ public class CacheFunctionServiceImpl implements FunctionService {
                         }
                     }
                 }catch (Exception e){
-                    e.printStackTrace();
+                    logger.error("ship service schedule function error: ", e);
                 }
             }
             cache = maps;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("ship service schedule error: ", e);
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("ship service schedule sqlSession error: ", e);
                 }
                 sqlSession.close();
             }

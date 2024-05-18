@@ -4,10 +4,13 @@ import com.zyc.common.entity.LabelInfo;
 import com.zyc.common.util.MybatisUtil;
 import com.zyc.label.dao.LabelMapper;
 import org.apache.ibatis.session.SqlSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class LabelServiceImpl {
+    private static Logger logger= LoggerFactory.getLogger(LabelServiceImpl.class);
 
     public LabelInfo selectByCode(String label_code, String label_use_type){
         SqlSession sqlSession=null;
@@ -23,7 +26,7 @@ public class LabelServiceImpl {
             return labelInfo;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("label service selectByCode error: ", e);
         }finally {
             if(sqlSession != null) {
                 sqlSession.close();

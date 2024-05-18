@@ -55,7 +55,7 @@ public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
                 }
             }
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship master handler error: ", e);
             long count = shipEvent.getCdl().getCount();
             while (count > 0){
                 shipEvent.getCdl().countDown();

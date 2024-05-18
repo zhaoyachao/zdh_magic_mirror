@@ -14,6 +14,8 @@ import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rocksdb.RocksDB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -27,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public abstract class BaseCalculate {
+    private static Logger logger= LoggerFactory.getLogger(BaseCalculate.class);
 
     public static ThreadLocal<String> localVar = new ThreadLocal<>();
     public static ConcurrentHashMap<String,BlockingQueue> queue = new ConcurrentHashMap<String, BlockingQueue>();
@@ -271,7 +274,7 @@ public abstract class BaseCalculate {
             FileUtil.flush(bw);
             return f.getAbsolutePath();
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("plugin server writeEmptyFile error: ", e);
         }
         return "";
     }
@@ -436,7 +439,7 @@ public abstract class BaseCalculate {
                     if(retry > 3){
                         throw e;
                     }
-                    e.printStackTrace();
+                    logger.error("plugin server writeFileAndPrintLogAndUpdateStatus2Finish error: ", e);
                     retry+=1;
                 }
             }
@@ -462,7 +465,7 @@ public abstract class BaseCalculate {
                     writeFtpFile(strategyLogInfo.getFile_path(), sftpUtil);
                     break;
                 }catch (Exception e){
-                    e.printStackTrace();
+                    logger.error("plugin server writeFileAndPrintLog error: ", e);
                     if(retry > 3){
                         throw e;
                     }

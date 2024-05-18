@@ -91,7 +91,7 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                         shipOnLineManagerEngine.executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch,
                                 shipEventMap, result, request_id);
                     }catch (Exception e){
-                        e.printStackTrace();
+                        logger.error("ship online manager thread error: ", e);
                     }
                 }
             });
@@ -100,7 +100,7 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
             //shipRiskOutputParam.setStrategyGroupResults(futures);
             logger.info("uuid: {}, end", uuid);
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship online manager server error: ", e);
         }
 
         return shipManagerOutputParam;

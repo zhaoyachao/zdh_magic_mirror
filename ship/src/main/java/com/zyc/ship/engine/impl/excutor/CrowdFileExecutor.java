@@ -4,8 +4,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CrowdFileExecutor {
+    private static Logger logger= LoggerFactory.getLogger(CrowdFileExecutor.class);
 
     public String execute(JSONObject run_jsmind_data, String product_code, String uid){
         String tmp = ShipResultStatusEnum.ERROR.code;
@@ -18,7 +21,7 @@ public class CrowdFileExecutor {
                 tmp = ShipResultStatusEnum.SUCCESS.code;
             }
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship excutor crowdfile error: ", e);
         }
         return tmp;
     }

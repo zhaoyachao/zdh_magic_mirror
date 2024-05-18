@@ -160,7 +160,7 @@ public class ShipCommonEngine implements Engine {
                 try{
                     return getLabelByUser(null, product_code,uid, id_type);
                 }catch (Exception e){
-                    e.printStackTrace();
+                   logger.error("ship common syncGetLabelByUser error: ", e);
                 }finally {
 
                 }
@@ -185,7 +185,7 @@ public class ShipCommonEngine implements Engine {
                 try{
                     return getFilterByUser(null, product_code,uid, id_type);
                 }catch (Exception e){
-                    e.printStackTrace();
+                    logger.error("ship common syncGetFilterByUser error: ", e);
                 }finally {
 
                 }

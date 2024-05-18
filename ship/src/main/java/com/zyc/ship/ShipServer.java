@@ -90,7 +90,7 @@ public class ShipServer {
             nettyServer.start(properties);
 
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship server error: ", e);
         }
 
     }

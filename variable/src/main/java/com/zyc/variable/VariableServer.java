@@ -61,7 +61,7 @@ public class VariableServer {
             nettyServer.start(properties);
 
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("variable server error: ", e);
         }
 
     }

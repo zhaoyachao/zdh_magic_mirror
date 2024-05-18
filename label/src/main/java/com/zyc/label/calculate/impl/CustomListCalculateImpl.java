@@ -140,7 +140,7 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
-            e.printStackTrace();
+            logger.error("label customlist run error: ", e);
         }finally {
             atomicInteger.decrementAndGet();
             removeTask(strategyLogInfo.getStrategy_instance_id());

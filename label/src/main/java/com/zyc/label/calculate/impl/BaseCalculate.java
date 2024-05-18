@@ -13,6 +13,8 @@ import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rocksdb.RocksDB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -24,6 +26,8 @@ import java.util.*;
 
 @SuppressWarnings("ALL")
 public class BaseCalculate {
+
+    private static Logger logger= LoggerFactory.getLogger(BaseCalculate.class);
 
     private SFTPUtil sftpUtil;
 
@@ -500,7 +504,7 @@ public class BaseCalculate {
                     writeFtpFile(file_path, sftpUtil);
                     break;
                 }catch (Exception e){
-                    e.printStackTrace();
+                    logger.error("label server writeFileAndPrintLogAndUpdateStatus2Finish error: ", e);
                     if(retry > 3){
                         throw e;
                     }

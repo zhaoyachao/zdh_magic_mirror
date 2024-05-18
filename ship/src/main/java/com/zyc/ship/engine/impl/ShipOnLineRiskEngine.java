@@ -97,7 +97,7 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
             logger.info("uuid: {}, end", uuid);
             return shipRiskOutputParam;
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("ship online risk execute error: ", e);
         }
 
         return shipRiskOutputParam;

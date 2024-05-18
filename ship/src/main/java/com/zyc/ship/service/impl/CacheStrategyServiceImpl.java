@@ -15,12 +15,16 @@ import com.zyc.ship.entity.StrategyGroupInstance;
 import com.zyc.ship.service.StrategyService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
 public class CacheStrategyServiceImpl implements StrategyService {
+
+    private static Logger logger= LoggerFactory.getLogger(CacheStrategyServiceImpl.class);
 
     public static Map<String,List<StrategyGroupInstance>> cache=new HashMap<>();
 
@@ -33,7 +37,7 @@ public class CacheStrategyServiceImpl implements StrategyService {
             }
             return null;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("ship service selectBySceneAndDataNode error: ", e);
             return null;
         }finally {
 
@@ -153,13 +157,13 @@ public class CacheStrategyServiceImpl implements StrategyService {
             cache = maps;
             strategyInstanceMappler.update2Killed();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("ship service schedule error: ", e);
         }finally {
             if(sqlSession != null){
                 try {
                     sqlSession.getConnection().close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("ship service schedule sqlSession error: ", e);
                 }
                 sqlSession.close();
             }

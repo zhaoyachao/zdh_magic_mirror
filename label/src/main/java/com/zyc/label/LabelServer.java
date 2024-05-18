@@ -141,7 +141,7 @@ public class LabelServer {
 
             JedisPoolUtil.close();
         }catch (Exception e){
-            e.printStackTrace();
+            logger.error("label server error: ", e);
         }
     }
 
@@ -222,7 +222,7 @@ public class LabelServer {
                         }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error("label server consumerLabelDoubleCheck error: ", e);
                 }
 
             }

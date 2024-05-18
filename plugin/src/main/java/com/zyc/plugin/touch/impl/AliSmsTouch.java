@@ -9,10 +9,13 @@ import com.aliyuncs.exceptions.ServerException;
 import com.aliyuncs.profile.DefaultProfile;
 import com.zyc.plugin.touch.SmsResponse;
 import com.zyc.plugin.touch.SmsTouch;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
 public class AliSmsTouch implements SmsTouch {
+    private static Logger logger= LoggerFactory.getLogger(AliSmsTouch.class);
     @Override
     public SmsResponse sendSms(Properties config, String phones, String sigin, String template, String param, String outId) throws Exception {
         SmsResponse smsResponse=new SmsResponse();
@@ -33,7 +36,7 @@ public class AliSmsTouch implements SmsTouch {
             smsResponse.setObject(response);
             return smsResponse;
         } catch (ServerException e) {
-            e.printStackTrace();
+            logger.error("plugin touch alisms error: ", e);
             throw e;
         } catch (ClientException e) {
             // 打印错误码

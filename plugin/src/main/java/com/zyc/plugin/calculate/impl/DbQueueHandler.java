@@ -57,7 +57,7 @@ public class DbQueueHandler implements QueueHandler {
             }
            return null;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("plugin handler db error: ", e);
         }
         return null;
     }
