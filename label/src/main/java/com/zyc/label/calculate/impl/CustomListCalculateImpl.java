@@ -7,7 +7,6 @@ import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
-import com.zyc.label.LabelServer;
 import com.zyc.label.calculate.CustomListCalculate;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;

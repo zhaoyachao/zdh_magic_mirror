@@ -17,7 +17,6 @@ import com.zyc.common.util.Const;
 import com.zyc.common.util.DBUtil;
 import com.zyc.common.util.HttpClientUtil;
 import com.zyc.common.util.LogUtil;
-import com.zyc.label.LabelServer;
 import com.zyc.label.calculate.LabelCalculate;
 import com.zyc.label.service.impl.DataSourcesServiceImpl;
 import com.zyc.label.service.impl.LabelServiceImpl;

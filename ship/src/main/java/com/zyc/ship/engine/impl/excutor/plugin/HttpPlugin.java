@@ -8,8 +8,6 @@ import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.util.HttpUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

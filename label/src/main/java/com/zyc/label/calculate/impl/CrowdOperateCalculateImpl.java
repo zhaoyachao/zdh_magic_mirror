@@ -7,7 +7,6 @@ import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.common.util.MybatisUtil;
-import com.zyc.label.LabelServer;
 import com.zyc.label.calculate.CrowdRuleCalculate;
 import com.zyc.label.dao.StrategyInstanceMapper;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
