@@ -152,14 +152,13 @@ public class BaseCalculate {
         if(!new File(f.getParent()).exists()){
             new File(f.getParent()).mkdirs();
         }
-        BufferedWriter bw = FileUtil.createBufferedWriter(f, Charset.forName("utf-8"));
+        FileUtil.clear(f);
         for (String line:rows){
             if(!line.contains(",")){
                 line = line+","+Const.FILE_STATUS_SUCCESS;
             }
-            FileUtil.writeString(bw, line);
+            FileUtil.appendString(f, line);
         }
-        FileUtil.flush(bw);
         return f.getAbsolutePath();
     }
 
@@ -174,8 +173,7 @@ public class BaseCalculate {
             if(!new File(f.getParent()).exists()){
                 new File(f.getParent()).mkdirs();
             }
-            BufferedWriter bw = FileUtil.createBufferedWriter(f, Charset.forName("utf-8"));
-            FileUtil.flush(bw);
+            FileUtil.clear(f);
             return f.getAbsolutePath();
         }catch (Exception e){
 

@@ -2,9 +2,7 @@ package com.zyc.common.util;
 
 import com.google.common.io.Files;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -12,25 +10,23 @@ import java.util.List;
 
 public class FileUtil {
 
-    public static BufferedWriter createBufferedWriter(File file, Charset charset) throws FileNotFoundException {
-        return Files.newWriter(file, charset);
+    public static void clear(File file) throws IOException {
+        Files.newWriter(file, Charset.forName("utf-8")).flush();
     }
 
-    public static void writeString(BufferedWriter bw,String line) throws IOException {
-       bw.write(line);
-       bw.newLine();
+    public static void writeString(File file, String line) throws IOException {
+        Files.write(line.getBytes("utf-8"), file);
     }
 
-    public static void appendString(BufferedWriter bw,String line) throws IOException {
-        bw.append(line);
-        bw.newLine();
+    public static void appendString(File file, String line) throws IOException {
+        cn.hutool.core.io.FileUtil.appendString(line+cn.hutool.core.io.FileUtil.getLineSeparator(), file, "utf-8");
     }
 
-    public static void flush(BufferedWriter bw) throws IOException {
-        bw.flush();
-        bw.close();
+    public static void touch(File file) throws IOException {
+        if(!cn.hutool.core.io.FileUtil.exist(file)){
+            cn.hutool.core.io.FileUtil.touch(file);
+        }
     }
-
 
     public static List<String> readString(File file, Charset charset) throws IOException {
         return Files.readLines(file, charset);
