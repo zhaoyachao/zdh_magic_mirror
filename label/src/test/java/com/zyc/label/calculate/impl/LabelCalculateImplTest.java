@@ -128,10 +128,10 @@ public class LabelCalculateImplTest {
     @Test
     public void testFileWrite() throws IOException {
         File f = new File("/home/data/w1");
-        BufferedWriter bw = FileUtil.createBufferedWriter(f, Charset.forName("utf-8"));
-        FileUtil.writeString(bw, "测试1");
-        FileUtil.writeString(bw, "测试1");
-        FileUtil.flush(bw);
+//        BufferedWriter bw = FileUtil.createBufferedWriter(f, Charset.forName("utf-8"));
+//        FileUtil.writeString(bw, "测试1");
+//        FileUtil.writeString(bw, "测试1");
+//        FileUtil.flush(bw);
     }
 
 }

@@ -124,6 +124,9 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             params.put("strategy_instance", this.param);
             params.put("rule_params", rule_params);
 
+            Set<String> rs_error = Sets.newHashSet();
+            Set<String> rs3 = Sets.newHashSet();
+
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用,不做操作
             }else{
@@ -133,7 +136,6 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                 FunctionServiceImpl functionService = new FunctionServiceImpl();
                 FunctionInfo functionInfo = functionService.selectByFunction(rule_id);
 
-                Set<String> rs3 = Sets.newHashSet();
                 for(String uid: rs){
                     try{
                         Map<String, Object> objectMap = new HashMap<>();
@@ -150,41 +152,36 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                         }
                         Object ret = executeFunction(strategyLogInfo,functionInfo, objectMap, param_codes);
                         LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "新增结果变量ret, 需要从结果变量取值,可对ret进行操作");
-                        //判断是否有返回值diff
-                        Object ret_diff = execReturnDiffExpress(strategyLogInfo, ret,  return_value_express, return_operate, return_operate_value, return_diff_enable, objectMap);
                         if(return_diff_enable.equalsIgnoreCase("true")){
-                            //开启对比,结果为true表示成功数据,false为失败数据
-                            if(ret_diff.toString().equalsIgnoreCase("true")){
-                                rs3.add(uid);
+                            Object ret_diff = execReturnDiffExpress(strategyLogInfo, ret, return_operate_value, objectMap);
+                            //开启对比,结果为true表示成功数据,false为失败数据, 不等于true则跳过当前
+                            if(!ret_diff.toString().equalsIgnoreCase("true")){
+                                rs_error.add(uid);
+                                continue;
                             }
                         }else{
-                            if(return_value_type.equalsIgnoreCase("void")){
-                                //无返回值函数,不报错则认为成功
-                                rs3.add(uid);
-                            }else if(ret_diff != null){
-                                //未开启结果对比,直接返回表达式
-                                rs3.add(ret_diff.toString());
-                            }
+                            //未开启对比,不做任何逻辑
                         }
 
-//                        if(ret != null){
-//                            if(functionInfo == null || Lists.newArrayList("int","long","string").contains(functionInfo.getReturn_type().toLowerCase())){
-//                                rs3.add(ret.toString());
-//                            }else if(Lists.newArrayList("array").contains(functionInfo.getReturn_type().toLowerCase())){
-//                                rs3.add(StringUtils.join((Object[])ret, ","));
-//                            }else if(Lists.newArrayList("map").contains(functionInfo.getReturn_type().toLowerCase())){
-//                                rs3.add(StringUtils.join(((Map)ret).values(), ","));
-//                            }else if(Lists.newArrayList("boolean").contains(functionInfo.getReturn_type().toLowerCase())){
-//                                rs3.add(uid);
-//                            }
-//                        }
+                        if(return_value_express.trim().equalsIgnoreCase("uid")){
+                            rs3.add(uid);
+                        }else if(return_value_express.trim().equalsIgnoreCase("ret")){
+                            rs3.add(ret.toString());
+                        }else{
+                            Object new_ret = execFunctionExpress(strategyLogInfo, ret, return_value_express, objectMap);
+                            if(new_ret != null && !StringUtils.isEmpty(new_ret.toString())){
+                                rs3.add(new_ret.toString());
+                            }else{
+                                rs_error.add(uid);
+                            }
+                        }
                     }catch (Exception e){
                         logger.error("plugin function functionexecute error: ", e);
                     }
                 }
-                rs = rs3;
             }
-            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
+            rs = rs3;
+            System.err.println(JSON.toJSONString(rs));
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
@@ -240,6 +237,20 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
         return null;
     }
 
+    /**
+     * 历史版本对比函数解析
+     * 5.3.5版本及之后已废弃, 使用下发execReturnDiffExpress(StrategyLogInfo strategyLogInfo,Object ret, String return_operate_value, Map<String, Object> objectMap)函数代替
+     * @param strategyLogInfo
+     * @param ret
+     * @param return_value_express
+     * @param return_operate
+     * @param return_operate_value
+     * @param return_diff_enable
+     * @param objectMap
+     * @return
+     * @throws ScriptException
+     * @throws NoSuchMethodException
+     */
     public Object execReturnDiffExpress(StrategyLogInfo strategyLogInfo,Object ret, String return_value_express, String return_operate, String return_operate_value, String return_diff_enable, Map<String, Object> objectMap) throws ScriptException, NoSuchMethodException {
 
         Map<String, Object> tmp = new HashMap<>();
@@ -306,5 +317,60 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
 
     }
 
+    /**
+     * 执行 对比 表达式
+     * @param strategyLogInfo
+     * @param ret
+     * @param return_operate_value
+     * @param objectMap
+     * @return
+     * @throws ScriptException
+     * @throws NoSuchMethodException
+     */
+    public Object execReturnDiffExpress(StrategyLogInfo strategyLogInfo,Object ret, String return_operate_value, Map<String, Object> objectMap) throws ScriptException, NoSuchMethodException {
+
+        String function_name = "plugin_function_if_v0";
+
+        objectMap.put("ret", ret);
+
+        if(StringUtils.isEmpty(return_operate_value)){
+            return false;
+        }
+
+        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "结果对比函数: "+function_name+", "+return_operate_value+", 参数: "+JSON.toJSONString(objectMap));
+
+        Object obj = GroovyFactory.execExpress(return_operate_value, objectMap);
+        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(),"结果: "+(obj!=null?obj.toString():"空"));
+        return obj;
+
+    }
+
+    /**
+     * 解析 取值表达式
+     * @param strategyLogInfo
+     * @param ret
+     * @param return_value_value
+     * @param objectMap
+     * @return
+     * @throws ScriptException
+     * @throws NoSuchMethodException
+     */
+    public Object execFunctionExpress(StrategyLogInfo strategyLogInfo,Object ret, String return_value_value, Map<String, Object> objectMap) throws ScriptException, NoSuchMethodException {
+
+        String function_name = "plugin_function_if_v0";
+
+        objectMap.put("ret", ret);
+
+        if(StringUtils.isEmpty(return_value_value)){
+            return null;
+        }
+
+        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "取值结果函数: "+function_name+", "+return_value_value+", 参数: "+JSON.toJSONString(objectMap));
+
+        Object obj = GroovyFactory.execExpress(return_value_value, objectMap);
+        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(),"取值结果: "+(obj!=null?obj.toString():"空"));
+        return obj;
+
+    }
 
 }
