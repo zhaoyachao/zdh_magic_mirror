@@ -1,5 +1,6 @@
 package com.zyc.common.util;
 
+import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -19,11 +20,12 @@ public class FileUtil {
     }
 
     public static void appendString(File file, String line) throws IOException {
-        cn.hutool.core.io.FileUtil.appendString(line+cn.hutool.core.io.FileUtil.getLineSeparator(), file, "utf-8");
+        Files.asCharSink(file, Charset.forName("utf-8"),FileWriteMode.APPEND).write(line);
+        Files.asCharSink(file, Charset.forName("utf-8"),FileWriteMode.APPEND).write(System.lineSeparator());
     }
 
     public static void touch(File file) throws IOException {
-        cn.hutool.core.io.FileUtil.touch(file);
+        Files.touch(file);
     }
 
     public static List<String> readString(File file, Charset charset) throws IOException {

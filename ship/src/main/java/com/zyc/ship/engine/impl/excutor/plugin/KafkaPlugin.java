@@ -29,6 +29,7 @@ public class KafkaPlugin implements Plugin{
 
     @Override
     public boolean execute() {
+        KafkaProducer<String, String> producer=null;
         try{
             Gson gson=new Gson();
             List<Map> rule_params = gson.fromJson(((JSONObject)run_jsmind_data).get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
@@ -62,15 +63,21 @@ public class KafkaPlugin implements Plugin{
                 //send发送时最大阻塞时间
                 props.put("max.block.ms", "1000");
             }
-
-
+            if (!props.containsKey("retries")) {
+                //send发送时最大阻塞时间
+                props.put("retries", "10");
+            }
             String topic = props.getProperty("topic","test");
             String msg = props.getProperty("message", "");
-            KafkaProducer<String, String> producer = new KafkaProducer<>(props);
+            producer = new KafkaProducer<>(props);
             producer.send(new ProducerRecord<>(topic, msg));
             return true;
         }catch (Exception e){
             logger.error("ship plugin kafka error: ", e);
+        }finally {
+            if(producer != null){
+                producer.close();
+            }
         }
         return false;
     }

@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 过滤实现
+ * TN实现,只做数据流转
  */
 public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
     private static Logger logger= LoggerFactory.getLogger(TnCalculateImpl.class);
@@ -87,14 +87,12 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
     public void run() {
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        FilterServiceImpl filterService=new FilterServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
         String logStr="";
         try{
 
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
-            String[] filter_codes=run_jsmind_data.getOrDefault("filter","").toString().split(",");
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
             //调度逻辑时间,毫秒时间戳
             String cur_time=this.param.get("cur_time").toString();
@@ -104,12 +102,9 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
             }
             String base_path=dbConfig.get("file.path");
 
-            List<FilterInfo> filterInfos=new ArrayList<>();
-
 
             CalculateResult calculateResult = calculateResult(base_path, run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
-            String file_dir = calculateResult.getFile_dir();
 
             if(is_disenable.equalsIgnoreCase("true")){
 
@@ -119,7 +114,6 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
 
             //tn操作为整体操作,全部成功或者全部失败
             Set<String> rs_error = Sets.newHashSet();
-            //Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){

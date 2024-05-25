@@ -89,7 +89,7 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
 
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
-            String id_mapping_code=run_jsmind_data.get("id_mapping_code").toString();
+            String id_mapping_code=run_jsmind_data.get("rule_id").toString();
             String id_mapping_type=run_jsmind_data.getOrDefault("id_mapping_type","").toString();
             String data_engine=run_jsmind_data.getOrDefault("data_engine", "file").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用

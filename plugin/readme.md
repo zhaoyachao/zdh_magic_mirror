@@ -42,3 +42,6 @@
     v5.3.3 优化idmapping
     v5.3.4 修复function插件无法杀死bug
     v5.3.4 升级function函数
+    
+    v5.3.5 修复历史数据读取失败bug
+    v5.3.5 统一策略配置基础信息字段

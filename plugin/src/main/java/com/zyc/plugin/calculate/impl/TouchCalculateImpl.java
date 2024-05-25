@@ -102,7 +102,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String touch_task=run_jsmind_data.get("touch_task").toString();
-            String touch_id=run_jsmind_data.get("touch_id").toString();
+            String touch_id=run_jsmind_data.get("rule_id").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
 

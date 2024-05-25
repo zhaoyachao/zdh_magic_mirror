@@ -181,7 +181,6 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                 }
             }
             rs = rs3;
-            System.err.println(JSON.toJSONString(rs));
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){

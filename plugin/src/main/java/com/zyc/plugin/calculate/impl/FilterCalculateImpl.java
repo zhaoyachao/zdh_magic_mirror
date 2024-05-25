@@ -96,7 +96,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
         try{
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
-            String[] filter_codes=run_jsmind_data.getOrDefault("filter","").toString().split(",");
+            String[] filter_codes=run_jsmind_data.getOrDefault("rule_id","").toString().split(",");
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
             List<FilterInfo> filterInfos=new ArrayList<>();

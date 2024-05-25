@@ -20,6 +20,7 @@ public class KafkaPluginServiceImpl implements PluginService {
     @Override
     public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, String rs) {
         KafkaPluginResult kafkaPluginResult = new KafkaPluginResult();
+        KafkaProducer<String, String> producer=null;
         try{
             System.out.println("用户: "+rs+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JSON.toJSONString(pluginParam));
             Properties props = getParams(pluginParam);
@@ -43,18 +44,27 @@ public class KafkaPluginServiceImpl implements PluginService {
                 //send发送时最大阻塞时间
                 props.put("max.block.ms", "1000");
             }
+            if (!props.containsKey("retries")) {
+                //send发送时最大阻塞时间
+                props.put("retries", "10");
+            }
+
             String topic = props.getProperty("topic","test");
             String msg = props.getProperty("message", "");
-            KafkaProducer<String, String> producer = new KafkaProducer<>(props);
+            producer = new KafkaProducer<>(props);
             RecordMetadata recordMetadata = producer.send(new ProducerRecord<>(topic, msg)).get();
             kafkaPluginResult.setCode(0);
             kafkaPluginResult.setMessage("success");
             kafkaPluginResult.setResult(JSON.toJSONString(recordMetadata));
-
             return kafkaPluginResult;
         }catch (Exception e){
+            e.printStackTrace();
             kafkaPluginResult.setCode(-1);
             kafkaPluginResult.setMessage(e.getMessage());
+        }finally {
+            if(producer != null){
+                producer.close();
+            }
         }
         return kafkaPluginResult;
     }

@@ -145,7 +145,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                     throw new Exception("无法找到标签信息");
                 }
                 if(!labelInfo.getStatus().equalsIgnoreCase("1")){
-                    throw new Exception("标签未启用");
+                    throw new Exception("标签未启用,标签名称: "+labelInfo.getLabel_context());
                 }
 
                 if(label_use_type.equalsIgnoreCase("batch")){

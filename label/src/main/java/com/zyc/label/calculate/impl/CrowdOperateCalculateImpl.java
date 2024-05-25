@@ -100,7 +100,8 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
             String base_path=dbConfig.get("file.path");
             //客群运算id
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
-            String crowd_operate_context=run_jsmind_data.get("crowd_operate_context").toString();
+            String rule_context=run_jsmind_data.get("rule_context").toString();
+            String operate=run_jsmind_data.get("operate").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
             String status=run_jsmind_data.getOrDefault("data_status",Const.FILE_STATUS_SUCCESS).toString();//依赖数据状态,1:成功,2:失败,3:不区分
 
@@ -115,10 +116,10 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
                 String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                         strategyLogInfo.getStrategy_group_instance_id());
                 if(!StringUtils.isEmpty(pre_tasks)){
-                    List<String> other = resetPreTasks(strategyLogInfo.getStrategy_instance_id(),pre_tasks, crowd_operate_context);
+                    List<String> other = resetPreTasks(strategyLogInfo.getStrategy_instance_id(),pre_tasks, operate);
                     List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
                     //多个任务交并排逻辑
-                    rs = calculate(other, file_dir, crowd_operate_context, strategyInstances,status);
+                    rs = calculate(other, file_dir, operate, strategyInstances,status);
                 }else{
                     throw new Exception("运算符节点至少依赖一个父节点");
                 }

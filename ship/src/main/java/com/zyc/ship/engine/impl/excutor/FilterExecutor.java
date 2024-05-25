@@ -11,7 +11,7 @@ public class FilterExecutor {
     public String executor(JSONObject run_jsmind_data, ShipEvent shipEvent, String uid){
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
-            String[] filters = run_jsmind_data.getString("filter").split(",");
+            String[] filters = run_jsmind_data.getString("rule_id").split(",");
             if(!isHitFilter(filters, shipEvent.getFilterValues(), uid)){
                 tmp = ShipResultStatusEnum.ERROR.code;
             }

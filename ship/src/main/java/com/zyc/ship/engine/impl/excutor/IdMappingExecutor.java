@@ -11,7 +11,7 @@ public class IdMappingExecutor {
     public String execute(JSONObject run_jsmind_data, Map<String,Object> labelVaues, ShipEvent shipEvent, String uid){
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
-            String mapping_code = run_jsmind_data.getString("id_mapping_code");
+            String mapping_code = run_jsmind_data.getString("rule_id");
             String tag_key = "tag_"+mapping_code;
             Object value = labelVaues.get(tag_key);
             if(value == null){

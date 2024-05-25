@@ -13,7 +13,7 @@ public class CrowdFileExecutor {
     public String execute(JSONObject run_jsmind_data, String product_code, String uid){
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{
-            String crowd_file_id = run_jsmind_data.getOrDefault("crowd_file","").toString();
+            String crowd_file_id = run_jsmind_data.getOrDefault("rule_id","").toString();
             //key: {product_code}_{crowd_file_id}_{uid}
             String key = StringUtils.join(product_code,"_crowd_file_", crowd_file_id, "_", uid);
             Object value = JedisPoolUtil.redisClient().get(key);

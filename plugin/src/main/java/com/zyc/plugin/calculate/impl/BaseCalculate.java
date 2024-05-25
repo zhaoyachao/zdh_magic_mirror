@@ -297,8 +297,9 @@ public abstract class BaseCalculate {
 
     public List<String> readHisotryFile(String file_dir, String task, String status) throws Exception {
         List<String> rows = new ArrayList<>();
-        if(cn.hutool.core.io.FileUtil.exist(file_dir + "/" + task)){
-            File f=new File(file_dir + "/" + task);
+        String file_path = file_dir + "/" + task;
+        if(cn.hutool.core.io.FileUtil.exist(file_path)){
+            File f=new File(file_path);
             if(f.exists() && f.isFile()){
                 rows = FileUtil.readStringSplit(f, Charset.forName("utf-8"),Const.FILE_STATUS_ALL);
                 return rows;
@@ -325,8 +326,6 @@ public abstract class BaseCalculate {
                     }
                 }
                 return rows;
-            }else{
-                throw new Exception("无法找到对应的数据文件");
             }
         }
 

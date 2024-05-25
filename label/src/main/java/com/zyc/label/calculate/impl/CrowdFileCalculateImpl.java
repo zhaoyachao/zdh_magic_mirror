@@ -103,7 +103,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
             //以文件id作为文件名
-            String crowd_file=run_jsmind_data.get("crowd_file").toString();
+            String rule_id=run_jsmind_data.get("rule_id").toString();
 
             Set<String> rowsStr=Sets.newHashSet();
             Set<String> rs=Sets.newHashSet() ;
@@ -121,7 +121,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                 String file_sftp_path = getFilePath(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                         strategyLogInfo.getStrategy_group_instance_id(), "sftp_"+strategyLogInfo.getStrategy_instance_id());
                 //此处直接使用directory目录是有风险的,人群文件最好单独设置一个目录,不和ftp的根目录共用
-                sftpUtil.download(directory, crowd_file, file_sftp_path);
+                sftpUtil.download(directory, rule_id, file_sftp_path);
 
                 //读取本地文件
                 List<String> rows = FileUtil.readStringSplit(new File(file_sftp_path), Charset.forName("utf-8"), Const.FILE_STATUS_SUCCESS);

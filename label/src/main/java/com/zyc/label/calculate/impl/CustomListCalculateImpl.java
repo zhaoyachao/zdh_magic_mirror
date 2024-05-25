@@ -107,7 +107,7 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
 
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
-            String label_code=run_jsmind_data.get("rule_id").toString();
+            String rule_id=run_jsmind_data.get("rule_id").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
 
