@@ -4,12 +4,17 @@ package com.zyc.label.calculate.impl;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zyc.common.util.FileUtil;
+import com.zyc.common.util.MinioUtil;
+import io.minio.MinioClient;
+import io.minio.errors.*;
 import org.junit.Test;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class LabelCalculateImplTest {
@@ -134,4 +139,18 @@ public class LabelCalculateImplTest {
 //        FileUtil.flush(bw);
     }
 
+    @Test
+    public void testMinio() throws IOException, InvalidResponseException, InvalidKeyException, NoSuchAlgorithmException, ServerException, InternalException, XmlParserException, InsufficientDataException, ErrorResponseException {
+
+        MinioClient minioClient = MinioUtil.buildMinioClient("minio_zyc", "minio_zyc", "http://111.173.105.158:9000");
+
+
+        String bucket = "zdh-magic-mirror";
+        MinioUtil.createBucket(minioClient, bucket, "cn-north-1");
+
+        String file_name = "/home/zyc/label/1243700840024248320/1243700886891401216/1243700887126282249";
+        //MinioUtil.putObject(minioClient, bucket, "cn-north-1", "application/otcet-stream",file_name,file_name ,null);
+        MinioUtil.removeObject(minioClient, bucket, "cn-north-1", file_name);
+
+    }
 }

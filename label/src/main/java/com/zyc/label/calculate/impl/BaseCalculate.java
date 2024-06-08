@@ -10,16 +10,17 @@ import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.*;
 import com.zyc.label.LabelServer;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
+import io.minio.MinioClient;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.rocksdb.RocksDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.sql.Timestamp;
 import java.util.*;
@@ -31,11 +32,13 @@ public class BaseCalculate {
 
     private SFTPUtil sftpUtil;
 
+    private MinioClient minioClient;
+
     public SFTPUtil getSftpUtil(Map<String,String> dbConfig){
         if(!dbConfig.getOrDefault("sftp.enable", "false").equalsIgnoreCase("true")){
             return sftpUtil;
         }
-        String directory = dbConfig.get("sftp.path");
+
         String username=dbConfig.get("sftp.username");
         String password=dbConfig.get("sftp.password");
         String host=dbConfig.get("sftp.host");
@@ -44,12 +47,51 @@ public class BaseCalculate {
         return sftpUtil;
     }
 
+    public void initMinioClient(Map<String,String> dbConfig){
+        if(!dbConfig.getOrDefault("storage.mode", "").equalsIgnoreCase("minio")){
+            return ;
+        }
+        String ak = dbConfig.get("storage.minio.ak");
+        String sk=dbConfig.get("storage.minio.sk");
+        String endpoint=dbConfig.get("storage.minio.endpoint");
+        minioClient = MinioUtil.buildMinioClient(ak, sk, endpoint);
+    }
+
     /**
      * 检查是否开启sftp,默认不开启,如果需要开启需要重写子类checkSftp
      * @return
      */
     public boolean checkSftp(){
         return false;
+    }
+
+    /**
+     * 返回存储模式
+     * 当前可选择值为minio
+     * @return
+     */
+    public String storageMode(){
+        return "";
+    }
+
+    /**
+     * 获取通用bucket
+     * @return
+     */
+    public String getBucket(){
+        return "zdh-magic-mirror";
+    }
+
+    /**
+     * 获取通用region
+     * @return
+     */
+    public String getRegion(){
+        return "cn-north-1";
+    }
+
+    public MinioClient getMinioClient(){
+        return minioClient;
     }
 
     /**
@@ -488,28 +530,35 @@ public class BaseCalculate {
      */
     public void writeFileAndPrintLogAndUpdateStatus2Finish(String id,String strategy_id, String file_path, Set<String> rs) throws Exception {
         String save_path = writeFile(file_path, rs);
-        //判断是否写入ftp
-        if(checkSftp()){
-            //失败-重试3次
-            int retry = 0;
-            while (true){
-                try{
-                    if(retry > 3){
-                        String logStr = StrUtil.format("task: {}, 上传ftp失败, file: {}", id, file_path);
-                        LogUtil.info(strategy_id, id, logStr);
-                        throw new Exception("上传ftp失败");
-                    }
+        //失败-重试3次
+        int retry = 0;
+        while (true){
+            try{
+                if(retry > 3){
+                    String logStr = StrUtil.format("task: {}, 上传ftp失败, file: {}", id, file_path);
+                    LogUtil.info(strategy_id, id, logStr);
+                    throw new Exception("上传ftp失败");
+                }
+
+                if(checkSftp()){
                     writeFtpFile(file_path, sftpUtil);
                     break;
-                }catch (Exception e){
-                    logger.error("label server writeFileAndPrintLogAndUpdateStatus2Finish error: ", e);
-                    if(retry > 3){
-                        throw e;
-                    }
-                    retry+=1;
+                }else if(storageMode().equalsIgnoreCase("minio")){
+                    //写入对象存储
+                    MinioUtil.putObject(minioClient, getBucket(), getRegion(), "application/octet-stream",file_path, file_path, null);
+                    break;
+                }else{
+                    break;
                 }
+            }catch (Exception e){
+                logger.error("label server writeFileAndPrintLogAndUpdateStatus2Finish error: ", e);
+                if(retry > 3){
+                    throw e;
+                }
+                retry+=1;
             }
         }
+
         String logStr = StrUtil.format("task: {}, write finish, file: {}", id, save_path);
         LogUtil.info(strategy_id, id, logStr);
         setStatus(id, Const.STATUS_FINISH);
@@ -560,7 +609,27 @@ public class BaseCalculate {
                 byte[] bytes = sftpUtil.download(file_dir, task);
                 ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
                 List<String> tmp = IOUtils.readLines(bais, "utf-8");
+                bais.close();
+                for (String line: tmp){
+                    String[] row = line.split(",");
+                    if(row.length>2){
+                        if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
+                            rows.add(row[0]);
+                        }else{
+                            if(row[1].equalsIgnoreCase(status)){
+                                rows.add(row[0]);
+                            }
+                        }
+                    }else{
+                        rows.add(row[0]);
+                    }
+                }
 
+            }else if(storageMode().equalsIgnoreCase("minio")){
+                //minio对象存储
+                InputStream inputStream = MinioUtil.getObject(minioClient, getBucket(), getRegion(), file_dir+"/"+task);
+                List<String> tmp = IOUtils.readLines(inputStream, "utf-8");
+                inputStream.close();
                 for (String line: tmp){
                     String[] row = line.split(",");
                     if(row.length>2){

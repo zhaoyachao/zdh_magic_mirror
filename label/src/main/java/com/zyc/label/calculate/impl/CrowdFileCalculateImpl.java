@@ -2,18 +2,28 @@ package com.zyc.label.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.google.common.io.FileWriteMode;
+import com.google.common.io.Files;
+import com.jcraft.jsch.SftpException;
+import com.zyc.common.entity.CrowdFileInfo;
 import com.zyc.common.entity.StrategyLogInfo;
-import com.zyc.common.util.Const;
-import com.zyc.common.util.FileUtil;
-import com.zyc.common.util.LogUtil;
-import com.zyc.common.util.SFTPUtil;
+import com.zyc.common.util.*;
 import com.zyc.label.calculate.CrowdFileCalculate;
+import com.zyc.label.service.impl.CrowdFileServiceImpl;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
+import io.minio.MinioClient;
+import io.minio.errors.*;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -84,11 +94,27 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
         this.atomicInteger=atomicInteger;
         this.dbConfig=new HashMap<>((Map)dbConfig);
         getSftpUtil(this.dbConfig);
+        initMinioClient(this.dbConfig);
     }
 
     @Override
     public boolean checkSftp() {
         return Boolean.valueOf(this.dbConfig.getOrDefault("sftp.enable", "false"));
+    }
+
+    @Override
+    public String storageMode() {
+        return this.dbConfig.getOrDefault("storage.mode", "");
+    }
+
+    @Override
+    public String getBucket() {
+        return this.dbConfig.getOrDefault("storage.minio.bucket", super.getBucket());
+    }
+
+    @Override
+    public String getRegion() {
+        return this.dbConfig.getOrDefault("storage.minio.region", super.getRegion());
     }
 
     @Override
@@ -110,18 +136,24 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
             if(is_disenable.equalsIgnoreCase("true")){
                 //当前策略跳过状态,则不计算当前策略信息,且跳过校验
             }else{
-                //获取人群文件,sftp
-                String directory = dbConfig.get("sftp.path");
-                String username=dbConfig.get("sftp.username");
-                String password=dbConfig.get("sftp.password");
-                String host=dbConfig.get("sftp.host");
-                int port=Integer.parseInt(dbConfig.get("sftp.port"));
-                SFTPUtil sftpUtil=new SFTPUtil(username, password, host, port);
+
+                //根据rule_id查询文件信息
+                CrowdFileServiceImpl crowdFileService = new CrowdFileServiceImpl();
+                CrowdFileInfo crowdFileInfo = crowdFileService.selectById(rule_id);
+
                 //下载sftp文件存储本地
                 String file_sftp_path = getFilePath(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                         strategyLogInfo.getStrategy_group_instance_id(), "sftp_"+strategyLogInfo.getStrategy_instance_id());
-                //此处直接使用directory目录是有风险的,人群文件最好单独设置一个目录,不和ftp的根目录共用
-                sftpUtil.download(directory, rule_id, file_sftp_path);
+
+                //获取人群文件,sftp
+                String sftp_enable = dbConfig.getOrDefault("sftp.enable", "");
+                String storage_mode = dbConfig.getOrDefault("storage.mode", "");
+
+                if(sftp_enable.equalsIgnoreCase("true")){
+                    sftpDownload(strategyLogInfo, crowdFileInfo.getFile_name(), file_sftp_path);
+                }else if(storage_mode.equalsIgnoreCase("minio")){
+                    minioDownload(strategyLogInfo, crowdFileInfo.getFile_name(), file_sftp_path);
+                }
 
                 //读取本地文件
                 List<String> rows = FileUtil.readStringSplit(new File(file_sftp_path), Charset.forName("utf-8"), Const.FILE_STATUS_SUCCESS);
@@ -132,7 +164,6 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                     strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
             rs = calculateCommon("offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
-
 
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
@@ -145,5 +176,28 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
             removeTask(strategyLogInfo.getStrategy_instance_id());
         }
 
+    }
+
+    private void sftpDownload(StrategyLogInfo strategyLogInfo, String fileName, String saveLocalFilePath) throws FileNotFoundException, SftpException {
+        String path = strategyLogInfo.getBase_path()+"/crowd_file";
+        String username=dbConfig.get("sftp.username");
+        String password=dbConfig.get("sftp.password");
+        String host=dbConfig.get("sftp.host");
+        int port=Integer.parseInt(dbConfig.get("sftp.port"));
+        SFTPUtil sftpUtil=new SFTPUtil(username, password, host, port);
+        //此处直接使用directory目录是有风险的,人群文件最好单独设置一个目录,不和ftp的根目录共用
+        sftpUtil.download(path, fileName, saveLocalFilePath);
+    }
+
+    private void minioDownload(StrategyLogInfo strategyLogInfo, String fileName, String saveLocalFilePath) throws IOException, InvalidResponseException, InvalidKeyException, NoSuchAlgorithmException, ServerException, ErrorResponseException, XmlParserException, InsufficientDataException, InternalException {
+        MinioClient minioClient = getMinioClient();
+        String objectName = strategyLogInfo.getBase_path()+"/crowd_file/"+fileName;
+        InputStream inputStream = MinioUtil.getObject(minioClient, getBucket(), getRegion(), objectName);
+        File file = new File(saveLocalFilePath);
+
+        if(!file.getParentFile().exists()){
+            file.getParentFile().mkdirs();
+        }
+        Files.asByteSink(new File(saveLocalFilePath)).writeFrom(inputStream);
     }
 }

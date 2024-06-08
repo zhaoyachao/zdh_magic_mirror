@@ -71,11 +71,27 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
         this.atomicInteger=atomicInteger;
         this.dbConfig=new HashMap<>((Map)dbConfig);
         getSftpUtil(this.dbConfig);
+        initMinioClient(this.dbConfig);
     }
 
     @Override
     public boolean checkSftp() {
         return Boolean.valueOf(this.dbConfig.getOrDefault("sftp.enable", "false"));
+    }
+
+    @Override
+    public String storageMode() {
+        return this.dbConfig.getOrDefault("storage.mode", "");
+    }
+
+    @Override
+    public String getBucket() {
+        return this.dbConfig.getOrDefault("storage.minio.bucket", super.getBucket());
+    }
+
+    @Override
+    public String getRegion() {
+        return this.dbConfig.getOrDefault("storage.minio.region", super.getRegion());
     }
 
     @Override

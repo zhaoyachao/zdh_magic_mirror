@@ -40,6 +40,7 @@
         <commons-jexl3.version>3.1</commons-jexl3.version>
         <groovy-all.version>3.0.19</groovy-all.version>
         <rocksdb.version>7.10.2</rocksdb.version>
+        <minio.version>8.5.10</minio.version>
     </properties>
 
     <name>zdh magic mirror Tapestry 5 Application</name>
@@ -177,6 +178,14 @@
                 <artifactId>rocksdbjni</artifactId>
                 <version>${rocksdb.version}</version>
             </dependency>
+
+            <!-- https://mvnrepository.com/artifact/io.minio/minio -->
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
