@@ -27,6 +27,9 @@ public class RedisFilterEngineImpl implements FilterEngine {
         this.filter_code = filter_code;
         this.product_code = product_code;
         if(!redisConfMap.containsKey(getFilterKey())){
+            if(redisConfMap.containsKey("default")){
+                return ;
+            }
             throw new Exception("redis引擎无法找到对应的filter配置");
         }
     }
@@ -37,7 +40,7 @@ public class RedisFilterEngineImpl implements FilterEngine {
 
     @Override
     public List<String> get() throws Exception {
-        RedissonClient redissonClient = redisConfMap.get(getFilterKey()).redisson();
+        RedissonClient redissonClient = redisConfMap.getOrDefault(getFilterKey(), redisConfMap.get("default")).redisson();
         try{
             List<String> list = new ArrayList<>();
             //根据filter_code找到对应配置
@@ -61,7 +64,7 @@ public class RedisFilterEngineImpl implements FilterEngine {
 
     @Override
     public FilterResult getMap(Collection<String> rs) throws Exception {
-        RedissonClient redissonClient = redisConfMap.get(getFilterKey()).redisson();
+        RedissonClient redissonClient = redisConfMap.getOrDefault(getFilterKey(), redisConfMap.get("default")).redisson();
         try{
             FilterResult filterResult = new FilterResult();
             Map<String,String> id_map_rs = Maps.newHashMap();

@@ -214,11 +214,11 @@ public class PluginServer {
                 }
                 if(engine.equalsIgnoreCase("redis")){
                   if(param.equalsIgnoreCase("mode")){
-                      redisConf.setMode(param);
+                      redisConf.setMode(config.getProperty(key));
                   }else if(param.equalsIgnoreCase("url")){
-                      redisConf.setUrl(param);
-                  }else if(param.equalsIgnoreCase("passwd")){
-                      redisConf.setPasswd(param);
+                      redisConf.setUrl(config.getProperty(key));
+                  }else if(param.equalsIgnoreCase("password")){
+                      redisConf.setPasswd(config.getProperty(key));
                   }
                 }
 
@@ -248,11 +248,11 @@ public class PluginServer {
                 }
                 if(engine.equalsIgnoreCase("redis")){
                     if(param.equalsIgnoreCase("mode")){
-                        redisConf.setMode(param);
+                        redisConf.setMode(config.getProperty(key));
                     }else if(param.equalsIgnoreCase("url")){
-                        redisConf.setUrl(param);
-                    }else if(param.equalsIgnoreCase("passwd")){
-                        redisConf.setPasswd(param);
+                        redisConf.setUrl(config.getProperty(key));
+                    }else if(param.equalsIgnoreCase("password")){
+                        redisConf.setPasswd(config.getProperty(key));
                     }
                 }
 

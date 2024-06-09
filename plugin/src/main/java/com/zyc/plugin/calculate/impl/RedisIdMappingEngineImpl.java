@@ -24,13 +24,16 @@ public class RedisIdMappingEngineImpl implements IdMappingEngine {
     public RedisIdMappingEngineImpl(String id_mapping_code) throws Exception {
         this.id_mapping_code = id_mapping_code;
         if(!redisConfMap.containsKey(id_mapping_code)){
+            if(redisConfMap.containsKey("default")){
+                return ;
+            }
             throw new Exception("redis引擎无法找到对应的id_mapping配置");
         }
     }
 
     @Override
     public List<String> get() throws Exception {
-        RedissonClient redissonClient = redisConfMap.get(id_mapping_code).redisson();
+        RedissonClient redissonClient = redisConfMap.getOrDefault(id_mapping_code, redisConfMap.get("default")).redisson();
         try{
             List<String> list = new ArrayList<>();
             //根据id_mapping_code找到对应配置
@@ -55,7 +58,7 @@ public class RedisIdMappingEngineImpl implements IdMappingEngine {
 
     @Override
     public IdMappingResult getMap(Collection<String> rs) throws Exception {
-        RedissonClient redissonClient = redisConfMap.get(id_mapping_code).redisson();
+        RedissonClient redissonClient = redisConfMap.getOrDefault(id_mapping_code, redisConfMap.get("default")).redisson();
         try{
             IdMappingResult idMappingResult = new IdMappingResult();
             Map<String,String> id_map_rs = Maps.newHashMap();
