@@ -115,6 +115,18 @@ public class LogUtil {
         send(zdhLogs);
     }
 
+    public static void warn(String job_id,String task_logs_id, String msg){
+        StackTraceElement caller = getCaller();
+        log().log(LogUtil.class.getName(), Level.INFO, msg, null);
+        ZdhLogs zdhLogs=new ZdhLogs();
+        zdhLogs.setLevel("WARN");
+        zdhLogs.setJob_id(job_id);
+        zdhLogs.setTask_logs_id(task_logs_id);
+        zdhLogs.setMsg(msg);
+        zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
+        send(zdhLogs);
+    }
+
     public static void debug(String job_id,String task_logs_id, String msg){
         StackTraceElement caller = getCaller();
         log().log(LogUtil.class.getName(), Level.DEBUG, msg, null);

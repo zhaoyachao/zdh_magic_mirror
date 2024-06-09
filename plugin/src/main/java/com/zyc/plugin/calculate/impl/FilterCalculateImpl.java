@@ -67,7 +67,6 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
     private Map<String,Object> param=new HashMap<String, Object>();
     private AtomicInteger atomicInteger;
     private Map<String,String> dbConfig=new HashMap<String, String>();
-    private StrategyLogInfo strategyLogInfo;
 
     public FilterCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
         this.param=param;
@@ -131,6 +130,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
                     }
                     filterInfos.add(filterInfo);
                 }
+                LogUtil.warn(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "过滤规则使用redis引擎时,需要区分产品线,请谨慎使用!!!");
                 //执行过滤
                 for (FilterInfo filterInfo:filterInfos){
                     filterInfo.getFilter_name();
