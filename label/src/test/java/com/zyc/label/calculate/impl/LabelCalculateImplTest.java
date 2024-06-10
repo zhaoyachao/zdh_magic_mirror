@@ -142,7 +142,7 @@ public class LabelCalculateImplTest {
     @Test
     public void testMinio() throws IOException, InvalidResponseException, InvalidKeyException, NoSuchAlgorithmException, ServerException, InternalException, XmlParserException, InsufficientDataException, ErrorResponseException {
 
-        MinioClient minioClient = MinioUtil.buildMinioClient("minio_zyc", "minio_zyc", "http://111.173.105.158:9000");
+        MinioClient minioClient = MinioUtil.buildMinioClient("minio_zyc", "minio_zyc", "http://127.0.0.1:9000");
 
 
         String bucket = "zdh-magic-mirror";
