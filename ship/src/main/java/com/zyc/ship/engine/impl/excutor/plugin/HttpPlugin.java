@@ -31,7 +31,7 @@ public class HttpPlugin implements Plugin{
     }
 
     @Override
-    public boolean execute() {
+    public boolean execute() throws Exception {
         try{
             Gson gson=new Gson();
             List<Map> rule_params = gson.fromJson(((JSONObject)run_jsmind_data).get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
@@ -78,7 +78,7 @@ public class HttpPlugin implements Plugin{
             return false;
         }catch (Exception e){
             logger.error("ship plugin http error: ", e);
+            throw e;
         }
-        return false;
     }
 }

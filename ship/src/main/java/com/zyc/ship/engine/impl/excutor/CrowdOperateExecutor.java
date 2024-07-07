@@ -2,18 +2,25 @@ package com.zyc.ship.engine.impl.excutor;
 
 
 import com.alibaba.fastjson.JSONObject;
+import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
+import com.zyc.ship.engine.impl.RiskShipResultImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CrowdOperateExecutor {
+    private static Logger logger= LoggerFactory.getLogger(CrowdOperateExecutor.class);
 
-    public String execute(JSONObject run_jsmind_data, String uid){
+    public ShipResult execute(JSONObject run_jsmind_data, String uid){
+        ShipResult shipResult = new RiskShipResultImpl();
         //到执行器时的运算符,都是可执行的,master disruptor会提前判断,因此一定返回success
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
-            return tmp;
+
         }catch (Exception e){
 
         }
-        return tmp;
+        shipResult.setStatus(tmp);
+        return shipResult;
     }
 }

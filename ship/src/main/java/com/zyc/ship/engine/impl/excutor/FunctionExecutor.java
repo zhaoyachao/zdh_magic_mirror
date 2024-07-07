@@ -9,7 +9,9 @@ import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.FunctionInfo;
 import com.zyc.common.groovy.GroovyFactory;
+import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
+import com.zyc.ship.engine.impl.RiskShipResultImpl;
 import com.zyc.ship.service.impl.CacheFunctionServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -21,7 +23,8 @@ import java.util.*;
 public class FunctionExecutor {
     private Logger logger= LoggerFactory.getLogger(this.getClass());
 
-    public String execute(JSONObject run_jsmind_data, String uid){
+    public ShipResult execute(JSONObject run_jsmind_data, String uid){
+        ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{
             String function_name = run_jsmind_data.getString("rule_id");
@@ -58,7 +61,8 @@ public class FunctionExecutor {
                 }else{
                     tmp = ShipResultStatusEnum.SUCCESS.code;
                 }
-                return tmp;
+                shipResult.setStatus(tmp);
+                return shipResult;
             }
 
             //如果开启对比: 开启对比：关闭, 取值表达式不为空且不为ret, 此时需要通过解析表达式获取结果
@@ -70,7 +74,8 @@ public class FunctionExecutor {
                 }else{
                     tmp = ShipResultStatusEnum.SUCCESS.code;
                 }
-                return tmp;
+                shipResult.setStatus(tmp);
+                return shipResult;
             }
 
             if(return_diff_enable.equalsIgnoreCase("true")) {
@@ -82,13 +87,17 @@ public class FunctionExecutor {
                 }else{
                     tmp = ShipResultStatusEnum.ERROR.code;
                 }
-                return tmp;
+                shipResult.setStatus(tmp);
+                return shipResult;
             }
 
         }catch (Exception e){
             logger.error("ship excutor function error: ", e);
+            tmp = ShipResultStatusEnum.ERROR.code;
+            shipResult.setMessage(e.getMessage());
         }
-        return tmp;
+        shipResult.setStatus(tmp);
+        return shipResult;
     }
 
     public Object functionExcute(FunctionInfo functionInfo, String[] param_value){

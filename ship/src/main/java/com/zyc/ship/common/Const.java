@@ -12,4 +12,6 @@ public class Const {
 
     public static String TN_TYPE_RELATIVE="relative";
     public static String TN_TYPE_ABSOLUTE="absolute";
+
+    public static String ONLINE_RISK_IS_STOP_KEY = "ONLINE_RISK_IS_STOP_KEY";
 }

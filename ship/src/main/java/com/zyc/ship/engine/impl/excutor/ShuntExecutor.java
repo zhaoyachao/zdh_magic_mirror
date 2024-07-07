@@ -4,7 +4,9 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.hash.Hashing;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
+import com.zyc.ship.engine.impl.RiskShipResultImpl;
 import com.zyc.ship.entity.StrategyGroupInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +18,8 @@ public class ShuntExecutor {
 
     private static Logger logger= LoggerFactory.getLogger(ShuntExecutor.class);
 
-    public String execute(StrategyInstance strategyInstance, String uid){
+    public ShipResult execute(StrategyInstance strategyInstance, String uid){
+        ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
             //校验是否命中分流
@@ -24,9 +27,12 @@ public class ShuntExecutor {
                 tmp = ShipResultStatusEnum.ERROR.code;
             }
         }catch (Exception e){
-
+            logger.error("ship excutor shunt error: ", e);
+            tmp = ShipResultStatusEnum.ERROR.code;
+            shipResult.setMessage(e.getMessage());
         }
-        return tmp;
+        shipResult.setStatus(tmp);
+        return shipResult;
     }
 
     public boolean shunt(StrategyGroupInstance strategyGroup, StrategyInstance strategyInstance, String uid){

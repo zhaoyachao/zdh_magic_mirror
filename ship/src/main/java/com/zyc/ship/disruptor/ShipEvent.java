@@ -8,12 +8,14 @@ import com.zyc.ship.entity.InputParam;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 统一参数
  */
 public class ShipEvent {
 
+    private AtomicInteger sequence = new AtomicInteger(0);
 
     private Map<String,Object> labelValues;
 
@@ -83,6 +85,23 @@ public class ShipEvent {
      * 执行中产生的数据
      */
     private ConcurrentHashMap<String, Object> runParam;
+
+
+    public AtomicInteger getSequence(){
+        return sequence;
+    }
+
+    public void setSequence(AtomicInteger sequence){
+        this.sequence = sequence;
+    }
+
+    /**
+     * 获取执行顺序
+     * @return
+     */
+    public int incrementAndGet(){
+        return this.sequence.incrementAndGet();
+    }
 
     public Map<String, Object> getLabelValues() {
         return labelValues;

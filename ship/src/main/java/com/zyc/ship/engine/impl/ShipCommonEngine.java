@@ -298,8 +298,8 @@ public class ShipCommonEngine implements Engine {
             shipEvent.setStatus(ShipConst.STATUS_CREATE);
 
             shipEvent.setShipResultMap(shipResultMap);
-            ShipResult shipResult = new RiskShipResultImpl();
-            ShipExecutor shipExecutor = new RiskShipExecutorImpl(shipEvent, shipResult);
+
+            ShipExecutor shipExecutor = new RiskShipExecutorImpl(shipEvent);
             shipEvent.setShipExecutor(shipExecutor);
             shipEvent.setRunParam(new ConcurrentHashMap<>());
 

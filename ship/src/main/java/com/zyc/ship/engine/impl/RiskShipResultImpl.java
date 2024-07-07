@@ -5,14 +5,51 @@ import com.zyc.ship.entity.StrategyEventResult;
 
 public class RiskShipResultImpl implements ShipResult {
 
+    private String startTime;
+
+    private String endTime;
+
+    private int sequence=0;
 
     private String strategy_instance_id;
 
     private String status;
 
+    private String message;
+
     private String strategyName;
 
     private StrategyEventResult riskStrategyEventResult;
+
+    @Override
+    public String getStartTime() {
+        return startTime;
+    }
+
+    @Override
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
+
+    @Override
+    public String getEndTime() {
+        return endTime;
+    }
+
+    @Override
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
+    }
+
+    @Override
+    public int getSequence() {
+        return sequence;
+    }
+
+    @Override
+    public void setSequence(int sequence) {
+        this.sequence = sequence;
+    }
 
     @Override
     public String getStrategyInstanceId() {
@@ -52,6 +89,16 @@ public class RiskShipResultImpl implements ShipResult {
     @Override
     public StrategyEventResult getRiskStrategyEventResult() {
         return riskStrategyEventResult;
+    }
+
+    @Override
+    public String getMessage() {
+        return this.message;
+    }
+
+    @Override
+    public void setMessage(String message) {
+        this.message = message;
     }
 
 

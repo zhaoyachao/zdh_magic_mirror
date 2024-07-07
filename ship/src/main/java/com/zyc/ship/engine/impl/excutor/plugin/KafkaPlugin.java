@@ -7,13 +7,19 @@ import com.zyc.common.entity.StrategyInstance;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
+/**
+ * @author Administrator
+ */
 public class KafkaPlugin implements Plugin{
 
     private static Logger logger= LoggerFactory.getLogger(KafkaPlugin.class);
@@ -28,7 +34,7 @@ public class KafkaPlugin implements Plugin{
     }
 
     @Override
-    public boolean execute() {
+    public boolean execute() throws ExecutionException, InterruptedException {
         KafkaProducer<String, String> producer=null;
         try{
             Gson gson=new Gson();
@@ -70,15 +76,16 @@ public class KafkaPlugin implements Plugin{
             String topic = props.getProperty("topic","test");
             String msg = props.getProperty("message", "");
             producer = new KafkaProducer<>(props);
-            producer.send(new ProducerRecord<>(topic, msg));
+            Future<RecordMetadata> send = producer.send(new ProducerRecord<>(topic, msg));
+            send.get().offset();
             return true;
         }catch (Exception e){
             logger.error("ship plugin kafka error: ", e);
+            throw e;
         }finally {
             if(producer != null){
                 producer.close();
             }
         }
-        return false;
     }
 }

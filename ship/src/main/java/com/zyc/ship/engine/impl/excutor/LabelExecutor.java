@@ -6,7 +6,9 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
+import com.zyc.ship.engine.impl.RiskShipResultImpl;
 import com.zyc.ship.entity.LabelValueConfig;
 import com.zyc.ship.entity.StrategyLabelParamConfig;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +31,8 @@ public class LabelExecutor {
      * @param user_param 用户自定义参数,从接口中传进来的参数
      * @return
      */
-    public String execute(JSONObject run_jsmind_data,  Map<String,Object> labelVaues, String uid, JSONObject user_param){
+    public ShipResult execute(JSONObject run_jsmind_data, Map<String,Object> labelVaues, String uid, JSONObject user_param){
+        ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
             List<LabelValueConfig> labelValueConfigs = labelParam2LableValueConfig(run_jsmind_data);
@@ -43,9 +46,10 @@ public class LabelExecutor {
         }catch (Exception e){
            logger.error("ship excutor label error: ", e);
            tmp = ShipResultStatusEnum.ERROR.code;
+           shipResult.setMessage(e.getMessage());
         }
-
-        return tmp;
+        shipResult.setStatus(tmp);
+        return shipResult;
     }
 
     /**

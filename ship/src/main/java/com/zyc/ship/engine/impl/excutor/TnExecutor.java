@@ -10,16 +10,22 @@ import com.zyc.rqueue.RQueueManager;
 import com.zyc.rqueue.RQueueMode;
 import com.zyc.ship.common.Const;
 import com.zyc.ship.disruptor.ShipEvent;
+import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
+import com.zyc.ship.engine.impl.RiskShipResultImpl;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class TnExecutor {
+    private static Logger logger= LoggerFactory.getLogger(TnExecutor.class);
 
-    public String execute(JSONObject run_jsmind_data, String uid, StrategyInstance strategyInstance, ShipEvent shipEvent){
+    public ShipResult execute(JSONObject run_jsmind_data, String uid, StrategyInstance strategyInstance, ShipEvent shipEvent){
+        ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
             //1 获取对比时间类型,相对或者绝对
@@ -72,10 +78,12 @@ public class TnExecutor {
             //获取当前request_id
             RQueueClient<String> rQueueClient = RQueueManager.getRQueueClient(queueName, RQueueMode.DELAYEDQUEUE);
             rQueueClient.offer(jsonObject.toJSONString(), delay_senond, TimeUnit.SECONDS);
-            return tmp;
         }catch (Exception e){
+            logger.error("ship excutor tn error: ", e);
             tmp = ShipResultStatusEnum.ERROR.code;
+            shipResult.setMessage(e.getMessage());
         }
-        return tmp;
+        shipResult.setStatus(tmp);
+        return shipResult;
     }
 }

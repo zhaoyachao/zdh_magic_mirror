@@ -3,7 +3,9 @@ package com.zyc.ship.engine.impl;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
+import com.zyc.ship.common.Const;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.entity.*;
@@ -60,6 +62,13 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                         String data_node = shipCommonInputParam.getData_node();
 
                         int flow = shipCommonInputParam.getFlow();
+
+                        //校验是否跳过,防止出现问题导致重大损失使用
+                        Object risk_is_stop= JedisPoolUtil.redisClient().get(Const.ONLINE_RISK_IS_STOP_KEY);
+                        if(risk_is_stop != null && risk_is_stop.toString().equalsIgnoreCase("true")){
+                            return ;
+                        }
+
                         //获取需要校验的策略信息
                         List<StrategyGroupInstance> strategy_groups = getStrategyGroups(strategyService,scene, data_node);
 

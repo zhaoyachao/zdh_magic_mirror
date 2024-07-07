@@ -2,7 +2,9 @@ package com.zyc.ship.engine.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
+import com.zyc.ship.common.Const;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.entity.*;
@@ -51,6 +53,12 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
             int flow = shipCommonInputParam.getFlow();
             //检测是否存在小流量区间,不存在则创建默认小流量区间 todo 默认根据uid hash
 
+            //校验是否跳过,防止出现问题导致重大损失使用
+            Object risk_is_stop= JedisPoolUtil.redisClient().get(Const.ONLINE_RISK_IS_STOP_KEY);
+            if(risk_is_stop != null && risk_is_stop.toString().equalsIgnoreCase("true")){
+                return shipRiskOutputParam;
+            }
+
             //获取需要校验的策略信息
             List<StrategyGroupInstance> strategy_groups = getStrategyGroups(this.strategyService,scene, data_node);
 
@@ -86,7 +94,7 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
             executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch, shipEventMap, result, request_id);
 
             //30秒超时,关闭线程
-            if(!groupCountDownLatch.await(1000*1000, TimeUnit.MILLISECONDS)){
+            if(!groupCountDownLatch.await(1000*10, TimeUnit.MILLISECONDS)){
                for (String group_instance_id: shipEventMap.keySet()){
                    if(shipEventMap.get(group_instance_id).getCdl().getCount() != 0){
                        shipEventMap.get(group_instance_id).getStopFlag().setFlag(true);

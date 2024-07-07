@@ -1,5 +1,6 @@
 package com.zyc.ship.disruptor;
 
+import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.WorkHandler;
@@ -32,6 +33,7 @@ public class ShipWorkerEventWorkHandler implements WorkHandler<ShipEvent> {
             if(shipEvent.getStopFlag().getFlag()){
                 shipEvent.getRunPath().put(shipEvent.getStrategyInstanceId(), ShipConst.STATUS_ERROR);
             }
+            int sequence = shipEvent.incrementAndGet();
             logger.info("worker: "+ JSON.toJSONString(shipEvent));
             logger.info("worker check: "+ JSON.toJSONString(shipEvent.getStrategyInstance().getStrategy_context()));
             StrategyInstance strategyInstance = shipEvent.getStrategyInstance();
@@ -40,13 +42,17 @@ public class ShipWorkerEventWorkHandler implements WorkHandler<ShipEvent> {
 
                 String strategyInstanceId = shipEvent.getStrategyInstanceId();
                 ShipResult shipResult = new RiskShipResultImpl();
+                shipResult.setStartTime(String.valueOf(DateUtil.current()));
+                shipResult.setSequence(sequence);
                 shipResult.setStatus(ShipConst.STATUS_ERROR);
                 shipResult.setStrategyInstanceId(strategyInstanceId);
                 shipResult.setStrategyName(shipEvent.getStrategyInstanceMap().get(strategyInstanceId).getStrategy_context());
+                shipResult.setEndTime(String.valueOf(DateUtil.current()));
                 shipEvent.getShipResultMap().put(strategyInstanceId, shipResult);
             }else if(shipEvent.getStatus().equalsIgnoreCase(ShipConst.STATUS_CREATE)){
                 //执行节点任务
                 ShipResult shipResult = shipEvent.getShipExecutor().execute(strategyInstance);
+                shipResult.setSequence(sequence);
                 shipEvent.getRunPath().put(shipEvent.getStrategyInstanceId(), shipResult.getStatus());
                 String strategyInstanceId = shipEvent.getStrategyInstanceId();
                 shipEvent.getShipResultMap().put(strategyInstanceId, shipResult);
@@ -74,6 +80,7 @@ public class ShipWorkerEventWorkHandler implements WorkHandler<ShipEvent> {
 
     public ShipEvent reBuildShipEvent(ShipEvent shipEvent, String strategyId){
         ShipEvent shipEvent1 = new ShipEvent();
+        shipEvent1.setSequence(shipEvent.getSequence());
         shipEvent1.setRequestId(shipEvent.getRequestId());
         shipEvent1.setLogGroupId(shipEvent.getLogGroupId());
         shipEvent1.setStrategyInstanceId(strategyId);

@@ -3,14 +3,21 @@ package com.zyc.ship.engine.impl.excutor;
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.groovy.GroovyFactory;
+import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
+import com.zyc.ship.engine.impl.RiskShipResultImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class CodeBlockExecutor {
 
-    public String execute(JSONObject run_jsmind_data, StrategyInstance strategyInstance){
+    private static Logger logger= LoggerFactory.getLogger(CodeBlockExecutor.class);
+
+    public ShipResult execute(JSONObject run_jsmind_data, StrategyInstance strategyInstance){
+        ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{
             String code_type=run_jsmind_data.getOrDefault("code_type", "").toString();
@@ -25,8 +32,11 @@ public class CodeBlockExecutor {
                 tmp = String.valueOf(result);
             }
         }catch (Exception e){
-
+            logger.error("ship excutor codeblock error: ", e);
+            tmp = ShipResultStatusEnum.ERROR.code;
+            shipResult.setMessage(e.getMessage());
         }
-        return tmp;
+        shipResult.setStatus(tmp);
+        return shipResult;
     }
 }

@@ -65,6 +65,7 @@ public class DisruptorManager {
             @Override
             public void translateTo(ShipEvent event, long sequence) {
 
+                event.setSequence(shipEvent.getSequence());
                 event.setRequestId(shipEvent.getRequestId());
                 event.setLogId(shipEvent.getLogId());
                 event.setLogGroupId(shipEvent.getLogGroupId());
