@@ -18,6 +18,8 @@ public class DataNodeExecutor {
             String s_data_node = run_jsmind_data.getOrDefault("data_node","").toString();
             if(data_node.equalsIgnoreCase(s_data_node)){
                 tmp = ShipResultStatusEnum.SUCCESS.code;
+            }else{
+                shipResult.setMessage("未命中数据节点: "+s_data_node);
             }
         }catch (Exception e){
             logger.error("ship excutor datanode error: ", e);

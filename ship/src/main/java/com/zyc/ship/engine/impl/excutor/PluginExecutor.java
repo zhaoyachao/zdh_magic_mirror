@@ -27,6 +27,8 @@ public class PluginExecutor {
             boolean result = plugin.execute();
             if(result){
                 tmp = ShipResultStatusEnum.SUCCESS.code;
+            }else{
+                shipResult.setMessage("查询执行失败: "+plugin.getName());
             }
         }catch (Exception e){
             logger.error("ship excutor plugin error: ", e);

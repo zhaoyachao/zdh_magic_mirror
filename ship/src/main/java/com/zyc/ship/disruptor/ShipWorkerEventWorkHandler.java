@@ -48,6 +48,7 @@ public class ShipWorkerEventWorkHandler implements WorkHandler<ShipEvent> {
                 shipResult.setStrategyInstanceId(strategyInstanceId);
                 shipResult.setStrategyName(shipEvent.getStrategyInstanceMap().get(strategyInstanceId).getStrategy_context());
                 shipResult.setEndTime(String.valueOf(DateUtil.current()));
+                shipResult.setMessage(shipEvent.getMsg());
                 shipEvent.getShipResultMap().put(strategyInstanceId, shipResult);
             }else if(shipEvent.getStatus().equalsIgnoreCase(ShipConst.STATUS_CREATE)){
                 //执行节点任务

@@ -22,6 +22,8 @@ public class CrowdFileExecutor {
             Object value = JedisPoolUtil.redisClient().get(key);
             if(value != null){
                 tmp = ShipResultStatusEnum.SUCCESS.code;
+            }else{
+                shipResult.setMessage("未命中人群文件: "+key);
             }
         }catch (Exception e){
             logger.error("ship excutor crowdfile error: ", e);

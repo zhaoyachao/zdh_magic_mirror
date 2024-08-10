@@ -34,6 +34,11 @@ public class KafkaPlugin implements Plugin{
     }
 
     @Override
+    public String getName() {
+        return "kafka";
+    }
+
+    @Override
     public boolean execute() throws ExecutionException, InterruptedException {
         KafkaProducer<String, String> producer=null;
         try{

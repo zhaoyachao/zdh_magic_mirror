@@ -47,6 +47,11 @@ public class ShipEvent {
     private String status;
 
     /**
+     * 信息说明
+     */
+    private String msg;
+
+    /**
      * 策略id
      */
     private String strategyInstanceId;
@@ -175,6 +180,14 @@ public class ShipEvent {
         this.status = status;
     }
 
+    public String getMsg() {
+        return msg;
+    }
+
+    public void setMsg(String msg) {
+        this.msg = msg;
+    }
+
     public String getStrategyInstanceId() {
         return strategyInstanceId;
     }
@@ -276,5 +289,6 @@ public class ShipEvent {
         this.setCdl(null);
         this.setGroupCdl(null);
         this.setShipExecutor(null);
+        this.setMsg(null);
     }
 }

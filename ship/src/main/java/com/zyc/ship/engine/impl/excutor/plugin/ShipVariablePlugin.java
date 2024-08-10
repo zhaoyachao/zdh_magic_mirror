@@ -30,6 +30,11 @@ public class ShipVariablePlugin implements Plugin{
     }
 
     @Override
+    public String getName() {
+        return "shipvariable";
+    }
+
+    @Override
     public boolean execute() throws Exception {
 
         try {

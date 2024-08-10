@@ -40,6 +40,7 @@ public class LabelExecutor {
                 //此处遍历实现,默认仅支持多个参数and操作
                 if(!diffLable(labelValueConfig, labelVaues, uid, user_param)) {
                     tmp = ShipResultStatusEnum.ERROR.code;
+                    shipResult.setMessage("标签不满足, 标签: "+labelValueConfig.getLabel_code());
                     break;
                 }
             }

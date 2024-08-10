@@ -25,6 +25,7 @@ public class ShuntExecutor {
             //校验是否命中分流
             if(!shunt(null, strategyInstance, uid)){
                 tmp = ShipResultStatusEnum.ERROR.code;
+                shipResult.setMessage("未命中分流");
             }
         }catch (Exception e){
             logger.error("ship excutor shunt error: ", e);

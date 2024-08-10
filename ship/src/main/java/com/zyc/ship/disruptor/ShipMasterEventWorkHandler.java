@@ -40,6 +40,7 @@ public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
             if(status.equalsIgnoreCase(ShipConst.STATUS_ERROR)){
                 ShipEvent shipEvent1 = reBuildShipEvent(shipEvent, shipEvent.getStrategyInstanceId());
                 shipEvent1.setStatus(ShipConst.STATUS_ERROR);
+                shipEvent1.setMsg("上游存在失败或异常");
                 EventTranslator<ShipEvent> eventEventTranslator = DisruptorManager.buildByShipEvent(shipEvent1);
                 if(disruptor != null){
                     disruptor.publishEvent(eventEventTranslator);

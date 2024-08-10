@@ -20,6 +20,7 @@ public class FilterExecutor {
             String[] filters = run_jsmind_data.getString("rule_id").split(",");
             if(!isHitFilter(filters, shipEvent.getFilterValues(), uid)){
                 tmp = ShipResultStatusEnum.ERROR.code;
+                shipResult.setMessage("命中过滤集");
             }
         }catch (Exception e){
             logger.error("ship excutor filter error: ", e);

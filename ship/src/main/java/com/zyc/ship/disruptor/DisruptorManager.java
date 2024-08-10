@@ -75,6 +75,7 @@ public class DisruptorManager {
                 event.setDag(shipEvent.getDag());
                 event.setStopFlag(shipEvent.getStopFlag());
                 event.setStatus(shipEvent.getStatus());
+                event.setMsg(shipEvent.getMsg());
                 event.setRunPath(shipEvent.getRunPath());
                 event.setStrategyInstance(shipEvent.getStrategyInstance());
                 event.setStrategyInstanceId(shipEvent.getStrategyInstanceId());

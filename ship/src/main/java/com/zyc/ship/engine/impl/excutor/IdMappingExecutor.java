@@ -22,6 +22,7 @@ public class IdMappingExecutor {
             Object value = labelVaues.get(tag_key);
             if(value == null){
                 tmp = ShipResultStatusEnum.ERROR.code;
+                shipResult.setMessage("无法找到id对应映射");
             }
             shipEvent.getRunParam().put(mapping_code, value);
 

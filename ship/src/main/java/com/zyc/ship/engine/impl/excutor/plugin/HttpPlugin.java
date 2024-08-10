@@ -31,6 +31,11 @@ public class HttpPlugin implements Plugin{
     }
 
     @Override
+    public String getName() {
+        return "http";
+    }
+
+    @Override
     public boolean execute() throws Exception {
         try{
             Gson gson=new Gson();
