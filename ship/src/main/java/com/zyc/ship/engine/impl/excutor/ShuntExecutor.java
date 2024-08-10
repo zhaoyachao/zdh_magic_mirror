@@ -35,7 +35,7 @@ public class ShuntExecutor {
         return shipResult;
     }
 
-    public boolean shunt(StrategyGroupInstance strategyGroup, StrategyInstance strategyInstance, String uid){
+    public boolean shunt(StrategyGroupInstance strategyGroup, StrategyInstance strategyInstance, String uid) throws Exception {
         try{
             JSONObject jsonObject = JSON.parseObject(strategyInstance.getRun_jsmind_data());
             String shunt_param_str=jsonObject.get("shunt_param").toString();
@@ -61,7 +61,7 @@ public class ShuntExecutor {
             }
         }catch (Exception e){
             logger.error("ship excutor shunt error: ", e);
-            return false;
+            throw e;
         }
 
     }
