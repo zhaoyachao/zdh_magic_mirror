@@ -10,6 +10,7 @@ import com.zyc.ship.disruptor.ShipExecutor;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.excutor.*;
+import com.zyc.ship.engine.impl.excutor.VarPoolExecutor;
 import com.zyc.ship.entity.ShipCommonInputParam;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -104,6 +105,9 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             }else if(instance_type.equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
                 FunctionExecutor functionExecutor = new FunctionExecutor();
                 shipResult1 = functionExecutor.execute(run_jsmind_data, uid);
+            }else if(instance_type.equalsIgnoreCase(InstanceType.VARPOOL.getCode())){
+                VarPoolExecutor varPoolExecutor = new VarPoolExecutor();
+                shipResult1 = varPoolExecutor.execute(strategyInstance, shipEvent);
             }else{
                 logger.error("暂不支持的经营类型: {}", instance_type);
                 tmp = ShipResultStatusEnum.ERROR.code;
