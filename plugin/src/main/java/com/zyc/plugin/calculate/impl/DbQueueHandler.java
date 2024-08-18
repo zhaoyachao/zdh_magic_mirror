@@ -27,7 +27,7 @@ public class DbQueueHandler implements QueueHandler {
     public static String[] instanceTypes = new String[]{
             InstanceType.FILTER.getCode(),InstanceType.SHUNT.getCode(),InstanceType.TOUCH.getCode(),InstanceType.PLUGIN.getCode(),
             InstanceType.ID_MAPPING.getCode(),InstanceType.MANUAL_CONFIRM.getCode(),InstanceType.RIGHTS.getCode(),InstanceType.CODE_BLOCK.getCode(),
-            InstanceType.TN.getCode(), InstanceType.FUNCTION.getCode()};
+            InstanceType.TN.getCode(), InstanceType.FUNCTION.getCode(), InstanceType.VARPOOL.getCode()};
     private String[] status = new String[]{"check_dep_finish"};
 
     @Override

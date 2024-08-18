@@ -18,6 +18,10 @@ public interface RedisClient {
 
     public String getKey(String key);
 
+    public void expire(String key, Long second);
+
+    public boolean isExists(String key);
+
     public void close();
 
     public RLock rLock(String lockName);

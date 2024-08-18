@@ -21,7 +21,8 @@ public enum InstanceType {
     DATA_NODE("data_node","data_node","在线节点","true"),
     RISK("risk","risk","决策事件","true"),
     TN("tn","tn","t+n时间","true"),
-    FUNCTION("function","function","函数","true");
+    FUNCTION("function","function","函数","true"),
+    VARPOOL("varpool","varpool","变量池","true");
 
 
     private String value;

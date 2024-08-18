@@ -132,6 +132,8 @@ public class PluginServer {
                         runnable=new TnCalculateImpl(m, atomicInteger, config);
                     }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
                         runnable=new FunctionCalculateImpl(m, atomicInteger, config);
+                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.VARPOOL.getCode())){
+                        runnable=new VarPoolCalculateImpl(m, atomicInteger, config);
                     }else{
                         //不支持的任务类型
                         LogUtil.error(m.get("strategy_id").toString(), m.get("id").toString(), "不支持的任务类型, "+m.get("instance_type").toString());

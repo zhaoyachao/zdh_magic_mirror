@@ -3,6 +3,7 @@ package com.zyc.common.redis;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 
+import java.time.Duration;
 import java.util.Map;
 
 public class RedisClientImpl implements RedisClient{
@@ -44,6 +45,16 @@ public class RedisClientImpl implements RedisClient{
     }
 
     @Override
+    public void expire(String key, Long second) {
+        redissonClient.getBucket(key).expire(Duration.ofSeconds(second));
+    }
+
+    @Override
+    public boolean isExists(String key) {
+        return redissonClient.getBucket(key).isExists();
+    }
+
+    @Override
     public void close() {
         redissonClient.shutdown();
     }
@@ -52,6 +63,7 @@ public class RedisClientImpl implements RedisClient{
     public RLock rLock(String lockName){
         try{
             RLock rLock = redissonClient.getLock(lockName);
+
             return rLock;
         }catch (Exception e){
             throw e;
