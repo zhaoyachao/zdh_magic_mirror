@@ -7,6 +7,7 @@ import com.zyc.common.plugin.PluginResult;
 import com.zyc.common.plugin.PluginService;
 import com.zyc.common.util.HttpUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
 
 import java.util.ArrayList;
@@ -27,10 +28,17 @@ public class HttpPluginServiceImpl implements PluginService {
             String request_params = props.getProperty("request_params", "");
             String url = props.getProperty("url", "");
             String data_type = props.getProperty("data_type", "");
+            String proxy_url = props.getProperty("proxy_url", "");
 
             String return_param = props.getProperty("return_param", "");
             String return_param_value = props.getProperty("return_param_value", "");
             String return_value_type = props.getProperty("return_value_type", "json");
+
+
+            HttpHost proxy = null;
+            if(!StringUtils.isEmpty(proxy_url)){
+                proxy = HttpHost.create(proxy_url);
+            }
 
             String res = "";
             if(method.equalsIgnoreCase("post")){
@@ -38,10 +46,10 @@ public class HttpPluginServiceImpl implements PluginService {
                     throw new Exception("当请求类型为post时数据类型仅支持json");
                 }
 
-                res = HttpUtil.postJSON(url, request_params);
+                res = HttpUtil.postJSON(url, request_params, proxy);
             }else if(method.equalsIgnoreCase("get")){
                 List<NameValuePair> npl=new ArrayList<>();
-                res = HttpUtil.getRequest(url+"?"+request_params, npl);
+                res = HttpUtil.getRequest(url+"?"+request_params, npl, proxy);
             }else{
                 throw new Exception("仅支持get,post请求");
             }
