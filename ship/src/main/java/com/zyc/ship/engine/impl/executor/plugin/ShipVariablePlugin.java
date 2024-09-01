@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor.plugin;
+package com.zyc.ship.engine.impl.executor.plugin;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;

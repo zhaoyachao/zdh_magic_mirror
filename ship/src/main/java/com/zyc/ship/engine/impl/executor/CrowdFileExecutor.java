@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.redis.JedisPoolUtil;
@@ -9,7 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CrowdFileExecutor {
+public class CrowdFileExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(CrowdFileExecutor.class);
 
     public ShipResult execute(JSONObject run_jsmind_data, String product_code, String uid){

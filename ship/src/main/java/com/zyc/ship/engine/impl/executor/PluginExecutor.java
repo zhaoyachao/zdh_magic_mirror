@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.entity.StrategyInstance;
@@ -6,14 +6,14 @@ import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.RiskShipResultImpl;
-import com.zyc.ship.engine.impl.excutor.plugin.HttpPlugin;
-import com.zyc.ship.engine.impl.excutor.plugin.KafkaPlugin;
-import com.zyc.ship.engine.impl.excutor.plugin.Plugin;
-import com.zyc.ship.engine.impl.excutor.plugin.ShipVariablePlugin;
+import com.zyc.ship.engine.impl.executor.plugin.HttpPlugin;
+import com.zyc.ship.engine.impl.executor.plugin.KafkaPlugin;
+import com.zyc.ship.engine.impl.executor.plugin.Plugin;
+import com.zyc.ship.engine.impl.executor.plugin.ShipVariablePlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PluginExecutor {
+public class PluginExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(PluginExecutor.class);
 
     public ShipResult execute(JSONObject run_jsmind_data, String uid, StrategyInstance strategyInstance, ShipEvent shipEvent){

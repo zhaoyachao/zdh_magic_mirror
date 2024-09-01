@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.NumberUtil;
@@ -21,7 +21,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-public class TnExecutor {
+public class TnExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(TnExecutor.class);
 
     public ShipResult execute(JSONObject run_jsmind_data, String uid, StrategyInstance strategyInstance, ShipEvent shipEvent){

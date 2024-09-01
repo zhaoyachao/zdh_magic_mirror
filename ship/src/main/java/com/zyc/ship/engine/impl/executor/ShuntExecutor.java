@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 
-public class ShuntExecutor {
+public class ShuntExecutor extends BaseExecutor{
 
     private static Logger logger= LoggerFactory.getLogger(ShuntExecutor.class);
 

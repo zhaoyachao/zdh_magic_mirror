@@ -64,4 +64,20 @@ public interface StrategyInstanceMapper {
     }
     )
     public int updateStatus2CheckFinish(@Param("status")String status, @Param("instance_types") String[] instance_types);
+
+    @Update({
+            "<script>",
+            "update strategy_instance set status='check_dep_finish'",
+            "where ",
+            "status=#{status}",
+            " and instance_type in ",
+            "<foreach collection='instance_types' item='instance_type' open='(' separator=',' close=')'>",
+            "#{instance_type}",
+            "</foreach>",
+            "and group_type='offline'",
+            "and (strategy_id % #{total_slot} &gt;= #{start_slot} and strategy_id % #{total_slot} &lt; #{end_slot})",
+            "</script>"
+    }
+    )
+    public int updateStatus2CheckFinishBySlot(@Param("status")String status, @Param("instance_types") String[] instance_types, @Param("start_slot")int start_slot, @Param("end_slot")int end_slot, @Param("total_slot")int total_slot);
 }

@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.ship.disruptor.ShipEvent;
@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class FilterExecutor {
+public class FilterExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(FilterExecutor.class);
 
     public ShipResult executor(JSONObject run_jsmind_data, ShipEvent shipEvent, String uid){

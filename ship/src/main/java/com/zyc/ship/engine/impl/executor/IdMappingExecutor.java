@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.ship.disruptor.ShipEvent;
@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class IdMappingExecutor {
+public class IdMappingExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(IdMappingExecutor.class);
 
     public ShipResult execute(JSONObject run_jsmind_data, Map<String,Object> labelVaues, ShipEvent shipEvent, String uid){

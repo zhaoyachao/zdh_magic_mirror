@@ -9,8 +9,8 @@ import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipExecutor;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
-import com.zyc.ship.engine.impl.excutor.*;
-import com.zyc.ship.engine.impl.excutor.VarPoolExecutor;
+import com.zyc.ship.engine.impl.executor.*;
+import com.zyc.ship.engine.impl.executor.VarPoolExecutor;
 import com.zyc.ship.entity.ShipCommonInputParam;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -90,21 +90,21 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 shipResult1 = rightsExecutor.execute(run_jsmind_data, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.CODE_BLOCK.getCode())){
                 CodeBlockExecutor codeBlockExecutor = new CodeBlockExecutor();
-                shipResult1 = codeBlockExecutor.execute(run_jsmind_data, strategyInstance);
+                shipResult1 = codeBlockExecutor.execute(shipEvent, run_jsmind_data, strategyInstance);
             }else if(instance_type.equalsIgnoreCase(InstanceType.DATA_NODE.getCode())){
                 DataNodeExecutor dataNodeExecutor = new DataNodeExecutor();
                 shipResult1 = dataNodeExecutor.execute(run_jsmind_data, data_node, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.RISK.getCode())){
                 //决策信息
                 RiskExecutor riskExecutor = new RiskExecutor();
-                shipResult1 = riskExecutor.execute(run_jsmind_data);
+                shipResult1 = riskExecutor.execute(shipEvent, run_jsmind_data);
             }else if(instance_type.equalsIgnoreCase(InstanceType.TN.getCode())){
                 //根据TN生成,任务(暂不支持,在线策略是否新增一个延迟插件)
                 TnExecutor tnExecutor = new TnExecutor();
                 shipResult1 = tnExecutor.execute(run_jsmind_data, uid, strategyInstance, shipEvent);
             }else if(instance_type.equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
                 FunctionExecutor functionExecutor = new FunctionExecutor();
-                shipResult1 = functionExecutor.execute(run_jsmind_data, uid);
+                shipResult1 = functionExecutor.execute(shipEvent, run_jsmind_data, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.VARPOOL.getCode())){
                 VarPoolExecutor varPoolExecutor = new VarPoolExecutor();
                 shipResult1 = varPoolExecutor.execute(strategyInstance, shipEvent);

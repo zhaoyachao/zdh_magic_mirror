@@ -1,22 +1,20 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.google.common.hash.Hashing;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.RiskShipResultImpl;
-import com.zyc.ship.entity.StrategyGroupInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
-public class VarPoolExecutor {
+public class VarPoolExecutor extends BaseExecutor{
 
     private static Logger logger= LoggerFactory.getLogger(VarPoolExecutor.class);
 
@@ -29,7 +27,7 @@ public class VarPoolExecutor {
             List<Map> varpool_params = JSON.parseArray(varpool_param_str, Map.class);
 
             //写入变量池
-            String key = "varpool:"+shipEvent.getLogGroupId();
+            String key = "varpool:logid:"+shipEvent.getLogGroupId();
             for (Map varpool: varpool_params){
                 String varpool_code = varpool.getOrDefault("varpool_code","").toString();
                 String varpool_domain = varpool.getOrDefault("varpool_domain","").toString();

@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 
 import com.alibaba.fastjson.JSONObject;
@@ -8,18 +8,17 @@ import com.zyc.ship.engine.impl.RiskShipResultImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CrowdRuleExecutor {
-    private static Logger logger= LoggerFactory.getLogger(CrowdRuleExecutor.class);
+public class CrowdOperateExecutor extends BaseExecutor{
+    private static Logger logger= LoggerFactory.getLogger(CrowdOperateExecutor.class);
 
     public ShipResult execute(JSONObject run_jsmind_data, String uid){
         ShipResult shipResult = new RiskShipResultImpl();
-        String tmp = ShipResultStatusEnum.ERROR.code;
+        //到执行器时的运算符,都是可执行的,master disruptor会提前判断,因此一定返回success
+        String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
 
         }catch (Exception e){
-            logger.error("ship excutor label error: ", e);
-            tmp = ShipResultStatusEnum.ERROR.code;
-            shipResult.setMessage(e.getMessage());
+
         }
         shipResult.setStatus(tmp);
         return shipResult;

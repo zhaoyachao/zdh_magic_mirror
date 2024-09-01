@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.ship.disruptor.ShipResult;
@@ -7,7 +7,7 @@ import com.zyc.ship.engine.impl.RiskShipResultImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DataNodeExecutor {
+public class DataNodeExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(DataNodeExecutor.class);
 
     public ShipResult execute(JSONObject run_jsmind_data, String data_node, String uid){

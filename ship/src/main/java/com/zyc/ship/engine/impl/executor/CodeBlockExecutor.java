@@ -1,8 +1,9 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.groovy.GroovyFactory;
+import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.RiskShipResultImpl;
@@ -12,11 +13,11 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CodeBlockExecutor {
+public class CodeBlockExecutor extends BaseExecutor{
 
     private static Logger logger= LoggerFactory.getLogger(CodeBlockExecutor.class);
 
-    public ShipResult execute(JSONObject run_jsmind_data, StrategyInstance strategyInstance){
+    public ShipResult execute(ShipEvent shipEvent, JSONObject run_jsmind_data, StrategyInstance strategyInstance){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{
@@ -28,6 +29,9 @@ public class CodeBlockExecutor {
                 Map<String,Object> params = new HashMap<>();
                 params.put("strategy_instance_id", strategyInstance.getId());
                 params.put("strategy_instance", strategyInstance);
+                mergeMapByVarPool(shipEvent.getLogGroupId()+"", params);
+
+
                 boolean result =(boolean) GroovyFactory.execExpress(command, params);
                 tmp = String.valueOf(result);
             }

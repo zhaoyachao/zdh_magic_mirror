@@ -125,7 +125,7 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
 
             }else{
                 //写入变量池
-                String key = "varpool:"+strategyLogInfo.getStrategy_group_instance_id();
+                String key = "varpool:gid:"+strategyLogInfo.getStrategy_group_instance_id();
                 for (Map varpool: varpool_params){
                     String varpool_code = varpool.getOrDefault("varpool_code","").toString();
                     String varpool_domain = varpool.getOrDefault("varpool_domain","").toString();

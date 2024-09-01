@@ -140,6 +140,9 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             params.put("strategy_instance", this.param);
             params.put("rule_params", rule_params);
 
+            mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);
+
+
             Set<String> rs_error = Sets.newHashSet();
             Set<String> rs3 = Sets.newHashSet();
 

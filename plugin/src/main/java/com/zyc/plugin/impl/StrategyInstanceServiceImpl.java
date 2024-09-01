@@ -107,4 +107,27 @@ public class StrategyInstanceServiceImpl {
         }
     }
 
+    public int updateStatus2CheckFinishBySlot(String status, String[] instance_types, int start_slot, int end_slot, int total_slot){
+        SqlSession sqlSession=null;
+        try {
+            sqlSession=MybatisUtil.getSqlSession();
+            StrategyInstanceMapper strategyInstanceMappler = sqlSession.getMapper(StrategyInstanceMapper.class);
+            int result = strategyInstanceMappler.updateStatus2CheckFinishBySlot(status, instance_types, start_slot, end_slot, total_slot);
+            return result;
+
+        } catch (IOException e) {
+            logger.error("plugin service updateStatus2CheckFinish error: ", e);
+            return 0;
+        }finally {
+            if(sqlSession != null){
+                try {
+                    sqlSession.getConnection().close();
+                } catch (SQLException e) {
+                    logger.error("plugin service updateStatus2CheckFinish sqlSession error: ", e);
+                }
+                sqlSession.close();
+            }
+        }
+    }
+
 }

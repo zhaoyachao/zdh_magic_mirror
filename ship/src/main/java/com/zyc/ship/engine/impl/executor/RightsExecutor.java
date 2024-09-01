@@ -1,5 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
-
+package com.zyc.ship.engine.impl.executor;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.ship.disruptor.ShipResult;
@@ -8,17 +7,19 @@ import com.zyc.ship.engine.impl.RiskShipResultImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CrowdOperateExecutor {
-    private static Logger logger= LoggerFactory.getLogger(CrowdOperateExecutor.class);
+public class RightsExecutor extends BaseExecutor{
+    private static Logger logger= LoggerFactory.getLogger(RightsExecutor.class);
 
     public ShipResult execute(JSONObject run_jsmind_data, String uid){
         ShipResult shipResult = new RiskShipResultImpl();
-        //到执行器时的运算符,都是可执行的,master disruptor会提前判断,因此一定返回success
-        String tmp = ShipResultStatusEnum.SUCCESS.code;
+        String tmp = ShipResultStatusEnum.ERROR.code;
         try{
+            //节点,当前不支持在线权益
 
         }catch (Exception e){
-
+            logger.error("ship excutor rights error: ", e);
+            tmp = ShipResultStatusEnum.ERROR.code;
+            shipResult.setMessage(e.getMessage());
         }
         shipResult.setStatus(tmp);
         return shipResult;

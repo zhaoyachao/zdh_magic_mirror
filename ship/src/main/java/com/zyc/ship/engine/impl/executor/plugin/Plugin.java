@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor.plugin;
+package com.zyc.ship.engine.impl.executor.plugin;
 
 public interface Plugin {
 

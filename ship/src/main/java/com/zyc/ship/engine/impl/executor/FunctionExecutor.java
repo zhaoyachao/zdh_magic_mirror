@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import cn.hutool.core.util.ArrayUtil;
 import com.alibaba.fastjson.JSON;
@@ -9,6 +9,7 @@ import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.FunctionInfo;
 import com.zyc.common.groovy.GroovyFactory;
+import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.RiskShipResultImpl;
@@ -20,10 +21,10 @@ import org.slf4j.LoggerFactory;
 import javax.script.ScriptException;
 import java.util.*;
 
-public class FunctionExecutor {
+public class FunctionExecutor extends BaseExecutor{
     private Logger logger= LoggerFactory.getLogger(this.getClass());
 
-    public ShipResult execute(JSONObject run_jsmind_data, String uid){
+    public ShipResult execute(ShipEvent shipEvent, JSONObject run_jsmind_data, String uid){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{
@@ -49,9 +50,13 @@ public class FunctionExecutor {
                 param_values.add(value);
                 String param_code = map.get("param_code").toString();
                 String param_value = map.get("param_value").toString();
+
                 String new_param_value = jinjava.render(param_value, objectMap);//替换可变参数
                 objectMap.put(param_code, new_param_value);
             }
+
+            mergeMapByVarPool(shipEvent.getLogGroupId()+"", objectMap);
+
             Object res = functionExcute(functionInfo, param_values.toArray(new String[param_values.size()]));
 
             //在线模块尽量直接使用返回结果, 需要设置 开启对比：关闭,取值表达式：为空或者ret

@@ -1,4 +1,4 @@
-package com.zyc.ship.engine.impl.excutor;
+package com.zyc.ship.engine.impl.executor;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class LabelExecutor {
+public class LabelExecutor extends BaseExecutor{
 
     private static Logger logger= LoggerFactory.getLogger(LabelExecutor.class);
     /**

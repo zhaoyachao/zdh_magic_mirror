@@ -8,6 +8,7 @@ import com.zyc.common.queue.QueueHandler;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
+import com.zyc.common.util.ServerManagerUtil;
 import com.zyc.label.calculate.impl.*;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
 import com.zyc.rqueue.RQueueClient;
@@ -70,7 +71,11 @@ public class LabelServer {
 
             initRQueue(config);
 
+            String serviceName = config.getProperty("service.name");
+            ServerManagerUtil.registerServiceName(serviceName);
+
             consumerLabelDoubleCheck();
+
             int limit = Integer.valueOf(config.getProperty("task.max.num", "50"));
 
             QueueHandler queueHandler=new DbQueueHandler();
@@ -79,7 +84,9 @@ public class LabelServer {
             ThreadPoolExecutor threadPoolExecutor=new ThreadPoolExecutor(10, 100, 20, TimeUnit.MINUTES, new LinkedBlockingDeque<Runnable>());
             //提交一个监控杀死任务线程
             threadPoolExecutor.execute(new KillCalculateImpl(null, config));
-            resetStatus();
+
+            resetStatus(config);
+
             while (true){
                 if(atomicInteger.get()>limit){
                     Thread.sleep(1000);
@@ -93,6 +100,7 @@ public class LabelServer {
                     }
                     continue;
                 }
+
 
                 Map m = queueHandler.handler();
                 if(m != null){
@@ -159,6 +167,10 @@ public class LabelServer {
 
     public static void checkConfig(Properties config) throws Exception {
 
+        if(config.get("service.name") == null){
+            throw new Exception("配置信息缺失service.name参数");
+        }
+
         if(config.get("file.path") == null || config.get("file.rocksdb.path") == null){
             throw new Exception("配置信息缺失file.path, file.rocksdb.path参数");
         }
@@ -166,6 +178,12 @@ public class LabelServer {
         int slot_num = Integer.valueOf(config.getProperty("task.slot.total.num", "0"));
         String slot = config.getProperty("task.slot", "0");
         logger.info("服务总槽位: "+slot_num+", 服务分配槽位: "+slot);
+
+        if(slot_num==0){
+            throw new Exception("服务总槽位配置异常,example: 100");
+        }
+
+
         if(!slot.contains(",") || slot.split(",").length != 2){
             throw new Exception("任务分配槽位信息配置格式异常,example: 0,99");
         }
@@ -190,9 +208,14 @@ public class LabelServer {
         }
     }
 
-    public static void resetStatus(){
+    public static void resetStatus(Properties config){
+        int slot_num = Integer.valueOf(config.getProperty("task.slot.total.num", "0"));
+        String[] slot = config.getProperty("task.slot", "0").split(",");
+        int start_slot =  Integer.valueOf(slot[0]);
+        int end_slot =  Integer.valueOf(slot[1]);
+
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        strategyInstanceService.updateStatus2CheckFinish(Const.STATUS_ETL, DbQueueHandler.instanceTypes);
+        strategyInstanceService.updateStatus2CheckFinishBySlot(Const.STATUS_ETL, DbQueueHandler.instanceTypes,start_slot,end_slot,slot_num);
     }
 
     public static void setStatus(String task_id,String status){

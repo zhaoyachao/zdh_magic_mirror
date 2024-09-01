@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import com.jcraft.jsch.SftpException;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.entity.StrategyLogInfo;
+import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.*;
 import com.zyc.plugin.PluginServer;
 import com.zyc.plugin.calculate.CalculateCommomParam;
@@ -642,5 +643,32 @@ public abstract class BaseCalculate {
             PluginServer.tasks.remove(key);
         }
 
+    }
+
+
+    /**
+     * 获取变量池信息,并合并到params集合中
+     * @param strategy_group_instance_id
+     * @param params
+     */
+    public void mergeMapByVarPool(String strategy_group_instance_id, Map<String, Object> params){
+        Map<Object, Object> varPoolMap = getVarPoolBy(strategy_group_instance_id);
+
+        if(varPoolMap != null && varPoolMap.size() > 0){
+            for(Map.Entry entry: varPoolMap.entrySet()){
+                String key = entry.getKey().toString();
+                Object value = entry.getKey();
+                params.put(key, value);
+            }
+        }
+    }
+
+
+    public Map<Object, Object> getVarPoolBy(String strategy_group_instance_id){
+        String key = "varpool:gid"+strategy_group_instance_id;
+        if(JedisPoolUtil.redisClient().isExists(key)){
+            return JedisPoolUtil.redisClient().hGetAll(key);
+        }
+        return new HashMap<>();
     }
 }

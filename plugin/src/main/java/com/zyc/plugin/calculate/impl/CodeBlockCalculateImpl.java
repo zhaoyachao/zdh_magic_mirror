@@ -125,6 +125,7 @@ public class CodeBlockCalculateImpl extends BaseCalculate implements CodeBlockCa
             Map<String,Object> params = new HashMap<>();
             params.put("strategy_instance_id", strategyLogInfo.getStrategy_instance_id());
             params.put("strategy_instance", this.param);
+            mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);
 
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用,不做操作
