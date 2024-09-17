@@ -8,6 +8,7 @@ import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.queue.QueueHandler;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
+import com.zyc.common.util.ServerManagerUtil;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,10 +37,14 @@ public class DbQueueHandler implements QueueHandler {
             if(config == null){
                 throw new Exception("handler 未配置properties");
             }
-            int slot_num = Integer.valueOf(config.getProperty("task.slot.total.num", "0"));
-            String[] slot = config.getProperty("task.slot", "0").split(",");
-            int start_slot =  Integer.valueOf(slot[0]);
-            int end_slot =  Integer.valueOf(slot[1]);
+            String slotStr = ServerManagerUtil.getReportSlot("");
+            String[] slots = slotStr.split(",");
+            int slot_num = 100;
+            int start_slot =  Integer.valueOf(slots[0]);
+            int end_slot =  Integer.valueOf(slots[1]);
+            if(slot_num<=0){
+                throw new Exception("服务槽位配置异常: "+slotStr);
+            }
             List<StrategyInstance> strategyInstances = strategyInstanceService.selectByStatus(status,instanceTypes);
             if(strategyInstances!=null && strategyInstances.size()>0){
                 for (StrategyInstance strategyInstance: strategyInstances){
@@ -49,7 +54,7 @@ public class DbQueueHandler implements QueueHandler {
                         strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
                         continue ;
                     }
-                    if(Long.valueOf(strategyInstance.getStrategy_id())% slot_num >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num < end_slot){
+                    if(Long.valueOf(strategyInstance.getStrategy_id())% slot_num + 1 >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1 <= end_slot){
                         return JSON.parseObject(JSON.toJSONString(strategyInstance), new TypeReference<Map<String, Object>>() {});
                     }
                 }

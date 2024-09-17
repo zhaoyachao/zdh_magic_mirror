@@ -25,6 +25,11 @@ public class RedisClientImpl implements RedisClient{
     }
 
     @Override
+    public boolean del(String key) {
+        return redissonClient.getBucket(key).delete();
+    }
+
+    @Override
     public Object hGet(String key, String secondKey) {
         return redissonClient.getMap(key).get(secondKey);
     }
@@ -32,6 +37,11 @@ public class RedisClientImpl implements RedisClient{
     @Override
     public void hSet(String key, String secondKey, Object value) {
         redissonClient.getMap(key).put(secondKey, value);
+    }
+
+    @Override
+    public void hDel(String key, String secondKey) {
+        redissonClient.getMap(key).remove(secondKey);
     }
 
     @Override

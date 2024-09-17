@@ -4,6 +4,7 @@ import cn.hutool.core.util.NumberUtil;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
+import com.zyc.common.util.ServerManagerUtil;
 import com.zyc.plugin.PluginServer;
 import com.zyc.plugin.calculate.KillCalculate;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
@@ -99,10 +100,11 @@ public class KillCalculateImpl extends BaseCalculate implements KillCalculate {
                 //获取要杀死的任务
                 List<StrategyInstance> strategyInstanceList = strategyInstanceService.selectByStatus(new String[]{"kill"}, new String[]{"rights","filter","shunt","touch","id_mapping","plugin", "manual_confirm","code_block", "tn", "function"});
 
-                int slot_num = Integer.valueOf(dbConfig.getOrDefault("task.slot.total.num", "0"));
-                String[] slot = dbConfig.getOrDefault("task.slot", "0").split(",");
-                int start_slot =  Integer.valueOf(slot[0]);
-                int end_slot =  Integer.valueOf(slot[1]);
+                String slotStr = ServerManagerUtil.getReportSlot("");
+                String[] slots = slotStr.split(",");
+                int slot_num = 100;
+                int start_slot =  Integer.valueOf(slots[0]);
+                int end_slot =  Integer.valueOf(slots[1]);
 
                 if(strategyInstanceList != null && strategyInstanceList.size()>0){
                     for (StrategyInstance strategyInstance: strategyInstanceList){
@@ -113,7 +115,7 @@ public class KillCalculateImpl extends BaseCalculate implements KillCalculate {
                             strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
                             continue ;
                         }
-                        if(!(Long.valueOf(strategyInstance.getStrategy_id())%slot_num >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num < end_slot)){
+                        if(!(Long.valueOf(strategyInstance.getStrategy_id())%slot_num +1 >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1<= end_slot)){
                             continue;
                         }
                         //拉取任务future

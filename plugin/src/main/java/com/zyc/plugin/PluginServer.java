@@ -66,6 +66,11 @@ public class PluginServer {
 
             String serviceName = config.getProperty("service.name");
             ServerManagerUtil.registerServiceName(serviceName);
+            ServerManagerUtil.ServiceInstanceConf serviceInstanceConf = ServerManagerUtil.registerServiceInstance(serviceName);
+            String slot_num = config.getProperty("task.slot.total.num", "0");
+            String slot = config.getProperty("task.slot", "-1,-1");
+            String instanceId = ServerManagerUtil.buildServiceInstance();
+            ServerManagerUtil.reportSlot(instanceId, slot_num, slot);
 
             loadIdMappingConf(config);
 
@@ -88,6 +93,9 @@ public class PluginServer {
             resetStatus(config);
 
             while (true){
+                ServerManagerUtil.heartbeatReport(serviceInstanceConf);
+                ServerManagerUtil.checkServiceRunningMode(serviceInstanceConf);
+
                 if(atomicInteger.get()>limit){
                     Thread.sleep(1000);
                     continue;
@@ -279,10 +287,12 @@ public class PluginServer {
     }
 
     public static void resetStatus(Properties config){
-        int slot_num = Integer.valueOf(config.getProperty("task.slot.total.num", "0"));
-        String[] slot = config.getProperty("task.slot", "0").split(",");
-        int start_slot =  Integer.valueOf(slot[0]);
-        int end_slot =  Integer.valueOf(slot[1]);
+
+        String slotStr = ServerManagerUtil.getReportSlot("");
+        String[] slots = slotStr.split(",");
+        int slot_num = 100;
+        int start_slot =  Integer.valueOf(slots[0]);
+        int end_slot =  Integer.valueOf(slots[1]);
 
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         strategyInstanceService.updateStatus2CheckFinishBySlot(Const.STATUS_ETL, DbQueueHandler.instanceTypes, start_slot, end_slot, slot_num);
