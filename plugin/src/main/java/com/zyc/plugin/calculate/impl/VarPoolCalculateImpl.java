@@ -2,6 +2,7 @@ package com.zyc.plugin.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 import com.zyc.common.entity.StrategyLogInfo;
@@ -128,10 +129,36 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
                 String key = "varpool:gid:"+strategyLogInfo.getStrategy_group_instance_id();
                 for (Map varpool: varpool_params){
                     String varpool_code = varpool.getOrDefault("varpool_code","").toString();
+                    String varpool_operate = varpool.getOrDefault("varpool_domain_operate","eq").toString();
                     String varpool_domain = varpool.getOrDefault("varpool_domain","").toString();
-                    String varpool_value = varpool.getOrDefault("varpool_value","").toString();
+                    String varpool_value = varpool.getOrDefault("varpool_domain_value","").toString();
                     String secondKey = varpool_domain+":"+varpool_code;
-                    JedisPoolUtil.redisClient().hSet(key, secondKey, varpool_value);
+                    if(varpool_operate.equalsIgnoreCase("eq")){
+                        JedisPoolUtil.redisClient().hSet(key, secondKey, varpool_value);
+                    }else if(varpool_operate.equalsIgnoreCase("add")){
+                        Set set = Sets.newHashSet(varpool_value);
+                        Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
+                        if(value != null){
+                            set = JSON.parseObject(value.toString(), Set.class);
+                            set.add(varpool_value);
+                        }
+                        JedisPoolUtil.redisClient().hSet(key, secondKey, JSON.toJSONString(set));
+                    }else if(varpool_operate.equalsIgnoreCase("concat")){
+                        Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
+                        if(value != null){
+                            varpool_value = value.toString()+","+varpool_value;
+                        }
+                        JedisPoolUtil.redisClient().hSet(key, secondKey, varpool_value);
+                    }else if(varpool_operate.equalsIgnoreCase("put")){
+                        JSONObject jsonObject = new JSONObject();
+                        Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
+                        if(value != null){
+                            jsonObject = JSON.parseObject(value.toString());
+                        }
+                        jsonObject.put(varpool_value.split(";")[0], varpool_value.split(";")[1]);
+                        JedisPoolUtil.redisClient().hSet(key, secondKey,jsonObject.toJSONString());
+                    }
+
                 }
 
                 //缓存7天

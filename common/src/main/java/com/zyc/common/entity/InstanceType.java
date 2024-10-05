@@ -22,7 +22,8 @@ public enum InstanceType {
     RISK("risk","risk","决策事件","true"),
     TN("tn","tn","t+n时间","true"),
     FUNCTION("function","function","函数","true"),
-    VARPOOL("varpool","varpool","变量池","true");
+    VARPOOL("varpool","varpool","变量池","true"),
+    VARIABLE("variable","variable","变量计算","true");
 
 
     private String value;

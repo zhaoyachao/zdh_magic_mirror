@@ -26,16 +26,7 @@ import java.util.stream.Collectors;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 
 public class HttpServerHandler extends HttpBaseHandler{
-    Logger logger= LoggerFactory.getLogger(HttpServerHandler.class);
-
-    //单线程线程池，同一时间只会有一个线程在运行,保证加载顺序
-    private ThreadPoolExecutor threadpool = new ThreadPoolExecutor(
-            1, // core pool size
-            1, // max pool size
-            500, // keep alive time
-            TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<Runnable>()
-            );
+    private Logger logger= LoggerFactory.getLogger(HttpServerHandler.class);
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -84,7 +75,10 @@ public class HttpServerHandler extends HttpBaseHandler{
         if(request.method().name().equalsIgnoreCase(HttpMethod.GET.name())){
             return getParam(request.uri());
         }else if(request.method().name().equalsIgnoreCase(HttpMethod.POST.name())){
-            return getBody(request.content().toString(CharsetUtil.UTF_8));
+            Map getMap = getParam(request.uri());
+            Map postMap = getBody(request.content().toString(CharsetUtil.UTF_8));
+            postMap.putAll(getMap);
+            return postMap;
         }else if(request.method().name().equalsIgnoreCase(HttpMethod.PUT.name())){
             Map<String,Object> map = getParam(request.uri());
             map.putAll(getBody(request.content().toString(CharsetUtil.UTF_8)));

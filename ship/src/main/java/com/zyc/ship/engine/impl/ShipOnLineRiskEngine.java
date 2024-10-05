@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
+import com.zyc.rqueue.RQueueManager;
 import com.zyc.ship.common.Const;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
@@ -101,6 +102,7 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
                    }
                }
             }
+            RQueueManager.getRQueueClient(Const.SHIP_ONLINE_RISK_LOG_QUEUE).add(JSON.toJSONString(result));
             shipRiskOutputParam.setStrategyGroupResults(result);
             logger.info("uuid: {}, end", uuid);
             return shipRiskOutputParam;

@@ -1,8 +1,11 @@
 package com.zyc.ship;
 
 import com.zyc.common.redis.JedisPoolUtil;
+import com.zyc.common.util.ServerManagerUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
+import com.zyc.rqueue.RQueueClient;
 import com.zyc.rqueue.RQueueManager;
+import com.zyc.ship.common.Const;
 import com.zyc.ship.disruptor.DisruptorManager;
 import com.zyc.ship.disruptor.ShipMasterEventWorkHandler;
 import com.zyc.ship.disruptor.ShipWorkerEventWorkHandler;
@@ -29,6 +32,10 @@ import java.util.concurrent.TimeUnit;
 public class ShipServer {
     public static Logger logger= LoggerFactory.getLogger(ShipServer.class);
 
+    public static ThreadPoolExecutor consumerLogThreadPoolExecutor = new ThreadPoolExecutor(1,
+            1, 1000*60*60,
+            TimeUnit.MICROSECONDS, new LinkedBlockingDeque<>(),
+            Executors.defaultThreadFactory(), new ThreadPoolExecutor.AbortPolicy());
 
     public static void main(String[] args) {
 
@@ -50,6 +57,10 @@ public class ShipServer {
                     Integer.valueOf(properties.getProperty("data.center.id", "1"))
                     );
             JedisPoolUtil.connect(properties);
+
+            String serviceName = properties.getProperty("service.name");
+            ServerManagerUtil.registerServiceName(serviceName);
+            ServerManagerUtil.ServiceInstanceConf serviceInstanceConf = ServerManagerUtil.registerServiceInstance(serviceName);
 
             initRQueue(properties);
             LabelHttpUtil.init(properties);
@@ -80,6 +91,7 @@ public class ShipServer {
             schedule.setName("ship_schedule");
             threadPoolExecutor.execute(schedule);
 
+            consumerLog(serviceInstanceConf);
             //初始化disruptor
             int masterHandlerNum = Integer.valueOf(properties.getProperty("ship.disruptr.master.handler.num", "1"));
             int workerHandlerNum = Integer.valueOf(properties.getProperty("ship.disruptr.worker.handler.num", "1"));
@@ -111,4 +123,51 @@ public class ShipServer {
 
     }
 
+    /**
+     * 经营/风控 实时日志记录
+     * 当前功能未实现,只是做一个消费逻辑,后续可扩展
+     * @param serviceInstanceConf
+     */
+    public static void consumerLog(ServerManagerUtil.ServiceInstanceConf serviceInstanceConf){
+
+        Runnable task = new Runnable(){
+
+            @Override
+            public void run() {
+
+                while (true){
+                    try{
+
+                        ServerManagerUtil.heartbeatReport(serviceInstanceConf);
+                        ServerManagerUtil.checkServiceRunningMode(serviceInstanceConf);
+
+                        RQueueClient rQueueClient = RQueueManager.getRQueueClient(Const.SHIP_ONLINE_RISK_LOG_QUEUE);
+
+                        Object riskLogStr = rQueueClient.poll();
+
+                        if(riskLogStr != null){
+                            logger.info(riskLogStr.toString());
+                        }
+                        RQueueClient rQueueClient2 = RQueueManager.getRQueueClient(Const.SHIP_ONLINE_MANAGER_LOG_QUEUE);
+
+                        Object managerLogStr = rQueueClient2.poll();
+                        if(riskLogStr != null){
+                            logger.info(managerLogStr.toString());
+                        }
+
+                        if(riskLogStr == null && managerLogStr == null){
+                            Thread.sleep(1000);
+                        }
+
+                    }catch (Exception e){
+
+                    }
+
+                }
+            }
+        };
+
+
+        consumerLogThreadPoolExecutor.submit(task);
+    }
 }

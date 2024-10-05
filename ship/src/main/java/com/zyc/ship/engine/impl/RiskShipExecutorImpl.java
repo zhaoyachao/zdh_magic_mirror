@@ -108,6 +108,9 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             }else if(instance_type.equalsIgnoreCase(InstanceType.VARPOOL.getCode())){
                 VarPoolExecutor varPoolExecutor = new VarPoolExecutor();
                 shipResult1 = varPoolExecutor.execute(strategyInstance, shipEvent);
+            }else if(instance_type.equalsIgnoreCase(InstanceType.VARIABLE.getCode())){
+                VariableExecutor variableExecutor = new VariableExecutor();
+                shipResult1 = variableExecutor.execute(strategyInstance, shipEvent);
             }else{
                 logger.error("暂不支持的经营类型: {}", instance_type);
                 tmp = ShipResultStatusEnum.ERROR.code;

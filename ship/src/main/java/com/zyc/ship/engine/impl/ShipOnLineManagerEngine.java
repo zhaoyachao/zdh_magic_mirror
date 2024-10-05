@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
+import com.zyc.rqueue.RQueueManager;
 import com.zyc.ship.common.Const;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
@@ -44,7 +45,6 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
         ShipManagerOutputParam shipManagerOutputParam = new ShipManagerOutputParam();
         shipManagerOutputParam.setStatus("error");
         try{
-            ShipOnLineManagerEngine shipOnLineManagerEngine = this;
             String uuid = UUID.randomUUID().toString();
 
             executorService.execute(new Runnable() {
@@ -88,7 +88,7 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
 
                         Map<String, Object> labels = new HashMap<>();
                         Map<String, Object> filters = new HashMap<>();
-                        shipOnLineManagerEngine.loadBaseData(null, labels, filters, shipCommonInputParam);
+                        loadBaseData(null, labels, filters, shipCommonInputParam);
 
                         logger.info("uuid: {}, label_values: {}", uuid, JSON.toJSONString(labels));
 
@@ -97,8 +97,10 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                         CountDownLatch groupCountDownLatch = new CountDownLatch(hit_strategy_groups.size());
                         Map<String, ShipEvent> shipEventMap = new ConcurrentHashMap<>();
 
-                        shipOnLineManagerEngine.executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch,
+                        executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch,
                                 shipEventMap, result, request_id);
+
+                        RQueueManager.getRQueueClient(Const.SHIP_ONLINE_MANAGER_LOG_QUEUE).add(JSON.toJSONString(result));
                     }catch (Exception e){
                         logger.error("ship online manager thread error: ", e);
                     }

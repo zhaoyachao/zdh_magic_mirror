@@ -14,4 +14,8 @@ public class Const {
     public static String TN_TYPE_ABSOLUTE="absolute";
 
     public static String ONLINE_RISK_IS_STOP_KEY = "ONLINE_RISK_IS_STOP_KEY";
+
+    public static String SHIP_ONLINE_RISK_LOG_QUEUE = "SHIP_ONLINE_RISK_LOG_QUEUE";
+
+    public static String SHIP_ONLINE_MANAGER_LOG_QUEUE = "SHIP_ONLINE_MANAGER_LOG_QUEUE";
 }

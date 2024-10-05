@@ -114,6 +114,7 @@ public class ServerManagerUtil {
             if(mode.toString().equalsIgnoreCase(SERVICE_MODE_STOP)){
                 //停止
                 JedisPoolUtil.redisClient().hDel(instance, "mode");
+                logger.info("服务停止...");
                 System.exit(0);
             }else if(mode.toString().equalsIgnoreCase(SERVICE_MODE_SUSPEND)){
                 while (true){
