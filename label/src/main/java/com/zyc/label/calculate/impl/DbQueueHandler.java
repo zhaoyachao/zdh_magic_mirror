@@ -43,6 +43,8 @@ public class DbQueueHandler implements QueueHandler {
             int start_slot =  Integer.valueOf(slots[0]);
             int end_slot =  Integer.valueOf(slots[1]);
 
+            String versionTag = ServerManagerUtil.getReportVersionTag("");
+
             if(slot_num!=100){
                 throw new Exception("服务槽位配置异常: "+slotStr);
             }
@@ -55,6 +57,14 @@ public class DbQueueHandler implements QueueHandler {
                         strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
                         continue ;
                     }
+                    Map run_jsmind_data = JSON.parseObject(strategyInstance.getRun_jsmind_data(), Map.class);
+                    String version_tag=run_jsmind_data.getOrDefault("version_tag","").toString();//true:禁用,false:未禁用
+
+                    //指定版本执行,判断当前实例是否可执行指定版本
+                    if(!versionTag.equalsIgnoreCase(version_tag)){
+                        continue;
+                    }
+
                     if(Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1 >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1 <= end_slot){
                         return JSON.parseObject(JSON.toJSONString(strategyInstance), new TypeReference<Map<String, Object>>() {});
                     }

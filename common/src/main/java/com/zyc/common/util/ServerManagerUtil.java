@@ -158,6 +158,17 @@ public class ServerManagerUtil {
         return slot.toString();
     }
 
+    public static String getReportVersionTag(String instaceId){
+        if(StringUtils.isEmpty(instaceId)){
+            instaceId = buildServiceInstance();
+        }
+        Object versionTag = JedisPoolUtil.redisClient().hGet(instaceId, "version_tag");
+        if(versionTag == null){
+            return "";
+        }
+        return versionTag.toString();
+    }
+
     public static class ServiceInstanceConf{
 
         private String service_name;
