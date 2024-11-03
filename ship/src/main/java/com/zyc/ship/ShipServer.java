@@ -6,6 +6,7 @@ import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.rqueue.RQueueClient;
 import com.zyc.rqueue.RQueueManager;
 import com.zyc.ship.common.Const;
+import com.zyc.ship.conf.ShipConf;
 import com.zyc.ship.disruptor.DisruptorManager;
 import com.zyc.ship.disruptor.ShipMasterEventWorkHandler;
 import com.zyc.ship.disruptor.ShipWorkerEventWorkHandler;
@@ -53,6 +54,7 @@ public class ShipServer {
             }
             logger.info("加载配置文件路径:{}", conf_path);
 
+            ShipConf.setConf(properties);
             SnowflakeIdWorker.init(Integer.valueOf(properties.getProperty("work.id", "1")),
                     Integer.valueOf(properties.getProperty("data.center.id", "1"))
                     );
@@ -95,8 +97,10 @@ public class ShipServer {
             //初始化disruptor
             int masterHandlerNum = Integer.valueOf(properties.getProperty("ship.disruptr.master.handler.num", "1"));
             int workerHandlerNum = Integer.valueOf(properties.getProperty("ship.disruptr.worker.handler.num", "1"));
-            DisruptorManager.getDisruptor("ship_master", masterHandlerNum, new ShipMasterEventWorkHandler());
-            DisruptorManager.getDisruptor("ship_worker", workerHandlerNum, new ShipWorkerEventWorkHandler());
+            int masterRingBufferSize = Integer.valueOf(properties.getProperty("ship.disruptr.master.ring.num", "1024*1024"));
+            int workerRingBufferSize = Integer.valueOf(properties.getProperty("ship.disruptr.worker.ring.num", "1024*1024"));
+            DisruptorManager.getDisruptor("ship_master", masterHandlerNum, new ShipMasterEventWorkHandler(), masterRingBufferSize);
+            DisruptorManager.getDisruptor("ship_worker", workerHandlerNum, new ShipWorkerEventWorkHandler(), workerRingBufferSize);
 
             NettyServer nettyServer=new NettyServer();
             nettyServer.start(properties);

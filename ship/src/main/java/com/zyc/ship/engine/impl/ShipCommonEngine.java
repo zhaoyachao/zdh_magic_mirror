@@ -263,8 +263,8 @@ public class ShipCommonEngine implements Engine {
             shipEvent.setLabelValues(labels);
             shipEvent.setFilterValues(filters);
 
-            Disruptor master = DisruptorManager.getDisruptor("ship_master", 1, new ShipMasterEventWorkHandler());
-            Disruptor worker = DisruptorManager.getDisruptor("ship_worker", 1, new ShipWorkerEventWorkHandler());
+            Disruptor master = DisruptorManager.getDisruptor("ship_master", 1, new ShipMasterEventWorkHandler(), Integer.valueOf(ShipConf.getProperty(ShipConf.SHIP_DISRUPTOR_MASTER_RING_NUM, "1024")));
+            Disruptor worker = DisruptorManager.getDisruptor("ship_worker", 1, new ShipWorkerEventWorkHandler(), Integer.valueOf(ShipConf.getProperty(ShipConf.SHIP_DISRUPTOR_WORKER_RING_NUM, "1024")));
 
 
             shipEvent.setInputParam(shipCommonInputParam);

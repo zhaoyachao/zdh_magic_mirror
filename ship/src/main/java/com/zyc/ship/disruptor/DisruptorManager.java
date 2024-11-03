@@ -17,7 +17,7 @@ public class DisruptorManager {
 
     private static String disruptor_lock = "disruptor_lock";
 
-    public static <T> Disruptor<T> getDisruptor(String name, int size, WorkHandler<T> workHandler) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    public static <T> Disruptor<T> getDisruptor(String name, int size, WorkHandler<T> workHandler, int ringBufferSize) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
 
         if(manager.containsKey(name)){
             return manager.get(name);
@@ -25,16 +25,15 @@ public class DisruptorManager {
 
         synchronized (disruptor_lock.intern()){
             if(!manager.containsKey(name)){
-                Disruptor disruptor = init(size, workHandler);
+                Disruptor disruptor = init(size, workHandler, ringBufferSize);
                 manager.put(name, disruptor);
             }
         }
         return manager.get(name);
     }
 
-    public static <T> Disruptor<T> init(int size, WorkHandler<T> workHandler) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+    public static <T> Disruptor<T> init(int size, WorkHandler<T> workHandler, int ringBufferSize) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         ShipEventFactory disruptorEventFactory = new ShipEventFactory();
-        int ringBufferSize = 1024 * 1024;
 
         Disruptor<T> disruptor = new Disruptor<T>(disruptorEventFactory, ringBufferSize, new ThreadFactory() {
             @Override
