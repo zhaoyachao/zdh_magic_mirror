@@ -63,5 +63,6 @@
 
     <mappers>
         <package name="com.zyc.ship.dao"/>
+        <package name="com.zyc.common.dao"/>
     </mappers>
 </configuration>

@@ -5,6 +5,7 @@ import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.util.DAG;
 import com.zyc.ship.entity.InputParam;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -25,7 +26,7 @@ public class ShipEvent {
     /**
      * 唯一请求id
      */
-    private long requestId;
+    private String requestId;
 
     /**
      * 策略组内日志id
@@ -52,6 +53,10 @@ public class ShipEvent {
     private String msg;
 
     /**
+     * 策略树实例ID
+     */
+    private String strategyGroupInstanceId;
+    /**
      * 策略id
      */
     private String strategyInstanceId;
@@ -61,6 +66,8 @@ public class ShipEvent {
     private Map<String, StrategyInstance> strategyInstanceMap;
 
     private DAG dag;
+
+    private List<Map<String,String>> dagMap;
 
     /**
      * 判断是否暂停任务
@@ -132,11 +139,11 @@ public class ShipEvent {
         this.inputParam = inputParam;
     }
 
-    public long getRequestId() {
+    public String getRequestId() {
         return requestId;
     }
 
-    public void setRequestId(long requestId) {
+    public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
 
@@ -188,6 +195,14 @@ public class ShipEvent {
         this.msg = msg;
     }
 
+    public String getStrategyGroupInstanceId() {
+        return strategyGroupInstanceId;
+    }
+
+    public void setStrategyGroupInstanceId(String strategyGroupInstanceId) {
+        this.strategyGroupInstanceId = strategyGroupInstanceId;
+    }
+
     public String getStrategyInstanceId() {
         return strategyInstanceId;
     }
@@ -218,6 +233,14 @@ public class ShipEvent {
 
     public void setDag(DAG dag) {
         this.dag = dag;
+    }
+
+    public List<Map<String, String>> getDagMap() {
+        return dagMap;
+    }
+
+    public void setDagMap(List<Map<String, String>> dagMap) {
+        this.dagMap = dagMap;
     }
 
     public StopFlag getStopFlag() {
@@ -282,6 +305,7 @@ public class ShipEvent {
         this.setDag(null);
         this.setStopFlag(null);
         this.setRunPath(null);
+        this.setStrategyGroupInstanceId(null);
         this.setStrategyInstance(null);
         this.setStrategyInstanceId(null);
         this.setStrategyInstanceMap(null);

@@ -250,7 +250,7 @@ public class ShipCommonEngine implements Engine {
      */
     public void executeStrategyGroups(List<StrategyGroupInstance> strategy_groups, Map<String, Object> labels, Map<String, Object> filters,
                                       ShipCommonInputParam shipCommonInputParam, String data_node, CountDownLatch groupCountDownLatch,
-                                      Map<String, ShipEvent> shipEventMap, Map<String, Map<String, ShipResult>> result, long request_id) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+                                      Map<String, ShipEvent> shipEventMap, Map<String, Map<String, ShipResult>> result, String request_id) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
         for (StrategyGroupInstance strategy_group: strategy_groups) {
 
@@ -297,12 +297,14 @@ public class ShipCommonEngine implements Engine {
             shipEvent.setGroupCdl(groupCountDownLatch);
             shipEvent.setStatus(ShipConst.STATUS_CREATE);
 
+            shipEvent.setStrategyGroupInstanceId(strategy_group.getId());
             shipEvent.setShipResultMap(shipResultMap);
 
             ShipExecutor shipExecutor = new RiskShipExecutorImpl(shipEvent);
             shipEvent.setShipExecutor(shipExecutor);
             shipEvent.setRunParam(new ConcurrentHashMap<>());
 
+            shipEvent.setDagMap(strategy_group.getDagMap());
             EventTranslator<ShipEvent> eventEventTranslator = DisruptorManager.buildByShipEvent(shipEvent);
 
             master.publishEvent(eventEventTranslator);

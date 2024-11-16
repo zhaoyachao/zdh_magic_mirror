@@ -671,4 +671,10 @@ public abstract class BaseCalculate {
         }
         return new HashMap<>();
     }
+
+    public void addStrategy2VarPool(String strategy_group_instance_id, String varpool_domain, String varpool_code, Object value){
+        String key = "varpool:gid"+strategy_group_instance_id;
+        String secondKey = varpool_domain+":"+varpool_code;
+        JedisPoolUtil.redisClient().hSet(key, secondKey, value);
+    }
 }

@@ -4,15 +4,21 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.RiskShipResultImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class VariableExecutor extends BaseExecutor{
 
@@ -24,8 +30,6 @@ public class VariableExecutor extends BaseExecutor{
         try{
             JSONObject jsonObject = JSON.parseObject(strategyInstance.getRun_jsmind_data());
 
-
-
             //写入变量池
             String key = "varpool:logid:"+shipEvent.getLogGroupId();
 
@@ -34,6 +38,7 @@ public class VariableExecutor extends BaseExecutor{
             String varpool_type = jsonObject.getOrDefault("varpool_type","string").toString();
             String varpool_domain = jsonObject.getOrDefault("varpool_domain","").toString();
             String varpool_value = jsonObject.getOrDefault("varpool_value","").toString();
+            String varpool_expre = jsonObject.getOrDefault("varpool_expre","").toString();
             String secondKey = varpool_domain+":"+varpool_code;
 
             Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
@@ -48,8 +53,45 @@ public class VariableExecutor extends BaseExecutor{
             }else if(varpool_type.equalsIgnoreCase("int")){
                 ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
             }else if(varpool_type.equalsIgnoreCase("list")){
-                throw new Exception("变量不支持的数据类型");
+                //获取变量表达式
+                if(!StringUtils.isEmpty(varpool_expre)){
+                    Map<String, Object> parmas = new HashMap<>();
+                    parmas.put("varpool_ret",  JSON.parseObject(value.toString(), List.class));
+                    value = GroovyFactory.execExpress(varpool_expre, parmas);
+                }else{
+                    value = JSON.parseObject(value.toString(), List.class);
+                }
+
+                if(value instanceof String){
+                    ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
+                }else if(value instanceof Integer){
+                    ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
+                }else if(value instanceof List){
+                    ret = diffListValue((List)value,varpool_value, varpool_operate);
+                }else{
+                    throw new Exception("不支持的数据类型");
+                }
+
             }else if(varpool_type.equalsIgnoreCase("map")){
+                //获取变量表达式
+                if(!StringUtils.isEmpty(varpool_expre)){
+                    Map<String, Object> parmas = new HashMap<>();
+                    parmas.put("varpool_ret",  JSON.parseObject(value.toString(), Map.class));
+                    value = GroovyFactory.execExpress(varpool_expre, parmas);
+                }else{
+                    value = JSON.parseObject(value.toString(), Map.class);
+                }
+
+                if(value instanceof String){
+                    ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
+                }else if(value instanceof Integer){
+                    ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
+                }else if(value instanceof Map){
+                    ret = diffMapValue((Map)value,varpool_value, varpool_operate);
+                }else{
+                    throw new Exception("不支持的数据类型");
+                }
+            }else{
                 throw new Exception("变量不支持的数据类型");
             }
 
@@ -189,6 +231,41 @@ public class VariableExecutor extends BaseExecutor{
             }else if(operate.equalsIgnoreCase("in")){
                 boolean in = Sets.newHashSet(uValue.split(";|,")).contains(lValue);
                 return in;
+            }
+            return false;
+        }catch (Exception e){
+            return false;
+        }
+    }
+
+
+    public boolean diffListValue(List<Object> lValue, String uValue, String operate){
+        try{
+            if(operate.equalsIgnoreCase("in")){
+                if(lValue.contains(uValue)) {
+                    return true;
+                }
+            }else if(operate.equalsIgnoreCase("like")){
+                if(lValue.stream().filter(s->s.toString().contains(uValue)).collect(Collectors.toList()).size()>0) {
+                    return true;
+                }
+            }
+            return false;
+        }catch (Exception e){
+            return false;
+        }
+    }
+
+    public boolean diffMapValue(Map lValue, String uValue, String operate){
+        try{
+            if(operate.equalsIgnoreCase("in")){
+                if(lValue.containsValue(uValue)) {
+                    return true;
+                }
+            }else if(operate.equalsIgnoreCase("like")){
+                if(lValue.values().stream().filter(s->s.toString().contains(uValue)).count()>0) {
+                    return true;
+                }
             }
             return false;
         }catch (Exception e){

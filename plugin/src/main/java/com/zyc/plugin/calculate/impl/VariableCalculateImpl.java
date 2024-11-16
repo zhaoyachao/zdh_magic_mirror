@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyLogInfo;
+import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
@@ -13,11 +14,13 @@ import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.VarPoolCalculate;
 import com.zyc.plugin.calculate.VariableCalculate;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 变量池实现
@@ -129,6 +132,7 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
                 String varpool_type = run_jsmind_data.getOrDefault("varpool_type","string").toString();
                 String varpool_domain = run_jsmind_data.getOrDefault("varpool_domain","").toString();
                 String varpool_value = run_jsmind_data.getOrDefault("varpool_value","").toString();
+                String varpool_expre = run_jsmind_data.getOrDefault("varpool_expre","").toString();
                 String secondKey = varpool_domain+":"+varpool_code;
 
                 Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
@@ -138,14 +142,49 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
                 }
 
                 boolean ret = false;
-                if(varpool_type.equalsIgnoreCase("string")){
+                if(varpool_type.equalsIgnoreCase("string") || varpool_type.equalsIgnoreCase("decimal")){
                     ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
-                }else if(varpool_type.equalsIgnoreCase("int")){
+                }else if(varpool_type.equalsIgnoreCase("int") ){
                     ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
                 }else if(varpool_type.equalsIgnoreCase("list")){
-                    throw new Exception("变量不支持的数据类型");
+                    //获取变量表达式
+                    if(!StringUtils.isEmpty(varpool_expre)){
+                        Map<String, Object> parmas = new HashMap<>();
+                        parmas.put("varpool_ret",  JSON.parseObject(value.toString(), List.class));
+                        value = GroovyFactory.execExpress(varpool_expre, parmas);
+                    }else{
+                        value = JSON.parseObject(value.toString(), List.class);
+                    }
+
+                    if(value instanceof String){
+                        ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
+                    }else if(value instanceof Integer){
+                        ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
+                    }else if(value instanceof List){
+                        ret = diffListValue((List)value,varpool_value, varpool_operate);
+                    }else{
+                        throw new Exception("不支持的数据类型");
+                    }
+
                 }else if(varpool_type.equalsIgnoreCase("map")){
-                    throw new Exception("变量不支持的数据类型");
+                    //获取变量表达式
+                    if(!StringUtils.isEmpty(varpool_expre)){
+                        Map<String, Object> parmas = new HashMap<>();
+                        parmas.put("varpool_ret",  JSON.parseObject(value.toString(), Map.class));
+                        value = GroovyFactory.execExpress(varpool_expre, parmas);
+                    }else{
+                        value = JSON.parseObject(value.toString(), Map.class);
+                    }
+
+                    if(value instanceof String){
+                        ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
+                    }else if(value instanceof Integer){
+                        ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
+                    }else if(value instanceof Map){
+                        ret = diffMapValue((Map)value,varpool_value, varpool_operate);
+                    }else{
+                        throw new Exception("不支持的数据类型");
+                    }
                 }
 
                 if(ret == false){
@@ -337,6 +376,40 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
             }else if(operate.equalsIgnoreCase("in")){
                 boolean in = Sets.newHashSet(uValue.split(";|,")).contains(lValue);
                 return in;
+            }
+            return false;
+        }catch (Exception e){
+            return false;
+        }
+    }
+
+    public boolean diffListValue(List<Object> lValue, String uValue, String operate){
+        try{
+            if(operate.equalsIgnoreCase("in")){
+                if(lValue.contains(uValue)) {
+                    return true;
+                }
+            }else if(operate.equalsIgnoreCase("like")){
+                if(lValue.stream().filter(s->s.toString().contains(uValue)).collect(Collectors.toList()).size()>0) {
+                    return true;
+                }
+            }
+            return false;
+        }catch (Exception e){
+            return false;
+        }
+    }
+
+    public boolean diffMapValue(Map lValue, String uValue, String operate){
+        try{
+            if(operate.equalsIgnoreCase("in")){
+                if(lValue.containsValue(uValue)) {
+                    return true;
+                }
+            }else if(operate.equalsIgnoreCase("like")){
+                if(lValue.values().stream().filter(s->s.toString().contains(uValue)).count()>0) {
+                    return true;
+                }
             }
             return false;
         }catch (Exception e){

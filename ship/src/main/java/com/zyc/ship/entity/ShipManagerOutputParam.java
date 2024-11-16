@@ -2,7 +2,17 @@ package com.zyc.ship.entity;
 
 public class ShipManagerOutputParam implements OutputParam{
 
+    private String requestId;
+
     private String status;
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
 
     public String getStatus() {
         return status;

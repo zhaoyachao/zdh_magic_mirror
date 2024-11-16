@@ -1,6 +1,10 @@
 package com.zyc.ship;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.redis.JedisPoolUtil;
+import com.zyc.common.util.LogUtil;
 import com.zyc.common.util.ServerManagerUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.rqueue.RQueueClient;
@@ -151,12 +155,37 @@ public class ShipServer {
 
                         if(riskLogStr != null){
                             logger.info(riskLogStr.toString());
+                            JSONArray jsonArray = JSON.parseArray(riskLogStr.toString());
+                            if(jsonArray != null && jsonArray.size()>0){
+                                String requestId = jsonArray.getJSONObject(0).getString("requestId");
+                                //截取前10位
+                                String task_log_id=requestId;
+                                // strategyGroupInstanceId=task_log_id
+                                for(Object obj: jsonArray){
+                                    String job_id= ((JSONObject)obj).getString("strategyGroupInstanceId");
+                                    LogUtil.info(job_id, task_log_id, ((JSONObject)obj).toJSONString());
+                                }
+
+                            }
                         }
                         RQueueClient rQueueClient2 = RQueueManager.getRQueueClient(Const.SHIP_ONLINE_MANAGER_LOG_QUEUE);
 
                         Object managerLogStr = rQueueClient2.poll();
-                        if(riskLogStr != null){
+                        if(managerLogStr != null){
                             logger.info(managerLogStr.toString());
+
+                            JSONArray jsonArray = JSON.parseArray(managerLogStr.toString());
+                            if(jsonArray != null && jsonArray.size()>0){
+                                String requestId = jsonArray.getJSONObject(0).getString("requestId");
+                                //截取前10位
+                                String task_log_id=requestId;
+                                // strategyGroupInstanceId=task_log_id
+                                for(Object obj: jsonArray){
+                                    String job_id= ((JSONObject)obj).getString("strategyGroupInstanceId");
+                                    LogUtil.info(job_id, task_log_id, ((JSONObject)obj).toJSONString());
+                                }
+
+                            }
                         }
 
                         if(riskLogStr == null && managerLogStr == null){
