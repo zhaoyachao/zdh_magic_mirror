@@ -6,10 +6,7 @@ import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.RiskShipResultImpl;
-import com.zyc.ship.engine.impl.executor.plugin.HttpPlugin;
-import com.zyc.ship.engine.impl.executor.plugin.KafkaPlugin;
-import com.zyc.ship.engine.impl.executor.plugin.Plugin;
-import com.zyc.ship.engine.impl.executor.plugin.ShipVariablePlugin;
+import com.zyc.ship.engine.impl.executor.plugin.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,11 +40,11 @@ public class PluginExecutor extends BaseExecutor{
     private Plugin getPlugin(String rule_id, JSONObject run_jsmind_data, StrategyInstance strategyInstance, ShipEvent shipEvent) throws Exception {
 
         if(rule_id.equalsIgnoreCase("kafka")){
-            return new KafkaPlugin(rule_id, run_jsmind_data, strategyInstance);
+            return new KafkaPlugin(rule_id, run_jsmind_data, strategyInstance, shipEvent);
         }else if(rule_id.equalsIgnoreCase("rqueue")){
-
+            return new RqueuePlugin(rule_id, run_jsmind_data, strategyInstance, shipEvent);
         }else if(rule_id.equalsIgnoreCase("http")){
-            return new HttpPlugin(rule_id, run_jsmind_data, strategyInstance);
+            return new HttpPlugin(rule_id, run_jsmind_data, strategyInstance, shipEvent);
         }else if(rule_id.equalsIgnoreCase("ship_variable_expr")){
             return new ShipVariablePlugin(rule_id, run_jsmind_data, strategyInstance, shipEvent);
         }

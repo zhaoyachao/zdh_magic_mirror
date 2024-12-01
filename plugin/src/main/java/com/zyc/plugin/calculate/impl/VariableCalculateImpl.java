@@ -1,9 +1,6 @@
 package com.zyc.plugin.calculate.impl;
 
-import cn.hutool.core.date.DatePattern;
-import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.groovy.GroovyFactory;
@@ -11,7 +8,6 @@ import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
-import com.zyc.plugin.calculate.VarPoolCalculate;
 import com.zyc.plugin.calculate.VariableCalculate;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
 import org.apache.commons.lang3.StringUtils;

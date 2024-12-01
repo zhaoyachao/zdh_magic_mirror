@@ -1,17 +1,13 @@
 package com.zyc.plugin.calculate.impl;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.hash.Hashing;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
-import com.zyc.plugin.calculate.ShuntCalculate;
 import com.zyc.plugin.calculate.VarPoolCalculate;
 import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
@@ -19,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
  * 变量池实现

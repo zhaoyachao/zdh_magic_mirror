@@ -10,7 +10,6 @@ import com.zyc.ship.disruptor.ShipExecutor;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.executor.*;
-import com.zyc.ship.engine.impl.executor.VarPoolExecutor;
 import com.zyc.ship.entity.ShipCommonInputParam;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

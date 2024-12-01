@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.ship.disruptor.ShipEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -26,11 +27,13 @@ public class KafkaPlugin implements Plugin{
     private String rule_id;
     private Object run_jsmind_data;
     private StrategyInstance strategyInstance;
+    private ShipEvent shipEvent;
 
-    public KafkaPlugin(String rule_id, Object run_jsmind_data, StrategyInstance strategyInstance){
+    public KafkaPlugin(String rule_id, Object run_jsmind_data, StrategyInstance strategyInstance, ShipEvent shipEvent){
         this.rule_id = rule_id;
         this.run_jsmind_data = run_jsmind_data;
         this.strategyInstance = strategyInstance;
+        this.shipEvent = shipEvent;
     }
 
     @Override

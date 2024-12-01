@@ -2,7 +2,6 @@ package com.zyc.label.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
-import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 import com.jcraft.jsch.SftpException;
 import com.zyc.common.entity.CrowdFileInfo;
@@ -13,7 +12,6 @@ import com.zyc.label.service.impl.CrowdFileServiceImpl;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
 import io.minio.MinioClient;
 import io.minio.errors.*;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
