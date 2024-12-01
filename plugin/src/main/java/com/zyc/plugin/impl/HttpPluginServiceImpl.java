@@ -1,6 +1,8 @@
 package com.zyc.plugin.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.PluginInfo;
 import com.zyc.common.plugin.PluginParam;
 import com.zyc.common.plugin.PluginResult;
@@ -10,16 +12,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 
 public class HttpPluginServiceImpl implements PluginService {
 
     @Override
-    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, String rs) {
+    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, String rs, Map<String,Object> params) {
         HttpPluginResult httpPluginResult = new HttpPluginResult();
         try{
             System.out.println("用户: "+rs+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JSON.toJSONString(pluginParam));
@@ -34,6 +33,11 @@ public class HttpPluginServiceImpl implements PluginService {
             String return_param_value = props.getProperty("return_param_value", "");
             String return_value_type = props.getProperty("return_value_type", "json");
 
+
+            //url, request_params 增加动态信息转换
+            Jinjava jinjava = new Jinjava();
+            url = jinjava.render(url, params);
+            request_params = jinjava.render(request_params, params);
 
             HttpHost proxy = null;
             if(!StringUtils.isEmpty(proxy_url)){
@@ -52,6 +56,13 @@ public class HttpPluginServiceImpl implements PluginService {
                 res = HttpUtil.getRequest(url+"?"+request_params, npl, proxy);
             }else{
                 throw new Exception("仅支持get,post请求");
+            }
+
+            if(return_value_type.equalsIgnoreCase("json")){
+                JSONObject jsonObject = JSON.parseObject(res);
+                if(jsonObject.getString(return_param).equalsIgnoreCase(return_param_value)){
+                    throw new Exception(res);
+                }
             }
 
             httpPluginResult.setCode(0);
@@ -137,5 +148,4 @@ public class HttpPluginServiceImpl implements PluginService {
             this.message = message;
         }
     }
-
 }

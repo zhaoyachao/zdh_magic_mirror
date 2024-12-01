@@ -118,7 +118,7 @@ public abstract class BaseCalculate {
         strategyLogInfo.setStrategy_group_instance_id(group_instance_id);
         strategyLogInfo.setStrategy_group_id(group_id);
         strategyLogInfo.setStrategy_id(strategy_id);
-        strategyLogInfo.setCur_time(new Timestamp(Long.valueOf(cur_time)));
+        strategyLogInfo.setCur_time(Timestamp.valueOf(cur_time));
         strategyLogInfo.setBase_path(base_path);
         strategyLogInfo.setFile_path(file_path);
         strategyLogInfo.setFile_rocksdb_path(file_rocksdb_path);
@@ -676,5 +676,36 @@ public abstract class BaseCalculate {
         String key = "varpool:gid"+strategy_group_instance_id;
         String secondKey = varpool_domain+":"+varpool_code;
         JedisPoolUtil.redisClient().hSet(key, secondKey, value);
+    }
+
+    public static Map<String, Object> getJinJavaParam(Timestamp cur_time) {
+        String msg = "目前支持日期参数以下模式: {{zdh_date}} => yyyy-MM-dd ,{{zdh_date_nodash}}=> yyyyMMdd " +
+                ",{{zdh_date_time}}=> yyyy-MM-dd HH:mm:ss,{{zdh_year}}=> yyyy年,{{zdh_month}}=> 月,{{zdh_day}}=> 日," +
+                "{{zdh_hour}}=>24小时制,{{zdh_minute}}=>分钟,{{zdh_second}}=>秒,{{zdh_time}}=>时间戳, 更多参数可参考【系统内置参数】点击链接查看具体使用例子";
+
+        String date_nodash = DateUtil.formatNodash(cur_time);
+        String date_time = DateUtil.formatTime(cur_time);
+        String date_dt = DateUtil.format(cur_time);
+        Map<String, Object> jinJavaParam = new HashMap<>();
+        jinJavaParam.put("zdh_date_nodash", date_nodash);
+        jinJavaParam.put("zdh_date_time", date_time);
+        jinJavaParam.put("zdh_date", date_dt);
+        jinJavaParam.put("zdh_year", DateUtil.year(cur_time));
+        jinJavaParam.put("zdh_month", DateUtil.month(cur_time));
+        jinJavaParam.put("zdh_day", DateUtil.day(cur_time));
+        jinJavaParam.put("zdh_hour", DateUtil.hour(cur_time));
+        jinJavaParam.put("zdh_minute", DateUtil.minute(cur_time));
+        jinJavaParam.put("zdh_second", DateUtil.second(cur_time));
+        jinJavaParam.put("zdh_monthx", DateUtil.monthx(cur_time));
+        jinJavaParam.put("zdh_dayx", DateUtil.dayx(cur_time));
+        jinJavaParam.put("zdh_hourx", DateUtil.hourx(cur_time));
+        jinJavaParam.put("zdh_minutex", DateUtil.minutex(cur_time));
+        jinJavaParam.put("zdh_secondx", DateUtil.secondx(cur_time));
+
+        jinJavaParam.put("zdh_time", cur_time.getTime());
+
+        jinJavaParam.put("zdh_dt", new DateUtil());
+        return jinJavaParam;
+
     }
 }

@@ -18,7 +18,7 @@ import java.util.Properties;
 public class KafkaPluginServiceImpl implements PluginService {
 
     @Override
-    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, String rs) {
+    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, String rs, Map<String,Object> params) {
         KafkaPluginResult kafkaPluginResult = new KafkaPluginResult();
         KafkaProducer<String, String> producer=null;
         try{

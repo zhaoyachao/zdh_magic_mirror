@@ -123,6 +123,16 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
             Gson gson=new Gson();
             List<Map> rule_params = gson.fromJson(run_jsmind_data.get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
 
+
+            Map<String,Object> params = new HashMap<>();
+            params.put("strategy_instance_id", strategyLogInfo.getStrategy_instance_id());
+            params.put("strategy_instance", this.param);
+            params.put("rule_params", rule_params);
+
+            mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);
+
+            params.putAll(getJinJavaParam(strategyLogInfo.getCur_time()));
+
             //生成参数
             CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
@@ -143,7 +153,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
 
                 for (String s: diff){
                     PluginParam pluginParam = pluginServiceImpl.getPluginParam(rule_params);
-                    PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, s);
+                    PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, s, params);
                     String status=Const.FILE_STATUS_FAIL;
                     if(result.getCode() == 0){
                         status = Const.FILE_STATUS_SUCCESS;
