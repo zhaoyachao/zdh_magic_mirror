@@ -114,7 +114,7 @@ public class BaseCalculate {
         strategyLogInfo.setStrategy_group_instance_id(group_instance_id);
         strategyLogInfo.setStrategy_group_id(group_id);
         strategyLogInfo.setStrategy_id(strategy_id);
-        strategyLogInfo.setCur_time(Timestamp.valueOf(cur_time));
+        strategyLogInfo.setCur_time(new Timestamp(Long.valueOf(cur_time)));
         strategyLogInfo.setBase_path(base_path);
         strategyLogInfo.setFile_path(file_path);
         strategyLogInfo.setFile_rocksdb_path(file_rocksdb_path);
