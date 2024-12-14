@@ -110,6 +110,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
             String base_path=dbConfig.get("file.path");

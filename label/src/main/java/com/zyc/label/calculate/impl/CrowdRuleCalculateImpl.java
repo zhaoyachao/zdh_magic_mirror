@@ -104,6 +104,7 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
     public void run() {
         atomicInteger.incrementAndGet();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
             //客群id

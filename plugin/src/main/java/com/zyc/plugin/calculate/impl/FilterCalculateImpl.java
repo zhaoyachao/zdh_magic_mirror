@@ -107,6 +107,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         FilterServiceImpl filterService=new FilterServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
             //获取标签code

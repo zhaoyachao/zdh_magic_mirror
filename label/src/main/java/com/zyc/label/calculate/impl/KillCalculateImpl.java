@@ -1,6 +1,7 @@
 package com.zyc.label.calculate.impl;
 
 import cn.hutool.core.util.NumberUtil;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
@@ -98,7 +99,8 @@ public class KillCalculateImpl extends BaseCalculate implements KillCalculate {
         while (true){
             try{
                 //获取要杀死的任务
-                List<StrategyInstance> strategyInstanceList = strategyInstanceService.selectByStatus(new String[]{"kill"}, new String[]{"label","crowd_rule","crowd_operate", "crowd_file", "custom_list"});
+                List<StrategyInstance> strategyInstanceList = strategyInstanceService.selectByStatus(new String[]{"kill"},
+                        new String[]{InstanceType.LABEL.getCode(),InstanceType.CROWD_RULE.getCode(),InstanceType.CROWD_OPERATE.getCode(),InstanceType.CROWD_FILE.getCode(), InstanceType.CUSTOM_LIST.getCode()});
 
                 String slotStr = ServerManagerUtil.getReportSlot("");
                 String[] slots = slotStr.split(",");

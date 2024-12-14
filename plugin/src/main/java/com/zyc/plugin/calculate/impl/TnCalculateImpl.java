@@ -105,6 +105,7 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 

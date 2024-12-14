@@ -120,6 +120,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 

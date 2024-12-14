@@ -110,6 +110,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         PluginServiceImpl pluginService=new PluginServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 
@@ -124,9 +125,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
             List<Map> rule_params = gson.fromJson(run_jsmind_data.get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
 
 
-            Map<String,Object> params = new HashMap<>();
-            params.put("strategy_instance_id", strategyLogInfo.getStrategy_instance_id());
-            params.put("strategy_instance", this.param);
+            Map<String,Object> params = getJinJavaCommonParam();
             params.put("rule_params", rule_params);
 
             mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);

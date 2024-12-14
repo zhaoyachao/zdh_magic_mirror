@@ -112,6 +112,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         TouchServiceImpl touchService=new TouchServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 

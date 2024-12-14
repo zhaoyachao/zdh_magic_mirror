@@ -106,6 +106,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 
@@ -157,6 +158,8 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
                     //写入标识文件,标记当前任务执行过
                     writeFile(strategyLogInfo.getFile_path()+"_done", Sets.newHashSet("done"));
                 }else{
+                    logStr = StrUtil.format("task: {}, alerady send success", strategyLogInfo.getStrategy_instance_id());
+                    LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                     check=true;
                 }
 

@@ -113,6 +113,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 
@@ -135,9 +136,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
 
-            Map<String,Object> params = new HashMap<>();
-            params.put("strategy_instance_id", strategyLogInfo.getStrategy_instance_id());
-            params.put("strategy_instance", this.param);
+            Map<String,Object> params = getJinJavaCommonParam();
             params.put("rule_params", rule_params);
 
             mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);

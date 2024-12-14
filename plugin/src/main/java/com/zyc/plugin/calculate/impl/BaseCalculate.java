@@ -1,5 +1,6 @@
 package com.zyc.plugin.calculate.impl;
 
+import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.util.StrUtil;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -42,6 +43,8 @@ public abstract class BaseCalculate {
     private SFTPUtil sftpUtil;
 
     private MinioClient minioClient;
+
+    private Map<String, Object> jinJavaCommonParam = new HashMap<>();
 
     public SFTPUtil getSftpUtil(Map<String,String> dbConfig){
         if(!dbConfig.getOrDefault("sftp.enable", "false").equalsIgnoreCase("true")){
@@ -99,6 +102,22 @@ public abstract class BaseCalculate {
     }
 
     /**
+     * 初始化公共参数
+     * @param strategyLogInfo
+     * @param param
+     */
+    public void initJinJavaCommonParam(StrategyLogInfo strategyLogInfo, Map<String, Object> param){
+        Map<String, Object> systemParam = getJinJavaParam(strategyLogInfo.getCur_time());
+
+        systemParam.put("stragegy_instance", param);
+        systemParam.put("stragegy_instance_id", param.get("id"));
+
+        systemParam.put("cur_time", cn.hutool.core.date.DateUtil.format(strategyLogInfo.getCur_time(), DatePattern.NORM_DATETIME_PATTERN));
+
+        this.jinJavaCommonParam = systemParam;
+    }
+
+    /**
      * 初始化基础参数
      * @param param
      * @param dbConfig
@@ -118,7 +137,7 @@ public abstract class BaseCalculate {
         strategyLogInfo.setStrategy_group_instance_id(group_instance_id);
         strategyLogInfo.setStrategy_group_id(group_id);
         strategyLogInfo.setStrategy_id(strategy_id);
-        strategyLogInfo.setCur_time(Timestamp.valueOf(cur_time));
+        strategyLogInfo.setCur_time(new Timestamp(Long.valueOf(cur_time)));
         strategyLogInfo.setBase_path(base_path);
         strategyLogInfo.setFile_path(file_path);
         strategyLogInfo.setFile_rocksdb_path(file_rocksdb_path);
@@ -707,5 +726,13 @@ public abstract class BaseCalculate {
         jinJavaParam.put("zdh_dt", new DateUtil());
         return jinJavaParam;
 
+    }
+
+    /**
+     * 获取公共参数,必须提前执行initJinJavaCommonParam函数
+     * @return
+     */
+    public Map<String, Object> getJinJavaCommonParam(){
+        return this.jinJavaCommonParam;
     }
 }

@@ -2,6 +2,7 @@ package com.zyc.plugin.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.common.redis.JedisPoolUtil;
@@ -105,6 +106,7 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 
@@ -130,6 +132,10 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
                 String varpool_value = run_jsmind_data.getOrDefault("varpool_value","").toString();
                 String varpool_expre = run_jsmind_data.getOrDefault("varpool_expre","").toString();
                 String secondKey = varpool_domain+":"+varpool_code;
+
+                Map<String, Object> commonParam = getJinJavaCommonParam();
+                Jinjava jinjava = new Jinjava();
+                varpool_value = jinjava.render(varpool_value, commonParam);
 
                 Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
 
@@ -197,7 +203,7 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
-            logger.error("plugin shunt run error: ", e);
+            logger.error("plugin variable run error: ", e);
         }finally {
             atomicInteger.decrementAndGet();
             removeTask(strategyLogInfo.getStrategy_instance_id());

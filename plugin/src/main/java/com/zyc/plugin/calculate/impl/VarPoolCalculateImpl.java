@@ -3,6 +3,7 @@ package com.zyc.plugin.calculate.impl;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.Const;
@@ -103,12 +104,18 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 
             //获取标签code
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String varpool_params_str=run_jsmind_data.getOrDefault("varpool_param","").toString();
+
+            Map<String, Object> commonParam = getJinJavaCommonParam();
+            Jinjava jinjava = new Jinjava();
+            varpool_params_str = jinjava.render(varpool_params_str, commonParam);
+
             List<Map> varpool_params = JSON.parseArray(varpool_params_str, Map.class);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
@@ -226,7 +233,7 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
-            logger.error("plugin shunt run error: ", e);
+            logger.error("plugin varpool run error: ", e);
         }finally {
             atomicInteger.decrementAndGet();
             removeTask(strategyLogInfo.getStrategy_instance_id());

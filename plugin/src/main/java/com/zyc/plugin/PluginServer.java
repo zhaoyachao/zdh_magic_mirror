@@ -110,7 +110,7 @@ public class PluginServer {
 
                 Map m = queueHandler.handler();
                 if(m != null){
-                    logger.info("task : "+JSON.toJSONString(m));
+                    logger.info("task_name: "+m.getOrDefault("strategy_context", "空")+", group_id: "+m.getOrDefault("group_id","空")+", task : "+JSON.toJSONString(m));
                     StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
                     //加锁防重执行
                     RLock rLock = JedisPoolUtil.redisClient().rLock(m.get("id").toString());

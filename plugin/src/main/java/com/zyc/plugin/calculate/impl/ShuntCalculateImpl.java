@@ -102,6 +102,7 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
         atomicInteger.incrementAndGet();
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 
@@ -116,8 +117,6 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
 
             Map shunt_param = shunt_params.get(0);
 
-
-
             //生成参数
             CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
             Set<String> rs = calculateResult.getRs();
@@ -131,13 +130,28 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
             }else{
                 if(shunt_type.equalsIgnoreCase("num")){
                     //按量级分流
-                    int shunt_value = Integer.parseInt(shunt_param.getOrDefault("shunt_value","0").toString());
-                    if(rs.size()<shunt_value){
-                        shunt_value = rs.size();
+                    String shunt_value_str = shunt_param.getOrDefault("shunt_value","0").toString();
+                    if(!shunt_value_str.contains(";")){
+                        //兼容历史,量级必须给一个开始,结束下标
+                        shunt_value_str = "1;"+shunt_value_str;
                     }
-                    logStr = StrUtil.format("task: {}, shunt_type: num, size: {}, num: {}", strategyLogInfo.getStrategy_instance_id(), rs.size(), shunt_value);
+
+                    int shunt_value_start = Integer.parseInt(shunt_value_str.split(";")[0]);
+                    int shunt_value_end = Integer.parseInt(shunt_value_str.split(";")[1]);
+
+
+                    if(rs.size()<shunt_value_end){
+                        shunt_value_end = rs.size();
+                    }
+                    if(shunt_value_start<1){
+                        shunt_value_start = 1;
+                    }
+
+                    logStr = StrUtil.format("task: {}, shunt_type: num, size: {}, num: {}", strategyLogInfo.getStrategy_instance_id(), rs.size(), shunt_value_str);
                     LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
-                    rs = rs.stream().limit(shunt_value).collect(Collectors.toSet());
+                    if(shunt_value_end>=shunt_value_start){
+                        rs = rs.stream().skip(shunt_value_start-1).limit(shunt_value_end-shunt_value_start+1).collect(Collectors.toSet());
+                    }
                 }else if(shunt_type.equalsIgnoreCase("rate")){
                     //按比例分流
                     Set<String> tmp=Sets.newHashSet() ;

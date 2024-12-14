@@ -135,6 +135,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
         LabelServiceImpl labelService=new LabelServiceImpl();
 
         StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 
@@ -219,11 +220,14 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
         Set<String> rowsStr = Sets.newHashSet();
         DataSourcesServiceImpl dataSourcesService=new DataSourcesServiceImpl();
 
+        Map<String, Object> commonParam = getJinJavaCommonParam();
+
         //生成参数
         Gson gson=new Gson();
         List<Map> rule_params = gson.fromJson(run_jsmind_data.get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
-        Map<String, String> jinJavaParam=getJinJavaParam(rule_params,labelInfo);
-        jinJavaParam.put("cur_time", DateUtil.format(strategyLogInfo.getCur_time(), DatePattern.NORM_DATETIME_PATTERN));
+        Map<String, Object> jinJavaParam=getJinJavaParam(rule_params,labelInfo);
+        jinJavaParam.putAll(commonParam);
+
         String logStr = StrUtil.format("task: {}, param: {}", strategyLogInfo.getStrategy_instance_id(), jinJavaParam);
         LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
 
@@ -326,8 +330,8 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
         return false;
     }
 
-    public Map<String,String> getJinJavaParam(List<Map> rule_params,LabelInfo labelInfo) throws Exception {
-        Map<String, String> jinJavaParam=new HashMap<String, String>();
+    public Map<String,Object> getJinJavaParam(List<Map> rule_params,LabelInfo labelInfo) throws Exception {
+        Map<String, Object> jinJavaParam=new HashMap<>();
         if(rule_params != null && rule_params.size()>0){
             for(Map rule_param: rule_params){
                 String code = rule_param.get("param_code").toString();
