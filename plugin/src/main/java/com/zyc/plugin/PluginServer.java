@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.sql.Timestamp;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
@@ -115,16 +116,32 @@ public class PluginServer {
                     //加锁防重执行
                     RLock rLock = JedisPoolUtil.redisClient().rLock(m.get("id").toString());
 
-                    if(!rLock.tryLock(1L, 5L, TimeUnit.SECONDS)){
+                    if(!rLock.tryLock()){
                         logger.info("task: {} ,try lock error: ", m.getOrDefault("id", ""));
                         continue;
                     }
+                    try{
+                        List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(new String[]{m.get("id").toString()});
+                        if(strategyInstances==null || strategyInstances.size()<1){
+                            continue;
+                        }
 
-                    //更新状态为执行中
-                    StrategyInstance strategyInstance=new StrategyInstance();
-                    strategyInstance.setId(m.get("id").toString());
-                    strategyInstance.setStatus("etl");
-                    strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
+                        //检查状态
+                        if(!strategyInstances.get(0).getStatus().equalsIgnoreCase("check_dep_finish")){
+                            continue;
+                        }
+                        //更新状态为执行中
+                        StrategyInstance strategyInstance=new StrategyInstance();
+                        strategyInstance.setId(m.get("id").toString());
+                        strategyInstance.setStatus("etl");
+                        strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
+
+                    }catch (Exception e){
+                        logger.error("plugin server check error: ", e);
+                    }finally {
+                        rLock.unlock();
+                    }
+
                     Runnable runnable=null;
                     if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.FILTER.getCode())){
                         runnable=new FilterCalculateImpl(m, atomicInteger, config);

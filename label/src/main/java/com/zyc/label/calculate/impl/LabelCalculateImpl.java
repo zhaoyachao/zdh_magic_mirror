@@ -145,11 +145,6 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
             String label_use_type=run_jsmind_data.getOrDefault("label_use_type", "batch").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
-            String driver=dbConfig.get("driver");
-            String url=dbConfig.get("url");
-            String username=dbConfig.get("user");
-            String password=dbConfig.get("password");
-            String base_path=dbConfig.get("file.path");
             String label_url=dbConfig.get("label.http.url");
             LabelInfo labelInfo = labelService.selectByCode(label_code, label_use_type);
             Set<String> rowsStr = Sets.newHashSet();

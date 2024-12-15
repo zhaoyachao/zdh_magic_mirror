@@ -124,6 +124,7 @@ public class BaseCalculate {
         String group_id=param.get("group_id").toString();
         String strategy_id=param.get("strategy_id").toString();
         String group_instance_id=param.get("group_instance_id").toString();
+        //todo fastjson timestamp类型自动转换成long类型
         String cur_time=param.get("cur_time").toString();
         String base_path=dbConfig.get("file.path");
         String file_path=getFilePathByParam(param, dbConfig);
