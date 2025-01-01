@@ -35,7 +35,11 @@ public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
             logger.info("master: "+JSON.toJSONString(shipEvent));
             String operate = shipEvent.getStrategyInstance().getOperate();
             Operate operate1 = check(operate);
-            String status = operate1.execute(shipEvent.getStrategyInstanceId(), shipEvent.getDag(), shipEvent.getRunPath());
+            String status = ShipConst.STATUS_WAIT;
+            //增加唯一锁,防止多父节点同时触发检查
+            synchronized (shipEvent.getStrategyInstanceId()+shipEvent.getRequestId().intern()){
+                status = operate1.execute(shipEvent.getStrategyInstanceId(), shipEvent.getDag(), shipEvent.getRunPath());
+            }
             Disruptor disruptor = shipEvent.getWorkerDisruptor();
             if(status.equalsIgnoreCase(ShipConst.STATUS_ERROR)){
                 ShipEvent shipEvent1 = reBuildShipEvent(shipEvent, shipEvent.getStrategyInstanceId());

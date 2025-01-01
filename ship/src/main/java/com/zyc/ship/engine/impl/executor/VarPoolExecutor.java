@@ -31,7 +31,7 @@ public class VarPoolExecutor extends BaseExecutor{
             List<Map> varpool_params = JSON.parseArray(varpool_param_str, Map.class);
 
             //写入变量池
-            String key = "varpool:logid:"+shipEvent.getLogGroupId();
+            String key = "varpool:reqid:"+shipEvent.getRequestId()+":"+shipEvent.getStrategyGroupInstanceId();
             for (Map varpool: varpool_params){
                 String varpool_code = varpool.getOrDefault("varpool_code","").toString();
                 String varpool_operate = varpool.getOrDefault("varpool_domain_operate","eq").toString();

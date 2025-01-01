@@ -31,7 +31,7 @@ public class VariableExecutor extends BaseExecutor{
             JSONObject jsonObject = JSON.parseObject(strategyInstance.getRun_jsmind_data());
 
             //写入变量池
-            String key = "varpool:logid:"+shipEvent.getLogGroupId();
+            String key = "varpool:reqid:"+shipEvent.getRequestId()+":"+shipEvent.getStrategyGroupInstanceId();
 
             String varpool_code = jsonObject.getOrDefault("varpool_code","").toString();
             String varpool_operate = jsonObject.getOrDefault("varpool_operate","eq").toString();
