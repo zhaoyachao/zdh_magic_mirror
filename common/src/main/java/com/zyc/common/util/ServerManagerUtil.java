@@ -141,6 +141,19 @@ public class ServerManagerUtil {
         return SERVICE_MODE_RUN;
     }
 
+
+    /**
+     * 检查服务槽位,无信息默认填充
+     * @param serviceInstanceConf
+     */
+    public static void checkServiceSlot(ServiceInstanceConf serviceInstanceConf){
+        String instance = getServiceInstanceKey(serviceInstanceConf);
+        Object slot = JedisPoolUtil.redisClient().hGet(instance, "slot");
+        if(slot == null){
+            reportSlot(instance, "0", "-1,-1");
+        }
+    }
+
     public static void reportSlot(String instaceId, String slot_num, String slot){
         JedisPoolUtil.redisClient().hSet(instaceId, "slot", slot);
         JedisPoolUtil.redisClient().expire(instaceId, 60*5L);

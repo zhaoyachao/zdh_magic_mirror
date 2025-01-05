@@ -7,6 +7,7 @@ import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.queue.QueueHandler;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.common.util.ServerManagerUtil;
 import com.zyc.label.calculate.impl.*;
@@ -96,6 +97,7 @@ public class LabelServer {
             while (true){
                 ServerManagerUtil.heartbeatReport(serviceInstanceConf);
                 ServerManagerUtil.checkServiceRunningMode(serviceInstanceConf);
+                ServerManagerUtil.checkServiceSlot(serviceInstanceConf);
 
                 if(atomicInteger.get()>limit){
                     Thread.sleep(1000);
@@ -113,7 +115,7 @@ public class LabelServer {
 
                 Map m = queueHandler.handler();
                 if(m != null){
-                    logger.info("task_name: "+m.getOrDefault("strategy_context", "空")+", group_id: "+m.getOrDefault("group_id","空")+", task : "+JSON.toJSONString(m));
+                    logger.info("task_name: "+m.getOrDefault("strategy_context", "空")+", group_id: "+m.getOrDefault("group_id","空")+", task : "+ JsonUtil.formatJsonString(m));
                     StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
                     //加锁防重执行
                     RLock rLock = JedisPoolUtil.redisClient().rLock(m.get("id").toString());

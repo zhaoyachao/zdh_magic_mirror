@@ -9,6 +9,7 @@
     <artifactId>variable</artifactId>
     <version>${revision}</version>
     <properties>
+        <build.name>zdh_variable-${revision}</build.name>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <tapestry-version>5.8.2</tapestry-version>
         <jackson-version>2.13.1</jackson-version>
@@ -153,7 +154,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.version}/lib</outputDirectory>
+                            <outputDirectory>${build.name}/lib</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -178,7 +179,7 @@
                                     <directory>src/main/resources</directory>
                                 </resource>
                             </resources>
-                            <outputDirectory>${project.version}/conf</outputDirectory>
+                            <outputDirectory>${build.name}/conf</outputDirectory>
                         </configuration>
                     </execution>
 
@@ -194,7 +195,7 @@
                                     <directory>bin</directory>
                                 </resource>
                             </resources>
-                            <outputDirectory>${project.version}/bin</outputDirectory>
+                            <outputDirectory>${build.name}/bin</outputDirectory>
                         </configuration>
                     </execution>
 
@@ -213,7 +214,7 @@
                                     </includes>
                                 </resource>
                             </resources>
-                            <outputDirectory>${project.version}</outputDirectory>
+                            <outputDirectory>${build.name}</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

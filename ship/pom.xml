@@ -14,6 +14,7 @@
 
 
     <properties>
+        <build.name>zdh_ship-${revision}</build.name>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -174,7 +175,7 @@
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.version}/lib</outputDirectory>
+                            <outputDirectory>${build.name}/lib</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -199,7 +200,7 @@
                                     <directory>src/main/resources</directory>
                                 </resource>
                             </resources>
-                            <outputDirectory>${project.version}/conf</outputDirectory>
+                            <outputDirectory>${build.name}/conf</outputDirectory>
                         </configuration>
                     </execution>
 
@@ -215,7 +216,7 @@
                                     <directory>bin</directory>
                                 </resource>
                             </resources>
-                            <outputDirectory>${project.version}/bin</outputDirectory>
+                            <outputDirectory>${build.name}/bin</outputDirectory>
                         </configuration>
                     </execution>
 
@@ -234,7 +235,7 @@
                                     </includes>
                                 </resource>
                             </resources>
-                            <outputDirectory>${project.version}</outputDirectory>
+                            <outputDirectory>${build.name}</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
