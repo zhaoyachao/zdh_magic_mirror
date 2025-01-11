@@ -66,9 +66,13 @@ public class PluginServer {
 
             JedisPoolUtil.connect(config);
 
+            AtomicInteger atomicInteger=new AtomicInteger(0);
+
             String serviceName = config.getProperty("service.name");
             ServerManagerUtil.registerServiceName(serviceName);
             ServerManagerUtil.ServiceInstanceConf serviceInstanceConf = ServerManagerUtil.registerServiceInstance(serviceName);
+            serviceInstanceConf.setAtomicInteger(atomicInteger);
+
             String slot_num = config.getProperty("task.slot.total.num", "0");
             String slot = config.getProperty("task.slot", "-1,-1");
             String instanceId = ServerManagerUtil.buildServiceInstance();
@@ -87,7 +91,6 @@ public class PluginServer {
             QueueHandler queueHandler=new DbQueueHandler();
             queueHandler.setProperties(config);
 
-            AtomicInteger atomicInteger=new AtomicInteger(0);
             ThreadPoolExecutor threadPoolExecutor=new ThreadPoolExecutor(10, 100, 20, TimeUnit.MINUTES, new LinkedBlockingDeque<Runnable>());
             //提交一个监控杀死任务线程
             threadPoolExecutor.execute(new KillCalculateImpl(null, config));
@@ -96,6 +99,7 @@ public class PluginServer {
 
             while (true){
                 ServerManagerUtil.heartbeatReport(serviceInstanceConf);
+                ServerManagerUtil.reportTaskNum(serviceInstanceConf);
                 ServerManagerUtil.checkServiceRunningMode(serviceInstanceConf);
                 ServerManagerUtil.checkServiceSlot(serviceInstanceConf);
 

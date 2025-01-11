@@ -113,7 +113,6 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
         initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
-            String base_path=dbConfig.get("file.path");
             //客群运算id
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String rule_context=run_jsmind_data.get("rule_context").toString();

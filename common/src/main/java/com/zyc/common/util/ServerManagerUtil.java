@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 服务管理工具类
@@ -121,6 +122,7 @@ public class ServerManagerUtil {
                     try {
                         Thread.sleep(1000*10L);
                         heartbeatReport(serviceInstanceConf);
+                        reportTaskNum(serviceInstanceConf);
                         Object value1 = JedisPoolUtil.redisClient().hGet(instance, "mode");
                         if(value1 == null || !value1.toString().equalsIgnoreCase("suspend")){
                             break;
@@ -159,6 +161,12 @@ public class ServerManagerUtil {
         JedisPoolUtil.redisClient().expire(instaceId, 60*5L);
     }
 
+    public static void reportTaskNum(ServiceInstanceConf serviceInstanceConf){
+        String instance = getServiceInstanceKey(serviceInstanceConf);
+        JedisPoolUtil.redisClient().hSet(instance, "task_num", serviceInstanceConf.atomicInteger.toString());
+        JedisPoolUtil.redisClient().expire(instance, 60*5L);
+    }
+
 
     public static String getReportSlot(String instaceId){
         if(StringUtils.isEmpty(instaceId)){
@@ -193,6 +201,8 @@ public class ServerManagerUtil {
         private String pid;
 
         private String last_time;
+
+        private AtomicInteger atomicInteger;
 
         public String getService_name() {
             return service_name;
@@ -232,6 +242,14 @@ public class ServerManagerUtil {
 
         public void setLast_time(String last_time) {
             this.last_time = last_time;
+        }
+
+        public AtomicInteger getAtomicInteger() {
+            return atomicInteger;
+        }
+
+        public void setAtomicInteger(AtomicInteger atomicInteger) {
+            this.atomicInteger = atomicInteger;
         }
 
         public static ServiceInstanceConf quick(String service_name){

@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.DateUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.label.calculate.CrowdRuleCalculate;
 import org.slf4j.Logger;
@@ -113,8 +114,8 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
             //调度逻辑时间,yyyy-MM-dd HH:mm:ss
-            String cur_time=this.param.get("cur_time").toString();
-            String base_path=dbConfig.get("file.path");
+            String cur_time= DateUtil.formatTime(strategyLogInfo.getCur_time());
+            String base_path=strategyLogInfo.getBase_path();
 
             if(dbConfig==null){
                 throw new Exception("客群信息数据库配置异常");

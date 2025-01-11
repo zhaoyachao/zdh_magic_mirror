@@ -126,9 +126,14 @@ public class BaseCalculate {
         String group_instance_id=param.get("group_instance_id").toString();
         //todo fastjson timestamp类型自动转换成long类型
         String cur_time=param.get("cur_time").toString();
-        String base_path=dbConfig.get("file.path");
-        String file_path=getFilePathByParam(param, dbConfig);
-        String file_rocksdb_path = getRocksdbFileDirByParam(param, dbConfig);
+        String cur_date = DateUtil.format(Timestamp.valueOf(cur_time));
+
+        String base_path=getBasePathWithCurDate(dbConfig.get("file.path"), cur_date);
+        String base_rocksdb_path=getBasePathWithCurDate(dbConfig.get("file.rocksdb.path").toString(), cur_date);
+
+        String file_path=getFilePathByParam(base_path, param, dbConfig);
+        String file_rocksdb_path = getRocksdbFileDirByParam(base_rocksdb_path, param, dbConfig);
+
         StrategyLogInfo strategyLogInfo = new StrategyLogInfo();
         strategyLogInfo.setStrategy_instance_id(id);
         strategyLogInfo.setStrategy_group_instance_id(group_instance_id);
@@ -143,13 +148,26 @@ public class BaseCalculate {
     }
 
     /**
+     * 根据逻辑运行日期-生成新路径
+     * @param path
+     * @param cur_date
+     * @return
+     */
+    public String getBasePathWithCurDate(String path, String cur_date){
+        if(path.endsWith("/")){
+            return path+cur_date;
+        }
+        return path + "/" + cur_date;
+    }
+
+    /**
      * 根据策略配置和系统配置目录获取文件写入地址
+     * @param base_path
      * @param param
      * @param dbConfig
      * @return
      */
-    public String getFilePathByParam(Map param, Map dbConfig){
-        String base_path=dbConfig.get("file.path").toString();
+    public String getFilePathByParam(String base_path,Map param, Map dbConfig){
         String id=param.get("id").toString();
         String group_id=param.get("group_id").toString();
         String strategy_id=param.get("strategy_id").toString();
@@ -159,16 +177,16 @@ public class BaseCalculate {
 
     /**
      * 根据策略配置和系统配置目录获取rocksdb文件写入地址
+     * @param base_rocksdb_path
      * @param param
      * @param dbConfig
      * @return
      */
-    public String getRocksdbFileDirByParam(Map param, Map dbConfig){
-        String base_path=dbConfig.get("file.rocksdb.path").toString();
+    public String getRocksdbFileDirByParam(String base_rocksdb_path, Map param, Map dbConfig){
         String group_id=param.get("group_id").toString();
         String group_instance_id=param.get("group_instance_id").toString();
         String id=param.get("id").toString();
-        return getFilePath(getFileDir(base_path,group_id,group_instance_id), id);
+        return getFilePath(getFileDir(base_rocksdb_path, group_id,group_instance_id), id);
     }
 
     /**

@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.DateUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.RightsCalculate;
@@ -110,13 +111,13 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
             Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
             String rights_param_str=run_jsmind_data.getOrDefault("rights_param","").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
-            //调度逻辑时间,毫秒时间戳
-            String cur_time=this.param.get("cur_time").toString();
+            //调度逻辑时间,yyyy-MM-dd HH:mm:ss
+            String cur_time= DateUtil.formatTime(strategyLogInfo.getCur_time());
 
             if(dbConfig==null){
                 throw new Exception("标签信息数据库配置异常");
             }
-            String base_path=dbConfig.get("file.path");
+            String base_path=strategyLogInfo.getBase_path();
 
             //生成参数
             Gson gson=new Gson();

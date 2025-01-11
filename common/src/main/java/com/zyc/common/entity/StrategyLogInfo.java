@@ -12,6 +12,9 @@ public class StrategyLogInfo {
 
     private String strategy_id;
 
+    /**
+     * 带有动态日期的地址
+     */
     private String base_path;
 
     /**
