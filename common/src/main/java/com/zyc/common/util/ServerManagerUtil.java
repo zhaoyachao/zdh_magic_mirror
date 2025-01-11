@@ -166,7 +166,7 @@ public class ServerManagerUtil {
         }
         Object slot = JedisPoolUtil.redisClient().hGet(instaceId, "slot");
         if(slot == null){
-            return "";
+            return "-1,-1";
         }
         return slot.toString();
     }
