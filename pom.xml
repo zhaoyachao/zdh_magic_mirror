@@ -14,7 +14,7 @@
     </modules>
 
     <properties>
-        <revision>5.6.2-SNAPSHOT</revision>
+        <revision>5.6.3-SNAPSHOT</revision>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -30,7 +30,7 @@
         <slf4j-log4j12.version>1.7.25</slf4j-log4j12.version>
         <junit.version>4.12</junit.version>
         <jsch.version>0.1.55</jsch.version>
-        <commons-io.version>2.7</commons-io.version>
+        <commons-io.version>2.18.0</commons-io.version>
         <httpclient.version>4.5.13</httpclient.version>
         <httpmime.version>4.5.13</httpmime.version>
         <redisson.version>3.22.0</redisson.version>
@@ -41,6 +41,7 @@
         <groovy-all.version>3.0.19</groovy-all.version>
         <rocksdb.version>7.10.2</rocksdb.version>
         <minio.version>8.5.10</minio.version>
+        <fastexcel.version>1.0.0</fastexcel.version>
     </properties>
 
     <name>zdh magic mirror Tapestry 5 Application</name>
@@ -184,6 +185,12 @@
                 <groupId>io.minio</groupId>
                 <artifactId>minio</artifactId>
                 <version>${minio.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>cn.idev.excel</groupId>
+                <artifactId>fastexcel</artifactId>
+                <version>${fastexcel.version}</version>
             </dependency>
 
         </dependencies>

@@ -159,6 +159,11 @@
             <artifactId>minio</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>cn.idev.excel</groupId>
+            <artifactId>fastexcel</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

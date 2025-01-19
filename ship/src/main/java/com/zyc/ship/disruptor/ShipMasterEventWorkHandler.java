@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * master disruptor , 用于策略实例的上下游关系,判断策略实例是否可执行
+ * 为了减轻master复杂性,master废弃依赖级别校验,所有策略均采用上游成功触发
  */
 public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
 
@@ -34,6 +35,8 @@ public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
 
             logger.info("master: "+JSON.toJSONString(shipEvent));
             String operate = shipEvent.getStrategyInstance().getOperate();
+            //判定级别0：成功时运行,1:杀死时运行,2:失败时运行,默认成功时运行,3:上游执行完成后触发(不关心成功/失败)
+            String dependLevel = shipEvent.getStrategyInstance().getDepend_level();
             Operate operate1 = check(operate);
             String status = ShipConst.STATUS_WAIT;
             //增加唯一锁,防止多父节点同时触发检查
@@ -59,6 +62,7 @@ public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
                     disruptor.publishEvent(eventEventTranslator);
                 }
             }
+
         }catch (Exception e){
             logger.error("ship master handler error: ", e);
             long count = shipEvent.getCdl().getCount();

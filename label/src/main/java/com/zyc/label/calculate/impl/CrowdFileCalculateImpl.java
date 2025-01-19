@@ -147,15 +147,28 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                 //获取人群文件,sftp
                 String sftp_enable = dbConfig.getOrDefault("sftp.enable", "");
                 String storage_mode = dbConfig.getOrDefault("storage.mode", "");
+                String local_path = dbConfig.getOrDefault("file.path", "");
 
                 if(sftp_enable.equalsIgnoreCase("true")){
                     sftpDownload(strategyLogInfo, crowdFileInfo.getFile_name(), file_sftp_path);
                 }else if(storage_mode.equalsIgnoreCase("minio")){
                     minioDownload(strategyLogInfo, crowdFileInfo.getFile_name(), file_sftp_path);
+                }else{
+                    //本地文件
+                    String local_file = local_path+"/crowd_file/"+crowdFileInfo.getFile_name();
+                    Files.copy(new File(local_file), new File(file_sftp_path));
                 }
 
+                List<String> rows = new ArrayList<>();
                 //读取本地文件
-                List<String> rows = FileUtil.readStringSplit(new File(file_sftp_path), Charset.forName("utf-8"), Const.FILE_STATUS_SUCCESS);
+                if(crowdFileInfo.getFile_name().endsWith("xlsx")){
+                    //excel 文件
+                    rows = FileUtil.readExcelSplit(new File(file_sftp_path),"xlsx", Charset.forName("utf-8"), Const.FILE_STATUS_SUCCESS);
+                }else if(crowdFileInfo.getFile_name().endsWith("xls")){
+                    rows = FileUtil.readExcelSplit(new File(file_sftp_path),"xls", Charset.forName("utf-8"), Const.FILE_STATUS_SUCCESS);
+                }else{
+                    rows = FileUtil.readStringSplit(new File(file_sftp_path), Charset.forName("utf-8"), Const.FILE_STATUS_SUCCESS);
+                }
                 rowsStr = Sets.newHashSet(rows);
             }
 

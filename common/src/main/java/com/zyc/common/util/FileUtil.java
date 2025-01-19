@@ -1,5 +1,8 @@
 package com.zyc.common.util;
 
+import cn.idev.excel.FastExcel;
+import cn.idev.excel.read.metadata.ReadSheet;
+import cn.idev.excel.support.ExcelTypeEnum;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
 
@@ -7,7 +10,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class FileUtil {
 
@@ -57,6 +62,29 @@ public class FileUtil {
                 }
             }else{
                 result.add(row[0]);
+            }
+        }
+        return result;
+    }
+
+    public static List<String> readExcelSplit(File file, String excelType, Charset charset, String status) throws IOException {
+        List<String> result = new ArrayList<>();
+        ExcelTypeEnum excelTypeEnum = ExcelTypeEnum.XLS;
+        if(excelType.endsWith("xlsx")){
+            excelTypeEnum = ExcelTypeEnum.XLSX;
+        }
+        List<Map<Integer, Object>> tmp = FastExcel.read(file).headRowNumber(0).excelType(excelTypeEnum).doReadAllSync();
+        for (Map<Integer, Object> line: tmp){
+            if(line.size()>2){
+                if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
+                    result.add(line.get(0).toString());
+                }else{
+                    if(line.get(1).toString().equalsIgnoreCase(status)){
+                        result.add(line.get(0).toString());
+                    }
+                }
+            }else{
+                result.add(line.get(0).toString());
             }
         }
         return result;
