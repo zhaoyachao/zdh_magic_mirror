@@ -1,7 +1,6 @@
 package com.zyc.common.entity;
 
 import java.sql.Timestamp;
-import java.util.Date;
 
 public class StrategyInstance {
 
@@ -39,12 +38,12 @@ public class StrategyInstance {
     /**
      * 开始时间
      */
-    private Date start_time;
+    private Timestamp start_time;
 
     /**
      * 结束时间
      */
-    private Date end_time;
+    private Timestamp end_time;
 
     /**
      * 账号
@@ -114,7 +113,7 @@ public class StrategyInstance {
     /**
      * 实例开始执行时间
      */
-    private Date run_time;
+    private Timestamp run_time;
 
     /**
      * 是否禁用true:禁用,false:启用
@@ -281,7 +280,7 @@ public class StrategyInstance {
      *
      * @return start_time - 开始时间
      */
-    public Date getStart_time() {
+    public Timestamp getStart_time() {
         return start_time;
     }
 
@@ -290,7 +289,7 @@ public class StrategyInstance {
      *
      * @param start_time 开始时间
      */
-    public void setStart_time(Date start_time) {
+    public void setStart_time(Timestamp start_time) {
         this.start_time = start_time;
     }
 
@@ -299,7 +298,7 @@ public class StrategyInstance {
      *
      * @return end_time - 结束时间
      */
-    public Date getEnd_time() {
+    public Timestamp getEnd_time() {
         return end_time;
     }
 
@@ -308,7 +307,7 @@ public class StrategyInstance {
      *
      * @param end_time 结束时间
      */
-    public void setEnd_time(Date end_time) {
+    public void setEnd_time(Timestamp end_time) {
         this.end_time = end_time;
     }
 
@@ -551,7 +550,7 @@ public class StrategyInstance {
      *
      * @return run_time - 实例开始执行时间
      */
-    public Date getRun_time() {
+    public Timestamp getRun_time() {
         return run_time;
     }
 
@@ -560,7 +559,7 @@ public class StrategyInstance {
      *
      * @param run_time 实例开始执行时间
      */
-    public void setRun_time(Date run_time) {
+    public void setRun_time(Timestamp run_time) {
         this.run_time = run_time;
     }
 
