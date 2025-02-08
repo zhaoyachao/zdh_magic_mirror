@@ -20,10 +20,13 @@ import org.apache.http.util.EntityUtils;
 
 import java.util.Map;
 
+/**
+ * 使用链接池的http
+ */
 public class HttpClientUtil {
 
     private final static HttpClientBuilder httpClientBuilder = HttpClients.custom();
-
+    private static CloseableHttpClient httpClient = null;
     static {
         //https 协议工厂
         SSLConnectionSocketFactory sslFactory = new SSLConnectionSocketFactory(SSLContexts.createSystemDefault(),
@@ -38,9 +41,9 @@ public class HttpClientUtil {
         //创建连接池 创建ConnectionManager接口new (连接池)
         PoolingHttpClientConnectionManager pool = new PoolingHttpClientConnectionManager(registry);
         //设置连接池最大连接数
-        pool.setMaxTotal(2);
+        pool.setMaxTotal(200);
         //设置每个路由默认多少链接
-        pool.setDefaultMaxPerRoute(2);
+        pool.setDefaultMaxPerRoute(200);
         //设置连接池属性
         httpClientBuilder.setConnectionManager(pool);
         RequestConfig requestConfig = RequestConfig.custom()
@@ -55,7 +58,7 @@ public class HttpClientUtil {
 
         //设置连接池为共享的
         httpClientBuilder.setConnectionManagerShared(true);
-
+        httpClient = httpClientBuilder.build();
     }
 
     /**
@@ -63,7 +66,6 @@ public class HttpClientUtil {
      */
     public static String postJson(String url, Map<String, Object> params) throws Exception {
         //不是每次创建新的HttpClient，而是从连接池中获取HttpClient对象
-        CloseableHttpClient httpClient = httpClientBuilder.build();
         HttpPost post = new HttpPost(url);
         post.setHeader("Content-Type", "application/json;charset=UTF-8");
         String jsonString = JSON.toJSONString(params);
@@ -91,7 +93,6 @@ public class HttpClientUtil {
 
     public static String postJson(String url,String json) throws Exception {
         //不是每次创建新的HttpClient，而是从连接池中获取HttpClient对象
-        CloseableHttpClient httpClient = httpClientBuilder.build();
         HttpPost post = new HttpPost(url);
         post.setHeader("Content-Type", "application/json;charset=UTF-8");
         post.setEntity(new StringEntity(json, "UTF-8"));
