@@ -2,8 +2,11 @@ package com.zyc.plugin.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.IdMappingCalculate;
@@ -14,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * id_mapping实现
@@ -114,19 +118,17 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
 
             //生成参数
             logger.info("task: {}, merge upstream data start", strategyLogInfo.getStrategy_instance_id());
-            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
 
 
             logger.info("task: {}, merge upstream data end, size: {}", strategyLogInfo.getStrategy_instance_id(), rs.size());
-            Set<String> rs2=Sets.newHashSet() ;//映射明细,每条记录的映射关系
-            Set<String> rs3=Sets.newHashSet() ;//映射结果,映射成功的结果
-            Set<String> rs_error=Sets.newHashSet() ;//映射结果,映射成功的结果
+
+            Set<DataPipe> rs_error=Sets.newHashSet() ;//映射结果,映射成功的结果
 
             if(is_disenable.equalsIgnoreCase("true")){
-                rs2=rs;
-                rs3=rs;
+
             }else{
                 //读取id_mapping
                 logger.info("task: {}, id mapping start", strategyLogInfo.getStrategy_instance_id());
@@ -134,23 +136,13 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
                 //选择id mapping 存储引擎
                 IdMappingEngine idMappingEngine = readIdMappingData(data_engine,strategyLogInfo.getBase_path(), id_mapping_code);
                 IdMappingEngine.IdMappingResult idMappingResult = idMappingEngine.getMap(rs);
-                Map<String,String> id_map = idMappingResult.rs;
-                Iterator<String> rs1 = rs.iterator();
-                while (rs1.hasNext()){
-                    String key = rs1.next();
-                    if(id_map.containsKey(key)){
-                        rs2.add(id_map.get(key)+","+key);
-                        rs3.add(id_map.get(key));
-                    }else{
-                        rs_error.add(key);
-                    }
-                }
-                rs = rs3;
+                rs = idMappingResult.rs;
+                rs_error = idMappingResult.rs_error;
             }
 
             //映射结果
             String file_idmapping_path = getFilePath(file_dir, "idmapping_"+strategyLogInfo.getStrategy_instance_id());
-            String save_idmapping_path = writeFile(file_idmapping_path, rs2);
+            String save_idmapping_path = writeFile(file_idmapping_path, rs);
 
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
@@ -169,11 +161,11 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
 
         if(data_engine.equalsIgnoreCase("file")){
             String file_path=base_path+"/id_mapping/"+data_engine+"/"+id_mapping_code;
-            FileIdMappingEngineImpl idMappingEngine = new FileIdMappingEngineImpl(file_path);
+            FileIdMappingEngineImpl idMappingEngine = new FileIdMappingEngineImpl(file_path, id_mapping_code);
             return idMappingEngine;
         }else if(data_engine.equalsIgnoreCase("rocksdb")){
             String file_path=base_path+"/id_mapping/"+data_engine+"/"+id_mapping_code;
-            RocksDbIdMappingEngineImpl idMappingEngine = new RocksDbIdMappingEngineImpl(file_path);
+            RocksDbIdMappingEngineImpl idMappingEngine = new RocksDbIdMappingEngineImpl(file_path, id_mapping_code);
             return idMappingEngine;
         }else if(data_engine.equalsIgnoreCase("jdbc")){
 

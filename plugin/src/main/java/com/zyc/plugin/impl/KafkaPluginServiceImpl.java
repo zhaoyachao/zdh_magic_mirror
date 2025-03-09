@@ -1,6 +1,7 @@
 package com.zyc.plugin.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.PluginInfo;
 import com.zyc.common.plugin.PluginParam;
 import com.zyc.common.plugin.PluginResult;
@@ -18,11 +19,11 @@ import java.util.Properties;
 public class KafkaPluginServiceImpl implements PluginService {
 
     @Override
-    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, String rs, Map<String,Object> params) {
+    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, DataPipe rs, Map<String,Object> params) {
         KafkaPluginResult kafkaPluginResult = new KafkaPluginResult();
         KafkaProducer<String, String> producer=null;
         try{
-            System.out.println("用户: "+rs+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JSON.toJSONString(pluginParam));
+            System.out.println("用户: "+rs.getUdata()+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JSON.toJSONString(pluginParam));
             Properties props = getParams(pluginParam);
 
             if (!props.containsKey("bootstrap.servers")) {

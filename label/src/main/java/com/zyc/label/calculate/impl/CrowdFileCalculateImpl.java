@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.jcraft.jsch.SftpException;
 import com.zyc.common.entity.CrowdFileInfo;
+import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.*;
 import com.zyc.label.calculate.CrowdFileCalculate;
@@ -40,7 +41,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
      * 		"group_id" : "测试策略组",
      * 		"group_context" : "测试策略组",
      * 		"group_instance_id" : "1032062598209605632",
-     * 		"instance_type" : "crowd_rule",
+     * 		"instance_type" : "crowd_file",
      * 		"start_time" : "2022-10-18 22:48:16",
      * 		"end_time" : null,
      * 		"jsmind_data" : "{\"crowd_rule_context\":\"测试新标签\",\"type\":\"crowd_rule\",\"time_out\":\"86400\",\"positionX\":303,\"positionY\":78,\"operate\":\"or\",\"crowd_rule\":\"985279445663223808\",\"touch_type\":\"database\",\"name\":\"测试新标签\",\"more_task\":\"crowd_rule\",\"id\":\"5e7_0c1_8f31_4a\",\"divId\":\"5e7_0c1_8f31_4a\",\"depend_level\":\"0\"}",
@@ -58,7 +59,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
      * 		"schedule_source" : "2",
      * 		"cur_time" : "2022-10-18 22:48:16",
      * 		"run_time" : "2022-10-18 22:48:19",
-     * 		"run_jsmind_data" : "{\"crowd_rule_context\":\"测试新标签\",\"type\":\"crowd_rule\",\"time_out\":\"86400\",\"positionX\":303,\"positionY\":78,\"operate\":\"or\",\"crowd_rule\":\"985279445663223808\",\"touch_type\":\"database\",\"name\":\"测试新标签\",\"more_task\":\"crowd_rule\",\"id\":\"5e7_0c1_8f31_4a\",\"divId\":\"5e7_0c1_8f31_4a\",\"depend_level\":\"0\"}",
+     * 		"run_jsmind_data" : "{\"crowd_rule_context\":\"测试新标签\",\"type\":\"crowd_file\",\"time_out\":\"86400\",\"positionX\":303,\"positionY\":78,\"operate\":\"or\",\"crowd_rule\":\"985279445663223808\",\"touch_type\":\"database\",\"name\":\"测试新标签\",\"more_task\":\"crowd_rule\",\"id\":\"5e7_0c1_8f31_4a\",\"divId\":\"5e7_0c1_8f31_4a\",\"depend_level\":\"0\"}",
      * 		"next_tasks" : "1032062601112064000",
      * 		"pre_tasks" : "1032062601124646912",
      * 		"is_disenable" : "false",
@@ -131,11 +132,10 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
             String rule_id=run_jsmind_data.get("rule_id").toString();
 
             Set<String> rowsStr=Sets.newHashSet();
-            Set<String> rs=Sets.newHashSet() ;
+            Set<DataPipe> rs=Sets.newHashSet() ;
             if(is_disenable.equalsIgnoreCase("true")){
                 //当前策略跳过状态,则不计算当前策略信息,且跳过校验
             }else{
-
                 //根据rule_id查询文件信息
                 CrowdFileServiceImpl crowdFileService = new CrowdFileServiceImpl();
                 CrowdFileInfo crowdFileInfo = crowdFileService.selectById(rule_id);
@@ -163,19 +163,23 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                 //读取本地文件
                 if(crowdFileInfo.getFile_name().endsWith("xlsx")){
                     //excel 文件
-                    rows = FileUtil.readExcelSplit(new File(file_sftp_path),"xlsx", Charset.forName("utf-8"), Const.FILE_STATUS_SUCCESS);
+                    rows = FileUtil.readExcelSplit(new File(file_sftp_path),"xlsx", Charset.forName("utf-8"), Const.FILE_STATUS_ALL);
                 }else if(crowdFileInfo.getFile_name().endsWith("xls")){
-                    rows = FileUtil.readExcelSplit(new File(file_sftp_path),"xls", Charset.forName("utf-8"), Const.FILE_STATUS_SUCCESS);
+                    rows = FileUtil.readExcelSplit(new File(file_sftp_path),"xls", Charset.forName("utf-8"), Const.FILE_STATUS_ALL);
                 }else{
-                    rows = FileUtil.readStringSplit(new File(file_sftp_path), Charset.forName("utf-8"), Const.FILE_STATUS_SUCCESS);
+                    rows = FileUtil.readTextSplit(new File(file_sftp_path), Charset.forName("utf-8"), "\t");
                 }
                 rowsStr = Sets.newHashSet(rows);
+
+
             }
 
             String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                     strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
-            rs = calculateCommon("offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+            rs = calculateCommon(strategyLogInfo,"offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+
+
 
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);

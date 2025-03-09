@@ -3,6 +3,8 @@ package com.zyc.plugin.calculate.impl;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.common.redis.JedisPoolUtil;
@@ -116,8 +118,9 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
 
 
             //生成参数
-            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
+            Set<DataPipe> rs_error = Sets.newHashSet();
             String file_dir = calculateResult.getFile_dir();
 
             if(is_disenable.equalsIgnoreCase("true")){
@@ -190,13 +193,13 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
                 }
 
                 if(ret == false){
+                    rs_error = rs;
                     rs = Sets.newHashSet();
                 }
                 LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "变量对比结果:"+ret+", 实际值:"+value.toString()+" ,期望值:"+varpool_value);
 
             }
 
-            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){

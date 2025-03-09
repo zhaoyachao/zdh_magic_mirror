@@ -3,6 +3,8 @@ package com.zyc.plugin.calculate.impl;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.common.util.Const;
@@ -18,6 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 插件实现
@@ -119,9 +122,10 @@ public class CodeBlockCalculateImpl extends BaseCalculate implements CodeBlockCa
             Gson gson=new Gson();
 
             //生成参数
-            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
 
+            Set<DataPipe> rs_ret = Sets.newHashSet();
 
             Map<String,Object> params = getJinJavaCommonParam();
 
@@ -148,7 +152,7 @@ public class CodeBlockCalculateImpl extends BaseCalculate implements CodeBlockCa
 
                 if(result instanceof Map){
                     if(((Map) result).containsKey("out_rs")){
-                        rs = (Set<String>)((Map) result).getOrDefault("out_rs", Sets.newHashSet());
+                        rs_ret = (Set<DataPipe>)((Map) result).getOrDefault("out_rs", Sets.newHashSet());
                     }else{
                         throw new Exception("java代码返回结果类型仅支持map结构,且返回的map结构中必须包含out_rs结果集");
                     }
@@ -157,9 +161,14 @@ public class CodeBlockCalculateImpl extends BaseCalculate implements CodeBlockCa
                 }
             }
 
-            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
-            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
+            Set<String> rs_error = Sets.difference(Sets.newHashSet(rs.parallelStream().map(s->s.getUdata()).collect(Collectors.toSet())), Sets.newHashSet(rs_ret.parallelStream().map(s->s.getUdata()).collect(Collectors.toSet())));
+
+            Set<DataPipe> rowsErrorObj= Sets.newHashSet(rs_error.stream().map(s -> new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_FAIL)
+                    .udata_type("").
+                            task_type(InstanceType.CODE_BLOCK.getCode()).build()).collect(Collectors.toSet()));
+
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs_ret, rowsErrorObj);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs_ret, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());

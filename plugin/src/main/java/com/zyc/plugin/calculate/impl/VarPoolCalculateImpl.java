@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.Const;
@@ -16,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 变量池实现
@@ -121,8 +124,8 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
 
 
             //生成参数
-            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
 
             if(is_disenable.equalsIgnoreCase("true")){
@@ -226,7 +229,9 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
                 }
             }
 
-            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
+            Set<DataPipe> rs_error = Sets.newHashSet();
+
+
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){

@@ -1,12 +1,14 @@
 package com.zyc.plugin.calculate;
 
+import com.zyc.common.entity.DataPipe;
+
 import java.util.Set;
 
 public class CalculateResult {
 
     private String file_dir;
 
-    private Set<String> rs;
+    private Set<DataPipe> rs;
 
     private CalculateCommomParam calculateCommomParam;
 
@@ -25,11 +27,11 @@ public class CalculateResult {
         this.file_dir = file_dir;
     }
 
-    public Set<String> getRs() {
+    public Set<DataPipe> getRs() {
         return rs;
     }
 
-    public void setRs(Set<String> rs) {
+    public void setRs(Set<DataPipe> rs) {
         this.rs = rs;
     }
 
@@ -44,7 +46,7 @@ public class CalculateResult {
     public static class Builder{
         private String file_dir;
 
-        private Set<String> rs;
+        private Set<DataPipe> rs;
 
         private CalculateCommomParam calculateCommomParam;
 
@@ -53,7 +55,7 @@ public class CalculateResult {
             return this;
         }
 
-        public Builder rs(Set<String> rs) {
+        public Builder rs(Set<DataPipe> rs) {
             this.rs = rs;
             return this;
         }

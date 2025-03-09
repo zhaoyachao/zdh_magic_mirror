@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.jcraft.jsch.SftpException;
+import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.*;
@@ -25,6 +26,8 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("ALL")
 public class BaseCalculate {
@@ -36,6 +39,8 @@ public class BaseCalculate {
     private MinioClient minioClient;
 
     private Map<String, Object> jinJavaCommonParam = new HashMap<>();
+
+    private String split = "\t";
 
     public SFTPUtil getSftpUtil(Map<String,String> dbConfig){
         if(!dbConfig.getOrDefault("sftp.enable", "false").equalsIgnoreCase("true")){
@@ -139,6 +144,7 @@ public class BaseCalculate {
         strategyLogInfo.setStrategy_group_instance_id(group_instance_id);
         strategyLogInfo.setStrategy_group_id(group_id);
         strategyLogInfo.setStrategy_id(strategy_id);
+        strategyLogInfo.setInstance_type(param.get("instance_type").toString());
         //strategyLogInfo.setCur_time(new Timestamp(Long.valueOf(cur_time)));
         strategyLogInfo.setCur_time(Timestamp.valueOf(cur_time));
         strategyLogInfo.setBase_path(base_path);
@@ -228,17 +234,15 @@ public class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public String writeFile(String file_path, Set<String> rows) throws IOException {
+    public String writeFile(String file_path, Set<DataPipe> rows) throws IOException {
         File f=new File(file_path);
         if(!new File(f.getParent()).exists()){
             new File(f.getParent()).mkdirs();
         }
         FileUtil.clear(f);
-        for (String line:rows){
-            if(!line.contains(",")){
-                line = line+","+Const.FILE_STATUS_SUCCESS;
-            }
-            FileUtil.appendString(f, line);
+        for (DataPipe line:rows){
+            String l = line.generateString();
+            FileUtil.appendString(f, l);
         }
         return f.getAbsolutePath();
     }
@@ -304,7 +308,7 @@ public class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculateCommon(String label_use_type,Set<String> currentRows,String is_disenable, String file_dir, Map param,Map run_jsmind_data, StrategyInstanceServiceImpl strategyInstanceService) throws Exception {
+    public Set<DataPipe> calculateCommon(StrategyLogInfo strategyLogInfo,String label_use_type, Set<String> currentRows, String is_disenable, String file_dir, Map param, Map run_jsmind_data, StrategyInstanceServiceImpl strategyInstanceService) throws Exception {
         String pre_tasks = param.get("pre_tasks").toString();
         List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
         String operate=run_jsmind_data.get("operate").toString();
@@ -314,9 +318,9 @@ public class BaseCalculate {
             pre_tasks_list = Lists.newArrayList(pre_tasks.split(","));
         }
         if(label_use_type.equalsIgnoreCase("offline")){
-            return calculate(file_dir, pre_tasks_list, operate, currentRows, strategyInstances, is_disenable, status);
+            return calculate(strategyLogInfo, file_dir, pre_tasks_list, operate, currentRows, strategyInstances, is_disenable, status);
         }else if(label_use_type.equalsIgnoreCase("online")){
-            return calculatePreTasksByOnlineLabel(pre_tasks_list ,file_dir, operate, strategyInstances, status);
+            return calculatePreTasksByOnlineLabel(strategyLogInfo, pre_tasks_list ,file_dir, operate, strategyInstances, status);
         }
         throw new Exception("不支持的标签类型");
     }
@@ -333,17 +337,17 @@ public class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculate(String file_dir, List<String> pre_tasks, String operate, Set<String> cur_rows, List<StrategyInstance> strategyInstances,
+    public Set<DataPipe> calculate(StrategyLogInfo strategyLogInfo, String file_dir, List<String> pre_tasks, String operate, Set<String> cur_rows, List<StrategyInstance> strategyInstances,
                                  String is_disenable, String status) throws Exception {
 
         //无上游,则直接返回当前结果集
         if(pre_tasks==null || pre_tasks.size()== 0){
-            return cur_rows;
+            return cur_rows.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(new HashMap<>()).build()).collect(Collectors.toSet());
         }
 
         //指定不使用上游数据,返回当前结果集
         if(operate.equalsIgnoreCase("not_use")){
-            return cur_rows;
+            return cur_rows.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(new HashMap<>()).build()).collect(Collectors.toSet());
         }
 
         Map<String,StrategyInstance> map=new HashMap<>();
@@ -351,20 +355,18 @@ public class BaseCalculate {
             map.put(strategyInstance.getId(), strategyInstance);
         }
 
-        Set<String> result=Sets.newHashSet();
+        // 临时结果存储透传参数
+        Map<String, Map<String, Object>> ext = new ConcurrentHashMap<>();
 
+        Set<String> result=Sets.newHashSet();
 
         //如果是排除逻辑, 上游多个任务先取并集,然后再排除当前标签
         if(operate.equalsIgnoreCase("not")){
             //取所有上游的并集
             for(String task:pre_tasks){
-                if(map.get(task).getStatus().equalsIgnoreCase("skip")){
-                    //skip 任务逻辑修改,跳过/禁用任务,采用上游数据
-                   //continue;
-                }
-                //List<String> lines = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
-                List<String> lines = readFile(file_dir, task, status);
-                Set<String> set = Sets.newHashSet(lines);
+                List<DataPipe> lines = readFile(file_dir, task, status, split);
+                loadExt(lines, ext);
+                Set<String> set = Sets.newHashSet(lines.parallelStream().map(s->s.getUdata()).collect(Collectors.toSet()));
                 result = Sets.difference(result, set);
             }
             if(is_disenable.equalsIgnoreCase("false")){
@@ -374,12 +376,10 @@ public class BaseCalculate {
             //交集
             result = null;
             for(String task:pre_tasks){
-                if(map.get(task).getStatus().equalsIgnoreCase("skip")){
-                   //continue;
-                }
                 //List<String> lines = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
-                List<String> lines = readFile(file_dir, task, status);
-                Set<String> set = Sets.newHashSet(lines);
+                List<DataPipe> lines = readFile(file_dir, task, status, split);
+                loadExt(lines, ext);
+                Set<String> set = Sets.newHashSet(lines.stream().map(s->s.getUdata()).collect(Collectors.toSet()));
                 if(result == null){
                     result = set;
                 }else{
@@ -396,12 +396,10 @@ public class BaseCalculate {
             //取并集去重
             result = null;
             for(String task:pre_tasks){
-                if(map.get(task).getStatus().equalsIgnoreCase("skip")){
-                    //continue;
-                }
                 //List<String> lines = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
-                List<String> lines = readFile(file_dir, task, status);
-                Set<String> set = Sets.newHashSet(lines);
+                List<DataPipe> lines = readFile(file_dir, task, status, split);
+                loadExt(lines, ext);
+                Set<String> set = Sets.newHashSet(lines.parallelStream().map(s->s.getUdata()).collect(Collectors.toSet()));
                 if(result == null){
                     result = set;
                 }else{
@@ -415,15 +413,21 @@ public class BaseCalculate {
                 result = Sets.intersection(result, cur_rows);
             }
         }else if(operate.equalsIgnoreCase("not_use")){
-            if(result == null){
-                result = Sets.newHashSet();
-            }
-            if(is_disenable.equalsIgnoreCase("false")){
-                return cur_rows;
-            }
+            //见最上方操作
         }
 
-        return result;
+        return result.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(ext.getOrDefault(s, new HashMap<>())).build()).collect(Collectors.toSet());
+    }
+
+    public void loadExt(List<DataPipe> lines, Map<String, Map<String, Object>> ext){
+        lines.parallelStream().forEach(s->{
+            if(StringUtils.isEmpty(s.getExt())){
+                Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(s.getExt());
+                Map<String, Object> old = ext.getOrDefault(s.getUdata(), new HashMap<>());
+                old.putAll(stringObjectMap);
+                ext.put(s.getUdata(), old);
+            }
+        });
     }
 
     /**
@@ -437,7 +441,7 @@ public class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculate(List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances, String status) throws Exception {
+    public Set<DataPipe> calculate(StrategyLogInfo strategyLogInfo, List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances, String status) throws Exception {
         if(operate.equalsIgnoreCase("not_use")){
             return Sets.newHashSet();
         }
@@ -447,7 +451,11 @@ public class BaseCalculate {
             map.put(strategyInstance.getId(), strategyInstance);
         }
 
+        // 临时结果存储透传参数
+        Map<String, Map<String, Object>> ext = new ConcurrentHashMap<>();
+
         Set<String> result=Sets.newHashSet();
+
         //如果是排除逻辑,需要先找一个base数据基于这个数据做排除
         if(operate.equalsIgnoreCase("not")){
             //需要先找到一个base
@@ -455,9 +463,9 @@ public class BaseCalculate {
             for(String task:pre_tasks){
                 Map run_jsmind_data = JSON.parseObject(map.get(task).getRun_jsmind_data(), Map.class);
                 if(run_jsmind_data.getOrDefault("is_base","false").equals("true")){
-                    //List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
-                    List<String> rows = readFile(file_dir, task, status);
-                    result =Sets.newHashSet(rows);
+                    List<DataPipe> rows = readFile(file_dir, task, status, split);
+                    loadExt(rows, ext);
+                    result =Sets.newHashSet(rows.stream().map(s->s.getUdata()).collect(Collectors.toSet()));
                     pre_tasks.remove(task);
                     break ;
                 }
@@ -470,8 +478,9 @@ public class BaseCalculate {
                 //continue;
             }
             //List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
-            List<String> rows = readFile(file_dir, task, status);
-            Set<String> set=Sets.newHashSet(rows);
+            List<DataPipe> rows = readFile(file_dir, task, status, split);
+            loadExt(rows, ext);
+            Set<String> set=Sets.newHashSet(rows.stream().map(s->s.getUdata()).collect(Collectors.toSet()));
             if(result==null){
                 //第一次赋值
                 result = set;
@@ -489,7 +498,9 @@ public class BaseCalculate {
                 }
             }
         }
-        return result;
+
+        return result.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(ext.getOrDefault(s, new HashMap<>())).build()).collect(Collectors.toSet());
+
     }
 
 
@@ -503,7 +514,7 @@ public class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<String> calculatePreTasksByOnlineLabel(List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances, String status) throws Exception {
+    public Set<DataPipe> calculatePreTasksByOnlineLabel(StrategyLogInfo strategyLogInfo, List<String> pre_tasks, String file_dir, String operate, List<StrategyInstance> strategyInstances, String status) throws Exception {
         if(operate.equalsIgnoreCase("not_use")){
             return Sets.newHashSet();
         }
@@ -516,16 +527,18 @@ public class BaseCalculate {
         if(pre_tasks.size()==0){
             throw new Exception("使用实时标签,必须存在上游标签");
         }
+
+        // 临时结果存储透传参数
+        Map<String, Map<String, Object>> ext = new ConcurrentHashMap<>();
+
         Set<String> result=Sets.newHashSet();
 
         //多个任务交并排逻辑
         for(String task:pre_tasks){
-            if(map.get(task).getStatus().equalsIgnoreCase("skip")){
-                //continue;
-            }
             //List<String> rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
-            List<String> rows = readFile(file_dir, task, status);
-            Set<String> set=Sets.newHashSet(rows);
+            List<DataPipe> rows = readFile(file_dir, task, status, split);
+            loadExt(rows, ext);
+            Set<String> set=Sets.newHashSet(rows.stream().map(s->s.getUdata()).collect(Collectors.toSet()));
             if(result==null){
                 //第一次赋值
                 result = set;
@@ -544,7 +557,7 @@ public class BaseCalculate {
                 }
             }
         }
-        return result;
+        return result.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).build()).collect(Collectors.toSet());
     }
 
     /**
@@ -553,7 +566,7 @@ public class BaseCalculate {
      * @param rs
      * @throws IOException
      */
-    public void writeFileAndPrintLogAndUpdateStatus2Finish(StrategyLogInfo strategyLogInfo,  Set<String> rs) throws Exception {
+    public void writeFileAndPrintLogAndUpdateStatus2Finish(StrategyLogInfo strategyLogInfo,  Set<DataPipe> rs) throws Exception {
         String logStr = StrUtil.format("task: {}, calculate finish size: {}", strategyLogInfo.getStrategy_instance_id(), rs.size());
         LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
         writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo.getStrategy_instance_id(),strategyLogInfo.getStrategy_id(), strategyLogInfo.getFile_path(), rs);
@@ -567,7 +580,7 @@ public class BaseCalculate {
      * @param rs
      * @throws IOException
      */
-    public void writeFileAndPrintLogAndUpdateStatus2Finish(String id,String strategy_id, String file_path, Set<String> rs) throws Exception {
+    public void writeFileAndPrintLogAndUpdateStatus2Finish(String id,String strategy_id, String file_path, Set<DataPipe> rs) throws Exception {
         String save_path = writeFile(file_path, rs);
         //失败-重试3次
         int retry = 0;
@@ -613,15 +626,15 @@ public class BaseCalculate {
      * @param status
      * @throws Exception
      */
-    public void writeRocksdb(String file_rocksdb_path, String id, Set<String> rs, String status) throws Exception {
+    public void writeRocksdb(String file_rocksdb_path, String id, Set<DataPipe> rs, String status) throws Exception {
         File file = new File(file_rocksdb_path);
         if(!file.exists()){
             file.mkdirs();
         }
         RocksDB rocksDB = RocksDBUtil.getConnection(file_rocksdb_path);
         if(rs != null && rs.size() > 0){
-            for (String r: rs){
-                String key = r+"_"+id;
+            for (DataPipe r: rs){
+                String key = r.getUdata()+"_"+id;
                 rocksDB.put(key.getBytes(), status.getBytes());
             }
         }
@@ -635,13 +648,14 @@ public class BaseCalculate {
      * @param file_dir
      * @param task
      * @param status
+     * @param split 默认\t
      * @return
      * @throws Exception
      */
-    public List<String> readFile(String file_dir, String task, String status) throws Exception {
-        List<String> rows = new ArrayList<>();
+    public List<DataPipe> readFile(String file_dir, String task, String status, String split) throws Exception {
+        List<DataPipe> rows = new ArrayList<>();
         if(cn.hutool.core.io.FileUtil.exist(file_dir+"/"+task)){
-            rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status);
+            rows = FileUtil.readStringSplit(new File(file_dir+"/"+task), Charset.forName("utf-8"), status, split);
         }else{
             if(checkSftp()){
                 sftpUtil.login();
@@ -650,17 +664,13 @@ public class BaseCalculate {
                 List<String> tmp = IOUtils.readLines(bais, "utf-8");
                 bais.close();
                 for (String line: tmp){
-                    String[] row = line.split(",");
-                    if(row.length>2){
-                        if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
-                            rows.add(row[0]);
-                        }else{
-                            if(row[1].equalsIgnoreCase(status)){
-                                rows.add(row[0]);
-                            }
-                        }
+                    DataPipe dataPipe = DataPipe.readStringSplit(line, split);
+                    if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
+                        rows.add(dataPipe);
                     }else{
-                        rows.add(row[0]);
+                        if(dataPipe.getStatus().equalsIgnoreCase(status)){
+                            rows.add(dataPipe);
+                        }
                     }
                 }
 
@@ -670,17 +680,13 @@ public class BaseCalculate {
                 List<String> tmp = IOUtils.readLines(inputStream, "utf-8");
                 inputStream.close();
                 for (String line: tmp){
-                    String[] row = line.split(",");
-                    if(row.length>2){
-                        if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
-                            rows.add(row[0]);
-                        }else{
-                            if(row[1].equalsIgnoreCase(status)){
-                                rows.add(row[0]);
-                            }
-                        }
+                    DataPipe dataPipe = DataPipe.readStringSplit(line, split);
+                    if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
+                        rows.add(dataPipe);
                     }else{
-                        rows.add(row[0]);
+                        if(dataPipe.getStatus().equalsIgnoreCase(status)){
+                            rows.add(dataPipe);
+                        }
                     }
                 }
 

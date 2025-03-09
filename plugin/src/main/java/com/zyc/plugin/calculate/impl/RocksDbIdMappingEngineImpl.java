@@ -2,15 +2,16 @@ package com.zyc.plugin.calculate.impl;
 
 import cn.hutool.core.io.FileUtil;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.RocksDBUtil;
 import com.zyc.plugin.calculate.IdMappingEngine;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksIterator;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * rocksdb, idmapping
@@ -19,9 +20,11 @@ import java.util.Map;
 public class RocksDbIdMappingEngineImpl implements IdMappingEngine {
 
     private String file_path;
+    private String id_mapping_code;
 
-    public RocksDbIdMappingEngineImpl(String file_path){
+    public RocksDbIdMappingEngineImpl(String file_path, String id_mapping_code){
         this.file_path = file_path;
+        this.id_mapping_code = id_mapping_code;
     }
 
     @Override
@@ -38,22 +41,27 @@ public class RocksDbIdMappingEngineImpl implements IdMappingEngine {
     }
 
     @Override
-    public IdMappingResult getMap(Collection<String> rs) throws Exception {
+    public IdMappingResult getMap(Collection<DataPipe> rs) throws Exception {
         IdMappingResult idMappingResult = new IdMappingResult();
-        Map<String,String> id_map_rs = Maps.newHashMap();
-        Map<String,String> id_map_rs_error = Maps.newHashMap();
+        Set<DataPipe> id_map_rs = Sets.newHashSet();
+        Set<DataPipe> id_map_rs_error = Sets.newHashSet();
         if(!FileUtil.exist(this.file_path)){
             FileUtil.mkParentDirs(this.file_path);
             throw new Exception("未找到id_mapping依赖的文件: "+this.file_path);
         }
         RocksDB rocksDB = RocksDBUtil.getReadOnlyConnection(this.file_path);
 
-        for (String id: rs){
-            byte[] value = rocksDB.get(id.getBytes());
+        for (DataPipe r: rs){
+            byte[] value = rocksDB.get(r.getUdata().getBytes());
             if(value != null && value.length>0){
-                id_map_rs.put(id, new String(value));
+                Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(r.getExt());
+                stringObjectMap.put("mapping_data", r.getUdata()+","+new String(value));
+                r.setUdata(new String(value));
+                id_map_rs.add(r);
             } else{
-                id_map_rs_error.put(id, "");
+                r.setStatus(Const.FILE_STATUS_FAIL);
+                r.setStatus_desc("id mapping error");
+                id_map_rs_error.add(r);
             }
         }
 

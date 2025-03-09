@@ -1,6 +1,9 @@
 package com.zyc.plugin.calculate.impl;
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.plugin.calculate.IdMappingEngine;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.Redisson;
@@ -58,21 +61,26 @@ public class RedisIdMappingEngineImpl implements IdMappingEngine {
     }
 
     @Override
-    public IdMappingResult getMap(Collection<String> rs) throws Exception {
+    public IdMappingResult getMap(Collection<DataPipe> rs) throws Exception {
         RedissonClient redissonClient = redisConfMap.getOrDefault(id_mapping_code,  redisConfMap.get("default")).redisson();
         try{
             IdMappingResult idMappingResult = new IdMappingResult();
-            Map<String,String> id_map_rs = Maps.newHashMap();
-            Map<String,String> id_map_rs_error = Maps.newHashMap();
+            Set<DataPipe> id_map_rs = Sets.newHashSet();
+            Set<DataPipe> id_map_rs_error = Sets.newHashSet();
 
 
-            for (String id: rs){
-                Object value = redissonClient.getBucket(id).get();
+            for (DataPipe r: rs){
+                Object value = redissonClient.getBucket(r.getUdata()).get();
 
                 if(value != null && !StringUtils.isEmpty(value.toString())){
-                    id_map_rs.put(id, value.toString());
+                    Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(r.getExt());
+                    stringObjectMap.put("mapping_data", r.getUdata()+","+value.toString());
+                    r.setUdata(value.toString());
+                    id_map_rs.add(r);
                 } else{
-                    id_map_rs_error.put(id, "");
+                    r.setStatus(Const.FILE_STATUS_FAIL);
+                    r.setStatus_desc("id mapping error");
+                    id_map_rs_error.add(r);
                 }
             }
 

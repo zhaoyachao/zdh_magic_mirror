@@ -5,6 +5,8 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
@@ -18,6 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 用户名单实现
@@ -148,11 +151,11 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
                 }
             }
 
-            Set<String> rs=Sets.newHashSet();
+            Set<DataPipe> rs=Sets.newHashSet();
             String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                     strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
-            rs = calculateCommon("offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+            rs = calculateCommon(strategyLogInfo, "offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);

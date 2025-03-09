@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.PluginInfo;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.plugin.PluginParam;
@@ -133,39 +135,51 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
             params.putAll(getJinJavaParam(strategyLogInfo.getCur_time()));
 
             //生成参数
-            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
 
-            Set<String> rs3 = Sets.newHashSet();
+            Set<DataPipe> rs3 = Sets.newHashSet();
+            Set<DataPipe> rs_error = Sets.newHashSet();
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用,不做操作
             }else{
                 PluginInfo pluginInfo = pluginService.selectById(rule_id);
                 PluginService pluginServiceImpl = getPluginService(rule_id);
                 //读取已经推送的信息
-                List<String> his = readHisotryFile(file_dir, rule_id+"_"+strategyLogInfo.getStrategy_instance_id(), Const.FILE_STATUS_ALL);
-                Set<String> his2 = his.stream().map(str->str.split(",")[0]).collect(Collectors.toSet());
+                List<DataPipe> his = readHisotryFile(file_dir, rule_id+"_"+strategyLogInfo.getStrategy_instance_id(), Const.FILE_STATUS_ALL);
+                Set<String> his2 = his.stream().map(str->str.getUdata()).collect(Collectors.toSet());
                 Set<String> hisSet = Sets.newHashSet(his2);
 
-                Set<String> diff = Sets.difference(rs, hisSet);
+                Set<DataPipe> diff = rs.parallelStream().filter(s->!hisSet.contains(s.getUdata())).collect(Collectors.toSet());
 
-                for (String s: diff){
+                for (DataPipe r: diff){
                     PluginParam pluginParam = pluginServiceImpl.getPluginParam(rule_params);
-                    PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, s, params);
+                    PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, r, params);
                     String status=Const.FILE_STATUS_FAIL;
                     if(result.getCode() == 0){
                         status = Const.FILE_STATUS_SUCCESS;
+                        rs3.add(r);
+                    }else{
+                        r.setStatus(status);
+                        r.setStatus_desc("plugin error");
+                        rs_error.add(r);
                     }
-                    rs3.add(s+","+status+","+","+System.currentTimeMillis()+JSON.toJSONString(result.getResult()));
+
                 }
+
+                his.parallelStream().forEach(s->{
+                    if(s.getStatus().equalsIgnoreCase(Const.FILE_STATUS_SUCCESS)){
+                        rs3.add(s);
+                    }else{
+                        rs_error.add(s);
+                    }
+                });
                 writeFile(file_dir+"/"+rule_id+"_"+strategyLogInfo.getStrategy_instance_id(), rs3);
             }
 
-            rs = rs3;
-            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
-            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs3, rs_error);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs3, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());

@@ -1,8 +1,11 @@
 package com.zyc.plugin.calculate;
 
+import com.zyc.common.entity.DataPipe;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * id_mapping 数据引擎
@@ -21,26 +24,26 @@ public interface IdMappingEngine{
      * @return
      * @throws Exception
      */
-    public IdMappingResult getMap(Collection<String> rs) throws Exception;
+    public IdMappingResult getMap(Collection<DataPipe> rs) throws Exception;
 
     public static class IdMappingResult{
-        public Map<String, String> rs;
+        public Set<DataPipe> rs;
 
-        public Map<String, String> rs_error;
+        public Set<DataPipe> rs_error;
 
-        public Map<String, String> getRs() {
+        public Set<DataPipe> getRs() {
             return rs;
         }
 
-        public void setRs(Map<String, String> rs) {
+        public void setRs(Set<DataPipe> rs) {
             this.rs = rs;
         }
 
-        public Map<String, String> getRs_error() {
+        public Set<DataPipe> getRs_error() {
             return rs_error;
         }
 
-        public void setRs_error(Map<String, String> rs_error) {
+        public void setRs_error(Set<DataPipe> rs_error) {
             this.rs_error = rs_error;
         }
     }

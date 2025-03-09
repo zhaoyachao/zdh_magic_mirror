@@ -9,6 +9,7 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
+import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.DataSourcesInfo;
 import com.zyc.common.entity.LabelInfo;
 import com.zyc.common.entity.StrategyLogInfo;
@@ -178,15 +179,15 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                 }
             }
 
-            Set<String> rs=Sets.newHashSet() ;
+            Set<DataPipe> rs=Sets.newHashSet() ;
             String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                     strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
             if(label_use_type.equalsIgnoreCase("batch")) {
-                rs = calculateCommon("offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+                rs = calculateCommon(strategyLogInfo,"offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
             }else if(label_use_type.equalsIgnoreCase("single")){
                 //使用实时标签,需要确保当前标签是子层标签
-                rs = calculateCommon("online",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+                rs = calculateCommon(strategyLogInfo, "online",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
                 if(rs == null || rs.size()==0){
 
@@ -196,7 +197,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                 }
             }
 
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
 
         }catch (Exception e){
@@ -253,12 +254,12 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
     }
 
 
-    public Set<String> onlineLabel(Map run_jsmind_data,Set<String> rs, String label_url, LabelInfo labelInfo){
-        Set<String> tmp = Sets.newHashSet();
+    public Set<DataPipe> onlineLabel(Map run_jsmind_data,Set<DataPipe> rs, String label_url, LabelInfo labelInfo){
+        Set<DataPipe> tmp = Sets.newHashSet();
         Gson gson=new Gson();
         List<Map> rule_params = gson.fromJson(run_jsmind_data.get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
-        for(String r: rs){
-            Map<String, Object> result = getLabel(label_url, r, labelInfo.getProduct_code(), labelInfo.getLabel_code());
+        for(DataPipe r: rs){
+            Map<String, Object> result = getLabel(label_url, r.getUdata(), labelInfo.getProduct_code(), labelInfo.getLabel_code());
             for(Map param_map: rule_params){
                 String param_code = param_map.getOrDefault("param_code", "").toString();
                 String param_value = param_map.getOrDefault("param_value", "").toString();

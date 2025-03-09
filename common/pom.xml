@@ -162,6 +162,12 @@
         <dependency>
             <groupId>cn.idev.excel</groupId>
             <artifactId>fastexcel</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
     </dependencies>

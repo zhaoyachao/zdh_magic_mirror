@@ -2,8 +2,11 @@ package com.zyc.plugin.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.LogUtil;
@@ -118,10 +121,10 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
             Map shunt_param = shunt_params.get(0);
 
             //生成参数
-            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
-
+            Set<DataPipe> rs3 = Sets.newHashSet();
 
             String shunt_type = shunt_param.getOrDefault("shunt_type","num").toString();
 
@@ -150,11 +153,11 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                     logStr = StrUtil.format("task: {}, shunt_type: num, size: {}, num: {}", strategyLogInfo.getStrategy_instance_id(), rs.size(), shunt_value_str);
                     LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                     if(shunt_value_end>=shunt_value_start){
-                        rs = rs.stream().skip(shunt_value_start-1).limit(shunt_value_end-shunt_value_start+1).collect(Collectors.toSet());
+                        rs3 = rs.stream().skip(shunt_value_start-1).limit(shunt_value_end-shunt_value_start+1).collect(Collectors.toSet());
                     }
                 }else if(shunt_type.equalsIgnoreCase("rate")){
                     //按比例分流
-                    Set<String> tmp=Sets.newHashSet() ;
+                    Set<DataPipe> tmp=Sets.newHashSet() ;
                     String[] shunt_values = shunt_param.getOrDefault("shunt_value","1;100").toString().split(";");
                     String shunt_code = shunt_param.getOrDefault("shunt_code","").toString();
                     if(shunt_values.length != 2){
@@ -162,7 +165,7 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                     }
                     int start = Integer.parseInt(shunt_values[0]);
                     int end = Integer.parseInt(shunt_values[1]);
-                    List<String> l=new ArrayList<>(rs);
+                    List<DataPipe> l= Lists.newArrayList(rs);
                     for(int i=0;i<rs.size();i++){
                         int mod = (i%100)+1;
                         if(mod>=start && mod <= end){
@@ -173,17 +176,17 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                     //addIndex(group_instance_id+"_"+shunt_code, index, index2);
                     logStr = StrUtil.format("task: {}, shunt_type: rate, size: {}, start: {}, end: {}", strategyLogInfo.getStrategy_instance_id(), rs.size(), start, end);
                     LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
-                    rs = tmp;
+                    rs3 = tmp;
                 }else if(shunt_type.equalsIgnoreCase("hash")){
                     //按hash一致性分流
-                    Set<String> tmp=Sets.newHashSet() ;
+                    Set<DataPipe> tmp=Sets.newHashSet() ;
                     String[] shunt_values = shunt_param.getOrDefault("shunt_value","1;100").toString().split(";");
                     if(shunt_values.length != 2){
                         throw new Exception("分流参数不正确,100%分流格式: 1;100 ");
                     }
                     int start = Integer.parseInt(shunt_values[0]);
                     int end = Integer.parseInt(shunt_values[1]);
-                    List<String> l=new ArrayList<>(rs);
+                    List<DataPipe> l = Lists.newArrayList(rs);
                     for(int i=0;i<rs.size();i++){
                         int mod=Hashing.consistentHash(l.hashCode(),100);
                         if(mod>=start && mod <= end){
@@ -192,13 +195,16 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
                     }
                     logStr = StrUtil.format("task: {}, shunt_type: rate, size: {}, start: {}, end: {}", strategyLogInfo.getStrategy_instance_id(), rs.size(), start, end);
                     LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
-                    rs = tmp;
+                    rs3 = tmp;
                 }
             }
 
-            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
-            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
+            final Set<String> rs4 = Sets.newHashSet(rs3.parallelStream().map(s->s.getUdata()).collect(Collectors.toSet()));
+            Set<DataPipe> rs_error = rs.parallelStream().filter(s->!rs4.contains(s.getUdata())).collect(Collectors.toSet());
+
+
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs3, rs_error);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs3, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());

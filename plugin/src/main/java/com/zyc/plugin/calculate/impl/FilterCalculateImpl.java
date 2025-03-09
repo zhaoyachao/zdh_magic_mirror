@@ -2,7 +2,9 @@ package com.zyc.plugin.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.FilterInfo;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
@@ -19,6 +21,7 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 过滤实现
@@ -117,8 +120,8 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
 
             List<FilterInfo> filterInfos=new ArrayList<>();
 
-            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
             Set<String> rs_error = Sets.newHashSet();
             if(is_disenable.equalsIgnoreCase("true")){
@@ -137,12 +140,17 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
                     filterInfo.getFilter_name();
                     FilterEngine filterEngine = getFilterEngine(filterInfo, strategyLogInfo.getBase_path());
                     FilterEngine.FilterResult filterResult = filterEngine.getMap(rs);
-                    rs = Sets.newHashSet(filterResult.getRs().keySet());
-                    rs_error = Sets.union(rs_error, filterResult.getRs_error().keySet());
+                    rs = Sets.newHashSet(filterResult.getRs());
+                    rs_error = Sets.union(rs_error, filterResult.getRs_error().parallelStream().map(s->s.getUdata()).collect(Collectors.toSet()));
                 }
             }
 
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
+
+            Set<DataPipe> rowsErrorObj= Sets.newHashSet(rs_error.stream().map(s -> new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_FAIL)
+                    .udata_type("").
+                            task_type(InstanceType.FILTER.getCode()).build()).collect(Collectors.toSet()));
+
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rowsErrorObj);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
@@ -159,7 +167,8 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
     private Set<String> loadFilters(FilterInfo filterInfo,String base_path) throws Exception {
         if(filterInfo.getEngine_type().equalsIgnoreCase("file")){
             String filter_path=base_path+"/filter/"+filterInfo.getFilter_code();
-            List<String> list = FileUtil.readStringSplit(new File(filter_path), Charset.forName("utf-8"), Const.FILE_STATUS_ALL);
+            String split = "\t";
+            List<String> list = FileUtil.readTextSplit(new File(filter_path), Charset.forName("utf-8"), split);
             Set<String> filterDataFrame = Sets.newHashSet();
             filterDataFrame.addAll(list);
             return filterDataFrame;

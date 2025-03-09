@@ -2,6 +2,8 @@ package com.zyc.label.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
@@ -16,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 运算符任务
@@ -123,7 +126,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
             //获取上游任务
             String pre_tasks = this.param.get("pre_tasks").toString();
 
-            Set<String> rs = null;
+            Set<DataPipe> rs = null;
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用任务不做处理,认为结果为空
                 rs = Sets.newHashSet();
@@ -134,7 +137,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
                     List<String> other = resetPreTasks(strategyLogInfo.getStrategy_instance_id(),pre_tasks, operate);
                     List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
                     //多个任务交并排逻辑
-                    rs = calculate(other, file_dir, operate, strategyInstances,status);
+                    rs = calculate(strategyLogInfo, other, file_dir, operate, strategyInstances,status);
                 }else{
                     throw new Exception("运算符节点至少依赖一个父节点");
                 }

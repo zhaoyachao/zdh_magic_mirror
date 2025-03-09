@@ -5,6 +5,7 @@ import cn.idev.excel.read.metadata.ReadSheet;
 import cn.idev.excel.support.ExcelTypeEnum;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
+import com.zyc.common.entity.DataPipe;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,29 +41,23 @@ public class FileUtil {
     /**
      * 读取文件解析
      * 当前函数仅适用于用于读取策略结果
-     * 文件内容格式 按逗号分割,依次如下, uid,status,start_time
+     * 文件内容格式 按制表符分割,依次如下, uid,status,start_time
      * @param file
      * @param charset
      * @param status
      * @return
      * @throws IOException
      */
-    public static List<String> readStringSplit(File file, Charset charset, String status) throws IOException {
+    public static List<DataPipe> readStringSplit(File file, Charset charset, String status, String split) throws IOException {
+        return DataPipe.readStringSplit(file, charset, status, split);
+    }
+
+    public static List<String> readTextSplit(File file, Charset charset, String split) throws IOException {
         List<String> result = new ArrayList<>();
         List<String> tmp = Files.readLines(file, charset);
         for (String line: tmp){
-            String[] row = line.split(",");
-            if(row.length>2){
-                if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
-                    result.add(row[0]);
-                }else{
-                    if(row[1].equalsIgnoreCase(status)){
-                        result.add(row[0]);
-                    }
-                }
-            }else{
-                result.add(row[0]);
-            }
+            String[] lines = line.split(split);
+            result.add(lines[0]);
         }
         return result;
     }

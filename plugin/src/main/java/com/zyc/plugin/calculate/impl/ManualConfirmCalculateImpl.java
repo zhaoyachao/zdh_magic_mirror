@@ -3,9 +3,7 @@ package com.zyc.plugin.calculate.impl;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
-import com.zyc.common.entity.NoticeInfo;
-import com.zyc.common.entity.PermissionUserInfo;
-import com.zyc.common.entity.StrategyLogInfo;
+import com.zyc.common.entity.*;
 import com.zyc.common.service.impl.NoticeServiceImpl;
 import com.zyc.common.service.impl.PermissionUserServiceImpl;
 import com.zyc.common.util.Const;
@@ -19,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 人工确认
@@ -122,8 +121,8 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
 
 
 
-            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
             boolean check = false;
             if(is_disenable.equalsIgnoreCase("true")){
@@ -156,7 +155,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
                         }
                     }
                     //写入标识文件,标记当前任务执行过
-                    writeFile(strategyLogInfo.getFile_path()+"_done", Sets.newHashSet("done"));
+                    writeFile(strategyLogInfo.getFile_path()+"_done", Sets.newHashSet(new DataPipe.Builder().udata("done").build()));
                 }else{
                     logStr = StrUtil.format("task: {}, alerady send success", strategyLogInfo.getStrategy_instance_id());
                     LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
@@ -169,8 +168,9 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
                 throw new Exception("send notice error");
             }
 
-            writeFileAndPrintLog(strategyLogInfo, rs);
             if(is_disenable.equalsIgnoreCase("true")){
+
+                writeFileAndPrintLog(strategyLogInfo, rs);
                 setStatus(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_FINISH);
                 logStr = StrUtil.format("task: {}, update status finish", strategyLogInfo.getStrategy_instance_id());
                 LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);

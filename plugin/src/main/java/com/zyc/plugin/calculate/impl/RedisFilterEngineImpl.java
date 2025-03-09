@@ -1,6 +1,9 @@
 package com.zyc.plugin.calculate.impl;
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.plugin.calculate.FilterEngine;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.Redisson;
@@ -63,20 +66,25 @@ public class RedisFilterEngineImpl implements FilterEngine {
     }
 
     @Override
-    public FilterResult getMap(Collection<String> rs) throws Exception {
+    public FilterResult getMap(Collection<DataPipe> rs) throws Exception {
         RedissonClient redissonClient = redisConfMap.getOrDefault(getFilterKey(), redisConfMap.get("default")).redisson();
         try{
             FilterResult filterResult = new FilterResult();
-            Map<String,String> id_map_rs = Maps.newHashMap();
-            Map<String,String> id_map_rs_error = Maps.newHashMap();
+            Set<DataPipe> id_map_rs = Sets.newHashSet();
+            Set<DataPipe> id_map_rs_error = Sets.newHashSet();
 
-            for (String id: rs){
-                Object value = redissonClient.getBucket(id).get();
+            for (DataPipe r: rs){
+                String key = product_code+"_filter:"+filter_code+":"+r.getUdata();
+                Object value = redissonClient.getBucket(key).get();
 
                 if(value != null && !StringUtils.isEmpty(value.toString())){
-                    id_map_rs_error.put(id, value.toString());
+                    r.setStatus(Const.FILE_STATUS_FAIL);
+                    r.setStatus_desc("hit filter "+filter_code);
+                    Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(r.getExt());
+                    stringObjectMap.put("hit_filter", filter_code);
+                    id_map_rs_error.add(r);
                 } else{
-                    id_map_rs.put(id, "");
+                    id_map_rs.add(r);
                 }
             }
 

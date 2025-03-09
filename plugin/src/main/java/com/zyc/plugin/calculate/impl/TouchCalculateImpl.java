@@ -5,9 +5,12 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.entity.TouchConfigInfo;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.TouchCalculate;
@@ -25,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 分流实现
@@ -124,8 +128,8 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
 
 
             //生成参数
-            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
 
 
@@ -137,15 +141,18 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
                 logStr = StrUtil.format("task: {}, touch_type: {}", strategyLogInfo.getStrategy_instance_id(), touch_task);
                 LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                 if(touch_task.equalsIgnoreCase("email")){
-                    emailTouch(touchConfigInfo,rs, file_dir,strategyLogInfo.getStrategy_instance_id());
+                    rs = emailTouch(touchConfigInfo,rs, file_dir,strategyLogInfo.getStrategy_instance_id());
                 }else if(touch_task.equalsIgnoreCase("sms")){
-                    smsTouch(touchConfigInfo,rs, file_dir,strategyLogInfo.getStrategy_instance_id());
+                    rs = smsTouch(touchConfigInfo,rs, file_dir,strategyLogInfo.getStrategy_instance_id());
                 }
             }
 
-            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
-            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
+            Set<DataPipe> rs3 = rs.parallelStream().filter(s->s.getStatus().equalsIgnoreCase(Const.FILE_STATUS_SUCCESS)).collect(Collectors.toSet());
+            Set<DataPipe> rs_error = rs.parallelStream().filter(s->s.getStatus().equalsIgnoreCase(Const.FILE_STATUS_FAIL)).collect(Collectors.toSet());
+
+
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs3, rs_error);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs3, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
@@ -165,36 +172,56 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
      * @param id
      * @throws IOException
      */
-    public void emailTouch(TouchConfigInfo touchConfigInfo,Set<String> rs,String file_dir, String id) throws Exception {
+    public Set<DataPipe> emailTouch(TouchConfigInfo touchConfigInfo,Set<DataPipe> rs,String file_dir, String id) throws Exception {
         EmailTouch emailTouch=new QQEmailTouch();
         emailTouch.init(new HashMap<String,Object>(this.dbConfig), touchConfigInfo);
+
+        Set<DataPipe> tmp = Sets.newHashSet();
+
+        Set<DataPipe> rs_tmp = Sets.newHashSet();
         List<String> ccs=new ArrayList<>();
-        for (String email:rs){
-            if(!email.contains("@")){
-                rs.remove(email);
-                writeFile(file_dir+"/email_"+id, Sets.newHashSet(email+",format error,"+System.currentTimeMillis()));
+        for (DataPipe email:rs){
+            if(email.getUdata().contains("@")){
+                rs_tmp.add(email);
+                //writeFile(file_dir+"/email_"+id, Sets.newHashSet(email+",format error,"+System.currentTimeMillis()));
+            }else{
+                email.setStatus(Const.FILE_STATUS_FAIL);
+                tmp.add(email);
             }
         }
 
-        List<String> his = readHisotryFile(file_dir, "email_"+id, Const.FILE_STATUS_ALL);
-        Set<String> hisSet = Sets.newHashSet(his);
-        Set<String> diff = Sets.difference(rs, hisSet);
-        Set<String> tmp = Sets.newHashSet();
-        for(String account: diff){
-            String result = emailTouch.send(account);
-            tmp.add(account+","+result+","+System.currentTimeMillis());
-            writeFile(file_dir+"/email_"+id, tmp);
+        List<DataPipe> his = readHisotryFile(file_dir, "email_"+id, Const.FILE_STATUS_ALL);
+        Set<String> hisSet = Sets.newHashSet(his.stream().map(s->s.getUdata()).collect(Collectors.toSet()));
+        Set<DataPipe> diff = rs_tmp.parallelStream().filter(s->!hisSet.contains(s.getUdata())).collect(Collectors.toSet());
+
+        for(DataPipe account: diff){
+            String result = emailTouch.send(account.getUdata());
+            if(result.equalsIgnoreCase("fail")){
+                account.setStatus(Const.FILE_STATUS_FAIL);
+            }
+
+            tmp.add(account);
         }
+
+        tmp.addAll(his);
+        writeFile(file_dir+"/email_"+id, tmp);
+
+        return tmp;
     }
 
-    public void smsTouch(TouchConfigInfo touchConfigInfo,Set<String> rs,String file_dir, String id) throws Exception {
-        List<List<String>> partitions = Lists.partition(new ArrayList<>(rs) , 1000);
+    public Set<DataPipe> smsTouch(TouchConfigInfo touchConfigInfo,Set<DataPipe> rs,String file_dir, String id) throws Exception {
+        List<List<DataPipe>> partitions = Lists.partition(Lists.newArrayList(rs) , 1000);
         //读取已经推送的信息
-        List<String> his = readHisotryFile(file_dir, "sms_"+id, Const.FILE_STATUS_ALL);
-        Set<String> hisSet = Sets.newHashSet(his);
-        for (List<String> partition: partitions){
-            Set<String> now = Sets.newHashSet(partition);
-            Set<String> diff = Sets.difference(now, hisSet);
+        List<DataPipe> his = readHisotryFile(file_dir, "sms_"+id, Const.FILE_STATUS_ALL);
+
+        Set<String> hisSet = Sets.newHashSet(his.parallelStream().map(s->s.getUdata()).collect(Collectors.toSet()));
+
+        Set<DataPipe> tmp = Sets.newHashSet();
+
+        for (List<DataPipe> partition: partitions){
+            Set<DataPipe> now = Sets.newHashSet(partition);
+
+            Set<DataPipe> diff = now.parallelStream().filter(s->!hisSet.contains(s.getUdata())).collect(Collectors.toSet());
             JSONObject jsonObject=JSONObject.parseObject(touchConfigInfo.getTouch_config());
             String sign = touchConfigInfo.getSign();
             String template = touchConfigInfo.getTemplate_code();
@@ -204,12 +231,21 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
             String phones = StringUtils.join(diff,",");
             Properties properties = getSmsConfigByPlatform(platform);
             SmsResponse response = smsTouch.sendSms(properties, phones, sign, template,"","");
-            Set<String> tmp = Sets.newHashSet();
-            for (String s: diff){
-                tmp.add(s+","+response.getCode()+","+response.getMessage()+","+JSON.toJSONString(response.getObject())+","+System.currentTimeMillis());
+
+            for (DataPipe s: diff){
+                if(!response.getCode().equalsIgnoreCase("ok")){
+                    s.setStatus(Const.FILE_STATUS_FAIL);
+                }
+                Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(s.getExt());
+                stringObjectMap.put("touch_result", response.getObject());
+                s.setExt(JsonUtil.formatJsonString(stringObjectMap));
+                tmp.add(s);
             }
-            writeFile(file_dir+"/sms_"+id, tmp);
         }
+
+        writeFile(file_dir+"/sms_"+id, tmp);
+
+        return tmp;
     }
 
     public SmsTouch getSmsTouchByPlatform(String platform) throws Exception {

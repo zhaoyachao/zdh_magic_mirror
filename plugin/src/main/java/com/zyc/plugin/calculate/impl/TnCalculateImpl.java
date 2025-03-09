@@ -2,6 +2,8 @@ package com.zyc.plugin.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.DateUtil;
@@ -17,6 +19,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * TN实现,只做数据流转
@@ -122,8 +125,8 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
             String base_path=strategyLogInfo.getBase_path();
 
 
-            CalculateResult calculateResult = calculateResult(base_path, run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, base_path, run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
 
             if(is_disenable.equalsIgnoreCase("true")){
 
@@ -132,7 +135,9 @@ public class TnCalculateImpl extends BaseCalculate implements TnCalculate {
             }
 
             //tn操作为整体操作,全部成功或者全部失败
-            Set<String> rs_error = Sets.newHashSet();
+            Set<DataPipe> rs_error = Sets.newHashSet();
+
+
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){

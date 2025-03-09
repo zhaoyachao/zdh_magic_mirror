@@ -8,10 +8,13 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
+import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.FunctionInfo;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.FunctionCalculate;
@@ -25,6 +28,7 @@ import javax.script.ScriptException;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 函数实现
@@ -133,8 +137,8 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             String return_operate_value = run_jsmind_data.getOrDefault("return_operate_value", "").toString();
 
             //生成参数
-            CalculateResult calculateResult = calculateResult(strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
 
             Map<String,Object> params = getJinJavaCommonParam();
             params.put("rule_params", rule_params);
@@ -142,8 +146,8 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);
 
 
-            Set<String> rs_error = Sets.newHashSet();
-            Set<String> rs3 = Sets.newHashSet();
+            Set<DataPipe> rs_error = Sets.newHashSet();
+            Set<DataPipe> rs3 = Sets.newHashSet();
 
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用,不做操作
@@ -154,12 +158,12 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                 FunctionServiceImpl functionService = new FunctionServiceImpl();
                 FunctionInfo functionInfo = functionService.selectByFunction(rule_id);
 
-                for(String uid: rs){
+                for(DataPipe r: rs){
                     try{
                         Map<String, Object> objectMap = new HashMap<>();
                         List<String> param_codes = new ArrayList<>();
                         objectMap.putAll(params);
-                        objectMap.put("uid", uid);//获取当前结果集信息
+                        objectMap.put("uid", r.getUdata());//获取当前结果集信息
 
                         for(Map map: rule_params){
                             String param_code = map.get("param_code").toString();
@@ -174,7 +178,11 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                             Object ret_diff = execReturnDiffExpress(strategyLogInfo, ret, return_operate_value, objectMap);
                             //开启对比,结果为true表示成功数据,false为失败数据, 不等于true则跳过当前
                             if(!ret_diff.toString().equalsIgnoreCase("true")){
-                                rs_error.add(uid);
+                                r.setStatus(Const.FILE_STATUS_FAIL);
+                                r.setStatus_desc("function error ");
+                                Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(r.getExt());
+                                stringObjectMap.put("function_ret", ret instanceof String?ret.toString():JsonUtil.formatJsonString(ret));
+                                rs_error.add(r);
                                 continue;
                             }
                         }else{
@@ -182,15 +190,21 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                         }
 
                         if(return_value_express.trim().equalsIgnoreCase("uid")){
-                            rs3.add(uid);
+                            rs3.add(r);
                         }else if(return_value_express.trim().equalsIgnoreCase("ret")){
-                            rs3.add(ret.toString());
+                            r.setUdata(ret.toString());
+                            rs3.add(r);
                         }else{
                             Object new_ret = execFunctionExpress(strategyLogInfo, ret, return_value_express, objectMap);
                             if(new_ret != null && !StringUtils.isEmpty(new_ret.toString())){
-                                rs3.add(new_ret.toString());
+                                r.setUdata(new_ret.toString());
+                                rs3.add(r);
                             }else{
-                                rs_error.add(uid);
+                                r.setStatus(Const.FILE_STATUS_FAIL);
+                                r.setStatus_desc("function error ");
+                                Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(r.getExt());
+                                stringObjectMap.put("function_ret", ret instanceof String?ret.toString():JsonUtil.formatJsonString(ret));
+                                rs_error.add(r);
                             }
                         }
                     }catch (Exception e){
@@ -199,6 +213,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                 }
             }
             rs = rs3;
+
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){

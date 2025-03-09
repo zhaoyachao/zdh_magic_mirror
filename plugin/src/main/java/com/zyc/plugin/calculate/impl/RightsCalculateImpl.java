@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.DateUtil;
@@ -16,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 权益实现
@@ -123,9 +126,10 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
             Gson gson=new Gson();
             List<Map> rights_param = gson.fromJson(rights_param_str, new TypeToken<List<Map>>(){}.getType());
 
-            CalculateResult calculateResult = calculateResult(base_path, run_jsmind_data, param, strategyInstanceService);
-            Set<String> rs = calculateResult.getRs();
+            CalculateResult calculateResult = calculateResult(strategyLogInfo,base_path, run_jsmind_data, param, strategyInstanceService);
+            Set<DataPipe> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
+            Set<DataPipe> rs_error = Sets.newHashSet();
 
             if(is_disenable.equalsIgnoreCase("true")){
 
@@ -134,7 +138,7 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
                 throw new Exception("当前权益模块未实现");
             }
 
-            Set<String> rs_error = Sets.difference(calculateResult.getRs(), rs);
+
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){

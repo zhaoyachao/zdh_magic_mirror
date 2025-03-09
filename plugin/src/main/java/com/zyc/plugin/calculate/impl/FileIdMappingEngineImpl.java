@@ -1,16 +1,16 @@
 package com.zyc.plugin.calculate.impl;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.zyc.common.entity.DataPipe;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.plugin.calculate.IdMappingEngine;
 
 import java.io.File;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 本地文件idmapping
@@ -19,22 +19,24 @@ import java.util.Map;
 public class FileIdMappingEngineImpl implements IdMappingEngine {
 
     private String file_path;
+    private String id_mapping_code;
 
-    public FileIdMappingEngineImpl(String file_path){
+    public FileIdMappingEngineImpl(String file_path, String id_mapping_code){
         this.file_path = file_path;
+        this.id_mapping_code = id_mapping_code;
     }
 
     @Override
     public List<String> get() throws Exception {
         File f=new File(file_path);
         if(f.exists() && f.isFile()){
-            return FileUtil.readStringSplit(f, Charset.forName("utf-8"), Const.FILE_STATUS_ALL);
+            return FileUtil.readTextSplit(f, Charset.forName("utf-8"), ",");
         }
         return new ArrayList<>();
     }
 
     @Override
-    public IdMappingResult getMap(Collection<String> rs) throws Exception {
+    public IdMappingResult getMap(Collection<DataPipe> rs) throws Exception {
 
         if(!cn.hutool.core.io.FileUtil.exist(this.file_path)){
             cn.hutool.core.io.FileUtil.mkParentDirs(this.file_path);
@@ -42,22 +44,27 @@ public class FileIdMappingEngineImpl implements IdMappingEngine {
         }
         File f=new File(file_path);
         Map<String,String> id_map = Maps.newHashMap();
-        Map<String,String> id_map_rs = Maps.newHashMap();
-        Map<String,String> id_map_rs_error = Maps.newHashMap();
+        Set<DataPipe> id_map_rs = Sets.newHashSet();
+        Set<DataPipe> id_map_rs_error = Sets.newHashSet();
         IdMappingResult idMappingResult = new IdMappingResult();
         if(f.exists() && f.isFile()){
-            List<String> id_mappings = FileUtil.readStringSplit(f, Charset.forName("utf-8"), Const.FILE_STATUS_ALL);
+            List<String> id_mappings = FileUtil.readTextSplit(f, Charset.forName("utf-8"), ",");
             for (String line:id_mappings){
                 String[] idm = line.split(",",2);
                 id_map.put(idm[0], idm[1]);
             }
         }
 
-        for (String id: rs){
-            if(id_map.containsKey(id)){
-                id_map_rs.put(id, id_map.get(id));
+        for (DataPipe r: rs){
+            if(id_map.containsKey(r.getUdata())){
+                Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(r.getExt());
+                stringObjectMap.put("mapping_data", r.getUdata()+","+id_map.get(r.getUdata()));
+                r.setUdata(id_map.get(r.getUdata()));
+                id_map_rs.add(r);
             }else{
-                id_map_rs_error.put(id, "");
+                r.setStatus(Const.FILE_STATUS_FAIL);
+                r.setStatus_desc("id mapping error");
+                id_map_rs_error.add(r);
             }
         }
 

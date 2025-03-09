@@ -2,6 +2,8 @@ package com.zyc.label.calculate.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
+import com.zyc.common.entity.DataPipe;
+import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.DateUtil;
@@ -15,6 +17,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleCalculate {
     private static Logger logger= LoggerFactory.getLogger(CrowdRuleCalculateImpl.class);
@@ -121,6 +124,7 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
                 throw new Exception("客群信息数据库配置异常");
             }
             Set<String> rs = null;
+            Set<DataPipe> rowsObj=Sets.newHashSet();
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用任务不做处理,认为结果为空
                 rs = Sets.newHashSet() ;
@@ -128,8 +132,12 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
                 //解析客群,生成标签任务
                 throw new Exception("暂时不支持客群任务计算");
             }
-            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
-            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
+            rowsObj = Sets.newHashSet(rs.stream().map(s -> new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS)
+                    .udata_type("").
+                            task_type(InstanceType.CROWD_RULE.getCode()).build()).collect(Collectors.toSet()));
+
+            writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rowsObj);
+            writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rowsObj, Const.STATUS_FINISH);
         }catch (Exception e){
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());

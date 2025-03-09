@@ -3,6 +3,7 @@ package com.zyc.plugin.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.hubspot.jinjava.Jinjava;
+import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.PluginInfo;
 import com.zyc.common.plugin.PluginParam;
 import com.zyc.common.plugin.PluginResult;
@@ -18,10 +19,10 @@ import java.util.*;
 public class HttpPluginServiceImpl implements PluginService {
 
     @Override
-    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, String rs, Map<String,Object> params) {
+    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, DataPipe rs, Map<String,Object> params) {
         HttpPluginResult httpPluginResult = new HttpPluginResult();
         try{
-            System.out.println("用户: "+rs+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JSON.toJSONString(pluginParam));
+            System.out.println("用户: "+rs.getUdata()+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JSON.toJSONString(pluginParam));
             Properties props = getParams(pluginParam);
             String method = props.getProperty("method","post");
             String request_params = props.getProperty("request_params", "");

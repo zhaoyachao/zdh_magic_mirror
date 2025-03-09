@@ -1,5 +1,6 @@
 package com.zyc.common.plugin;
 
+import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.PluginInfo;
 
 import java.util.Map;
@@ -9,7 +10,7 @@ import java.util.Map;
  */
 public interface PluginService {
 
-    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, String rs, Map<String,Object> params);
+    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, DataPipe rs, Map<String,Object> params);
 
     public PluginParam getPluginParam(Object param);
 }
