@@ -439,7 +439,7 @@ public abstract class BaseCalculate {
 
         if(operate.equalsIgnoreCase("not_use")){
             //plugin模块理论上不应该存在not_use 的使用方式,因plugin仅做数据处理,不做数据生产
-            return Sets.newHashSet();
+            throw new Exception("运算符插件-不支持not, not_use 用法");
         }
 
         Set<String> result = null;
@@ -468,9 +468,9 @@ public abstract class BaseCalculate {
                     result = Sets.intersection(result, set);
                 }else if(operate.equalsIgnoreCase("not")){
                     //计算排除
-                    throw new Exception("不支持排除操作,plugin模块仅支持and, or, not_use操作符");
+                    throw new Exception("不支持排除操作,plugin模块仅支持and, or操作符");
                 }else if(operate.equalsIgnoreCase("not_use")){
-                    return Sets.newHashSet();
+                    throw new Exception("不支持截断操作,plugin模块仅支持and, or操作符");
                 }
             }
         }

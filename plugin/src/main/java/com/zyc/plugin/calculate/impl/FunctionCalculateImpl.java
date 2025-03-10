@@ -10,7 +10,6 @@ import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.FunctionInfo;
-import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.common.util.Const;
@@ -28,7 +27,6 @@ import javax.script.ScriptException;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
  * 函数实现

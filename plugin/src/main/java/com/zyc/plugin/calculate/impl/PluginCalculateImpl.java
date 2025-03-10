@@ -5,7 +5,6 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.common.entity.DataPipe;
-import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.PluginInfo;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.plugin.PluginParam;

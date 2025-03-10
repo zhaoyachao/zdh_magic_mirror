@@ -2,7 +2,6 @@ package com.zyc.label.calculate.impl;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.jcraft.jsch.SftpException;
@@ -360,17 +359,17 @@ public class BaseCalculate {
 
         Set<String> result=Sets.newHashSet();
 
-        //如果是排除逻辑, 上游多个任务先取并集,然后再排除当前标签
+        //如果是排除逻辑, 上游多个任务先取交集,然后再排除当前标签
         if(operate.equalsIgnoreCase("not")){
-            //取所有上游的并集
+            //取所有上游的交集
             for(String task:pre_tasks){
                 List<DataPipe> lines = readFile(file_dir, task, status, split);
                 loadExt(lines, ext);
                 Set<String> set = Sets.newHashSet(lines.parallelStream().map(s->s.getUdata()).collect(Collectors.toSet()));
-                result = Sets.difference(result, set);
+                result = Sets.intersection(result, set);
             }
             if(is_disenable.equalsIgnoreCase("false")){
-                result = Sets.intersection(result, cur_rows);
+                result = Sets.difference(result, cur_rows);
             }
         }else if(operate.equalsIgnoreCase("and")){
             //交集
@@ -459,17 +458,8 @@ public class BaseCalculate {
         //如果是排除逻辑,需要先找一个base数据基于这个数据做排除
         if(operate.equalsIgnoreCase("not")){
             //需要先找到一个base
-            result = Sets.newHashSet();
-            for(String task:pre_tasks){
-                Map run_jsmind_data = JSON.parseObject(map.get(task).getRun_jsmind_data(), Map.class);
-                if(run_jsmind_data.getOrDefault("is_base","false").equals("true")){
-                    List<DataPipe> rows = readFile(file_dir, task, status, split);
-                    loadExt(rows, ext);
-                    result =Sets.newHashSet(rows.stream().map(s->s.getUdata()).collect(Collectors.toSet()));
-                    pre_tasks.remove(task);
-                    break ;
-                }
-            }
+            throw new Exception("运算符插件-不支持not, not_use 用法");
+
         }
 
         //多个任务交并排逻辑
