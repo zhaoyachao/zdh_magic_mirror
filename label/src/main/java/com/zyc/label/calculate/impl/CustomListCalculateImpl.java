@@ -1,13 +1,13 @@
 package com.zyc.label.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.label.calculate.CustomListCalculate;
 import com.zyc.label.service.impl.StrategyInstanceServiceImpl;
@@ -125,7 +125,7 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
         try{
 
             //获取标签code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String rule_id=run_jsmind_data.get("rule_id").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 

@@ -1,11 +1,10 @@
 package com.zyc.ship.engine.impl.executor.plugin;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.util.HttpUtil;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.ship.disruptor.ShipEvent;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
@@ -23,11 +22,11 @@ public class HttpPlugin implements Plugin{
     private static Logger logger= LoggerFactory.getLogger(HttpPlugin.class);
 
     private String rule_id;
-    private Object run_jsmind_data;
+    private Map<String, Object> run_jsmind_data;
     private StrategyInstance strategyInstance;
     private ShipEvent shipEvent;
 
-    public HttpPlugin(String rule_id, Object run_jsmind_data, StrategyInstance strategyInstance, ShipEvent shipEvent){
+    public HttpPlugin(String rule_id, Map<String, Object> run_jsmind_data, StrategyInstance strategyInstance, ShipEvent shipEvent){
         this.rule_id = rule_id;
         this.run_jsmind_data = run_jsmind_data;
         this.strategyInstance = strategyInstance;
@@ -43,7 +42,7 @@ public class HttpPlugin implements Plugin{
     public boolean execute() throws Exception {
         try{
             Gson gson=new Gson();
-            List<Map> rule_params = gson.fromJson(((JSONObject)run_jsmind_data).get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
+            List<Map> rule_params = gson.fromJson((run_jsmind_data).get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
 
             Properties props = new Properties();
 
@@ -84,8 +83,8 @@ public class HttpPlugin implements Plugin{
             }
 
             if(return_value_type.equalsIgnoreCase("json")){
-                JSONObject jsonObject = JSON.parseObject(res);
-                if(jsonObject.getString(return_param).equalsIgnoreCase(return_param_value)){
+                Map<String, Object> jsonObject = JsonUtil.toJavaMap(res);
+                if(jsonObject.getOrDefault(return_param,"").toString().equalsIgnoreCase(return_param_value)){
                     return true;
                 }
             }

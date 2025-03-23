@@ -1,7 +1,6 @@
 package com.zyc.common.util;
 
 import cn.hutool.system.SystemUtil;
-import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.redis.JedisPoolUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -76,7 +75,7 @@ public class ServerManagerUtil {
         String key = getServiceNameKey(serviceInstanceConf.getService_name());
         String instance = getServiceInstanceKey(serviceInstanceConf);
         serviceInstanceConf.setLast_time(System.currentTimeMillis()+"");
-        String value = JSONObject.toJSONString(serviceInstanceConf);
+        String value = JsonUtil.formatJsonString(serviceInstanceConf);
         JedisPoolUtil.redisClient().hSet(instance, "service", value);
         JedisPoolUtil.redisClient().expire(instance, 60*5L);
 

@@ -1,7 +1,7 @@
 package com.zyc.ship.util;
 
-import cn.hutool.json.JSONUtil;
 import com.zyc.common.util.DAG;
+import com.zyc.common.util.JsonUtil;
 
 import java.util.*;
 
@@ -39,16 +39,16 @@ public class Dag2Antlr {
         }
 
         Set<String> outPutRoots = getOutPutRoots(dag, nodeTypes);
-        System.out.println("最终："+JSONUtil.toJsonStr(runPath));
-        return JSONUtil.toJsonStr(runPath);
+        System.out.println("最终："+ JsonUtil.formatJsonString(runPath));
+        return JsonUtil.formatJsonString(runPath);
     }
 
     public String checkParentInRunPath(String current, Set<String> parents, DAG dag, Map<String,String> runPath, Map<String,String> nodeTyps, Map<String,String> nodeOperates ){
-        System.out.println("current: "+current+" ,parents: "+ JSONUtil.toJsonStr(parents));
+        System.out.println("current: "+current+" ,parents: "+ JsonUtil.formatJsonString(parents));
         String str = "";
         //无父节点,返回当前节点的配置信息,此处暂时已节点代替
         if(parents == null || parents.size()==0){
-            System.out.println("current: "+current+" ,parents 为空: "+ JSONUtil.toJsonStr(parents));
+            System.out.println("current: "+current+" ,parents 为空: "+ JsonUtil.formatJsonString(parents));
             return current;
         }
         for (String parent:parents){

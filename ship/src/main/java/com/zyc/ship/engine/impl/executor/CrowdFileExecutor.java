@@ -1,6 +1,5 @@
 package com.zyc.ship.engine.impl.executor;
 
-import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
@@ -9,10 +8,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 public class CrowdFileExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(CrowdFileExecutor.class);
 
-    public ShipResult execute(JSONObject run_jsmind_data, String product_code, String uid){
+    public ShipResult execute(Map<String, Object> run_jsmind_data, String product_code, String uid){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{

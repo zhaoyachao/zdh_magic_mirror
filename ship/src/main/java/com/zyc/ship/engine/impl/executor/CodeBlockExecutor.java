@@ -1,6 +1,5 @@
 package com.zyc.ship.engine.impl.executor;
 
-import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.groovy.GroovyFactory;
 import com.zyc.ship.disruptor.ShipEvent;
@@ -17,7 +16,7 @@ public class CodeBlockExecutor extends BaseExecutor{
 
     private static Logger logger= LoggerFactory.getLogger(CodeBlockExecutor.class);
 
-    public ShipResult execute(ShipEvent shipEvent, JSONObject run_jsmind_data, StrategyInstance strategyInstance){
+    public ShipResult execute(ShipEvent shipEvent, Map<String, Object> run_jsmind_data, StrategyInstance strategyInstance){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{

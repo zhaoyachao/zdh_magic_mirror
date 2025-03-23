@@ -1,7 +1,7 @@
 package com.zyc.variable.service.impl;
 
-import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.entity.LabelInfo;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.MybatisUtil;
 import com.zyc.variable.dao.LabelMapper;
 import com.zyc.variable.service.LabelService;
@@ -30,8 +30,10 @@ public class CacheLabelServiceImpl implements LabelService {
 
                 String label_default = row.getLabel_default();
                 if(!StringUtils.isEmpty(label_default)){
-                    Map default_map = JSONObject.parseObject(label_default, Map.class);
-                    cache.put(row.getLabel_code(), default_map);
+                    Map default_map = JsonUtil.toJavaBean(label_default, Map.class);
+                    if(default_map != null){
+                        cache.put(row.getLabel_code(), default_map);
+                    }
                 }else{
                     cache.put(row.getLabel_code(), null);
                 }

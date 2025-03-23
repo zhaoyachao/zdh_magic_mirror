@@ -1,14 +1,12 @@
 package com.zyc.ship.service.impl;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.DAG;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.MybatisUtil;
 import com.zyc.ship.dao.StrategyGroupMapper;
 import com.zyc.ship.entity.StrategyGroupInstance;
@@ -92,13 +90,13 @@ public class CacheStrategyServiceImpl implements StrategyService {
                 strategyGroupInstance.setId(group_instance_id);
                 strategyGroupInstance.setGroup_id(group_id);
 
-                JSONObject run_jsmind_data = JSON.parseObject(row.get("run_jsmind_data").toString());
+                Map<String, Object> run_jsmind_data = JsonUtil.toJavaMap(row.get("run_jsmind_data").toString());
                 //获取跟节点
-                JSONArray run_lins = run_jsmind_data.getJSONArray("run_line");
+                List<Map<String, Object>> run_lins = (List<Map<String, Object>>)run_jsmind_data.get("run_line");
                 List<Map<String,String>> dagMap = new ArrayList<>();
-                for (Object run_line: run_lins){
-                    String from = ((JSONObject) run_line).getString("from");
-                    String to = ((JSONObject) run_line).getString("to");
+                for (Map<String,Object> run_line: run_lins){
+                    String from = run_line.get("from").toString();
+                    String to = run_line.get("to").toString();
                     Map<String,String> tmp = Maps.newHashMap();
                     tmp.put("from", from);
                     tmp.put("to", to);
@@ -120,8 +118,8 @@ public class CacheStrategyServiceImpl implements StrategyService {
                     strategyInstance.setGroup_instance_id(group_instance_id);
                     strategyInstance.setStrategy_id(stringObjectMap.get("strategy_id").toString());
                     strategyInstance.setInstance_type(stringObjectMap.get("instance_type").toString());
-                    JSONObject run_jsmind_data_strategy = JSON.parseObject(stringObjectMap.get("run_jsmind_data").toString());
-                    strategyInstance.setOperate(run_jsmind_data_strategy.getString("operate"));
+                    Map<String, Object> run_jsmind_data_strategy = JsonUtil.toJavaMap(stringObjectMap.get("run_jsmind_data").toString());
+                    strategyInstance.setOperate(run_jsmind_data_strategy.get("operate").toString());
                     //strategyInstance.setParams(run_jsmind_data_strategy.getString("rule_param"));
                     strategyInstance.setRun_jsmind_data(stringObjectMap.get("run_jsmind_data").toString());
                     stringStrategyMap.put(strategyInstance.getId(), strategyInstance);
@@ -131,7 +129,7 @@ public class CacheStrategyServiceImpl implements StrategyService {
 
                     //判断是否标签类型
                     if(stringObjectMap.get("instance_type").toString().equalsIgnoreCase("label")){
-                        label_codes.add(run_jsmind_data_strategy.getString("rule_id"));
+                        label_codes.add(run_jsmind_data_strategy.get("rule_id").toString());
                     }
                 }
                 strategyGroupInstance.setDag(dag);
@@ -140,7 +138,7 @@ public class CacheStrategyServiceImpl implements StrategyService {
                 strategyGroupInstance.setLabel_codes(Lists.newArrayList(label_codes));
                 Object small_flow_rate_map_str = JedisPoolUtil.redisClient.get("small_flow_rate_"+group_id);
                 if(small_flow_rate_map_str != null && !StringUtils.isEmpty(small_flow_rate_map_str.toString())){
-                    Map<String, String> stringStringMap = JSON.parseObject(small_flow_rate_map_str.toString(), Map.class);
+                    Map<String, String> stringStringMap = JsonUtil.toJavaBean(small_flow_rate_map_str.toString(), Map.class);
                     String small_flow_rate = stringStringMap.getOrDefault(group_instance_id,"");
                     strategyGroupInstance.setSmall_flow_rate(small_flow_rate);
                 }

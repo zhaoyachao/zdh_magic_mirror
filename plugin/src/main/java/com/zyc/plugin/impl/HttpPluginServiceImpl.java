@@ -1,7 +1,5 @@
 package com.zyc.plugin.impl;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.PluginInfo;
@@ -9,6 +7,7 @@ import com.zyc.common.plugin.PluginParam;
 import com.zyc.common.plugin.PluginResult;
 import com.zyc.common.plugin.PluginService;
 import com.zyc.common.util.HttpUtil;
+import com.zyc.common.util.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
@@ -25,7 +24,7 @@ public class HttpPluginServiceImpl implements PluginService {
     public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, DataPipe rs, Map<String,Object> params) {
         HttpPluginResult httpPluginResult = new HttpPluginResult();
         try{
-            System.out.println("用户: "+rs.getUdata()+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JSON.toJSONString(pluginParam));
+            System.out.println("用户: "+rs.getUdata()+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JsonUtil.formatJsonString(pluginParam));
             Properties props = getParams(pluginParam);
             String method = props.getProperty("method","post");
             String request_params = props.getProperty("request_params", "");
@@ -63,8 +62,8 @@ public class HttpPluginServiceImpl implements PluginService {
             }
 
             if(return_value_type.equalsIgnoreCase("json")){
-                JSONObject jsonObject = JSON.parseObject(res);
-                if(jsonObject.getString(return_param).equalsIgnoreCase(return_param_value)){
+                Map<String, Object> jsonObject = JsonUtil.toJavaMap(res);
+                if(jsonObject.getOrDefault(return_param,"").toString().equalsIgnoreCase(return_param_value)){
                     throw new Exception(res);
                 }
             }

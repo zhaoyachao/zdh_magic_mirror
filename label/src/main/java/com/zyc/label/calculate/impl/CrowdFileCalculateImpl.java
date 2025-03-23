@@ -1,6 +1,5 @@
 package com.zyc.label.calculate.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.jcraft.jsch.SftpException;
@@ -126,7 +125,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
         try{
 
             //客群运算id
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
             //以文件id作为文件名
             String rule_id=run_jsmind_data.get("rule_id").toString();

@@ -49,3 +49,5 @@
     v5.3.6 优化sftp,新增minio存储
     
     v5.5.1 http插件增加代理支持
+    
+    v5.6.4 删除fastjson

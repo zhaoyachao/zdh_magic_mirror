@@ -1,7 +1,6 @@
 package com.zyc.plugin;
 
 import cn.hutool.core.util.NumberUtil;
-import com.alibaba.fastjson.JSON;
 import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.queue.QueueHandler;
@@ -184,7 +183,7 @@ public class PluginServer {
                         Future future = threadPoolExecutor.submit(runnable);
                         PluginServer.tasks.put(m.get("id").toString(), future);
                     }else{
-                        logger.error("not found task impl: {}", JSON.toJSONString(m));
+                        logger.error("not found task impl: {}", JsonUtil.formatJsonString(m));
                     }
 
                 }else{

@@ -1,6 +1,5 @@
 package com.zyc.common.util;
 
-import com.alibaba.fastjson.JSON;
 import org.apache.commons.codec.Charsets;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -231,7 +230,7 @@ public class HttpUtil {
     public static void main(String[] args) throws Exception {
 
         String url = "http://127.0.0.1:8081/api/call_back_test";
-        String json = JSON.toJSONString("");
+        String json = JsonUtil.formatJsonString("");
         System.out.println(postJSON(url, json));
 
     }

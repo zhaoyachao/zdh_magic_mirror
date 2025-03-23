@@ -1,12 +1,12 @@
 package com.zyc.label.calculate.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.DateUtil;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.label.calculate.CrowdRuleCalculate;
 import org.slf4j.Logger;
@@ -112,7 +112,7 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
         String logStr="";
         try{
             //客群id
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String crowd_rule_id=run_jsmind_data.get("crowd_rule").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 

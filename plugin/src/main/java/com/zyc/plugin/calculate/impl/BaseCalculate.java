@@ -418,12 +418,10 @@ public abstract class BaseCalculate {
 
     public void loadExt(List<DataPipe> lines, Map<String, Map<String, Object>> ext){
         lines.parallelStream().forEach(s->{
-            if(StringUtils.isEmpty(s.getExt())){
-                Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(s.getExt());
-                Map<String, Object> old = ext.getOrDefault(s.getUdata(), new HashMap<>());
-                old.putAll(stringObjectMap);
-                ext.put(s.getUdata(), old);
-            }
+            Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(s.getExt());
+            Map<String, Object> old = ext.getOrDefault(s.getUdata(), new HashMap<>());
+            old.putAll(stringObjectMap);
+            ext.put(s.getUdata(), old);
         });
     }
 

@@ -1,10 +1,10 @@
 package com.zyc.ship.util;
 
-import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.util.DAG;
+import com.zyc.common.util.JsonUtil;
 import org.junit.Test;
 
 import java.util.*;
@@ -55,7 +55,7 @@ public class DAGTest {
             //判断子节点的父节点是否都在runPath中
         }
 
-        System.out.println("最终："+JSONUtil.toJsonStr(runPath));
+        System.out.println("最终："+JsonUtil.formatJsonString(runPath));
     }
 
     @Test
@@ -91,11 +91,11 @@ public class DAGTest {
     }
 
     public String checkParentInRunPath(String current, Set<String> parents, DAG dag, Map<String,String> runPath){
-        System.out.println("current: "+current+" ,parents: "+ JSONUtil.toJsonStr(parents));
+        System.out.println("current: "+current+" ,parents: "+ JsonUtil.formatJsonString(parents));
         String str = "";
         //无父节点,返回当前节点的配置信息,此处暂时已节点代替
         if(parents == null || parents.size()==0){
-            System.out.println("current: "+current+" ,parents 为空: "+ JSONUtil.toJsonStr(parents));
+            System.out.println("current: "+current+" ,parents 为空: "+ JsonUtil.formatJsonString(parents));
             return current;
         }
         for (String parent:parents){

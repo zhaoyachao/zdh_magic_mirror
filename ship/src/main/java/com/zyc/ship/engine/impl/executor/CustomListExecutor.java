@@ -1,6 +1,5 @@
 package com.zyc.ship.engine.impl.executor;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
@@ -8,10 +7,12 @@ import com.zyc.ship.engine.impl.RiskShipResultImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 public class CustomListExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(CustomListExecutor.class);
 
-    public ShipResult execute(JSONObject run_jsmind_data, String uid){
+    public ShipResult execute(Map<String, Object> run_jsmind_data, String uid){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{

@@ -6,8 +6,8 @@ import cn.hutool.extra.template.Template;
 import cn.hutool.extra.template.TemplateConfig;
 import cn.hutool.extra.template.TemplateEngine;
 import cn.hutool.extra.template.TemplateUtil;
-import com.alibaba.fastjson.JSON;
 import com.zyc.common.entity.TouchConfigInfo;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.plugin.touch.EmailTouch;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -37,8 +37,8 @@ public class QQEmailTouch implements EmailTouch {
                 }
             }
         }
-        String mailStr = JSON.toJSONString(mail);
-        account = JSON.parseObject(mailStr, MailAccount.class);
+        String mailStr = JsonUtil.formatJsonString(mail);
+        account = JsonUtil.toJavaBean(mailStr, MailAccount.class);
         this.mailAccount = account;
     }
 

@@ -1,10 +1,9 @@
 package com.zyc.ship.engine.impl;
 
 import cn.hutool.core.date.DateUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipExecutor;
 import com.zyc.ship.disruptor.ShipResult;
@@ -15,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class RiskShipExecutorImpl implements ShipExecutor {
@@ -38,15 +38,16 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             String product_code = ((ShipCommonInputParam)shipEvent.getInputParam()).getProduct_code();
             String data_node = ((ShipCommonInputParam)shipEvent.getInputParam()).getData_node();
             String param = ((ShipCommonInputParam)shipEvent.getInputParam()).getParam();
-            JSONObject jsonObjectParam = new JSONObject();
+            Map<String, Object> params = JsonUtil.toJavaMap(param);
+            Map<String, Object> jsonObjectParam = new LinkedHashMap<>();
 
-            if(!StringUtils.isEmpty(param) && JSONObject.parseObject(param).containsKey("user_param")){
-                jsonObjectParam = JSONObject.parseObject(param).getJSONObject("user_param");
+            if(!StringUtils.isEmpty(param) && params.containsKey("user_param")){
+                jsonObjectParam = (Map<String, Object>)params.getOrDefault("user_param", new LinkedHashMap<>());
             }
 
             Map<String,Object> labelVaues = shipEvent.getLabelValues();
             String instance_type = strategyInstance.getInstance_type();
-            JSONObject run_jsmind_data =  JSON.parseObject(strategyInstance.getRun_jsmind_data());
+            Map<String, Object> run_jsmind_data =  JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
             if(instance_type.equalsIgnoreCase(InstanceType.LABEL.getCode())){
                 LabelExecutor labelExecutor = new LabelExecutor();
                 shipResult1 =labelExecutor.execute(run_jsmind_data, labelVaues, uid, jsonObjectParam);
@@ -109,7 +110,7 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 shipResult1 = varPoolExecutor.execute(strategyInstance, shipEvent);
             }else if(instance_type.equalsIgnoreCase(InstanceType.VARIABLE.getCode())){
                 VariableExecutor variableExecutor = new VariableExecutor();
-                shipResult1 = variableExecutor.execute(strategyInstance, shipEvent);
+                shipResult1 = variableExecutor.execute(strategyInstance, shipEvent, jsonObjectParam);
             }else{
                 logger.error("暂不支持的经营类型: {}", instance_type);
                 tmp = ShipResultStatusEnum.ERROR.code;

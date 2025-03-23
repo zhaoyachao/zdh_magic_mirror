@@ -1,6 +1,5 @@
 package com.zyc.plugin.calculate.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
@@ -8,6 +7,7 @@ import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.VarPoolCalculate;
@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 变量池实现
@@ -110,14 +111,14 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
         try{
 
             //获取标签code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String varpool_params_str=run_jsmind_data.getOrDefault("varpool_param","").toString();
 
             Map<String, Object> commonParam = getJinJavaCommonParam();
             Jinjava jinjava = new Jinjava();
             varpool_params_str = jinjava.render(varpool_params_str, commonParam);
 
-            List<Map> varpool_params = JSON.parseArray(varpool_params_str, Map.class);
+            List<Map<String, Object>> varpool_params = JsonUtil.toJavaListMap(varpool_params_str);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
 
@@ -129,106 +130,112 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
             if(is_disenable.equalsIgnoreCase("true")){
 
             }else{
-                //写入变量池
-                String key = "varpool:gid:"+strategyLogInfo.getStrategy_group_instance_id();
-                for (Map varpool: varpool_params){
-                    String varpool_code = varpool.getOrDefault("varpool_code","").toString();
-                    String varpool_operate = varpool.getOrDefault("varpool_domain_operate","eq").toString();
-                    String varpool_domain = varpool.getOrDefault("varpool_domain","").toString();
-                    String varpool_value = varpool.getOrDefault("varpool_domain_value","").toString();
-                    String varpool_domain_type = varpool.getOrDefault("varpool_domain_type","").toString();
-                    String varpool_domain_sep = varpool.getOrDefault("varpool_domain_sep",";").toString();
-                    String secondKey = varpool_domain+":"+varpool_code;
+                for(DataPipe dataPipe: rs){
+                    Map<String, Object> ext = JsonUtil.toJavaMap(dataPipe.getExt());
+                    Map<String, Object> varParams = new HashMap<>();
 
-                    if(varpool_domain_type.equalsIgnoreCase("string")){
-                        if(varpool_operate.equalsIgnoreCase("eq")){
-                            JedisPoolUtil.redisClient().hSet(key, secondKey, varpool_value);
-                        }else if(varpool_operate.equalsIgnoreCase("add")){
-                            Set set = Sets.newHashSet(varpool_value.split(varpool_domain_sep));
-                            Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
-                            if(value != null){
-                                set = JSON.parseObject(value.toString(), Set.class);
-                                set.add(varpool_value);
+                    for (Map varpool: varpool_params){
+                        String varpool_code = varpool.getOrDefault("varpool_code","").toString();
+                        String varpool_operate = varpool.getOrDefault("varpool_domain_operate","eq").toString();
+                        String varpool_domain = varpool.getOrDefault("varpool_domain","").toString();
+                        String varpool_value = varpool.getOrDefault("varpool_domain_value","").toString();
+                        String varpool_domain_type = varpool.getOrDefault("varpool_domain_type","").toString();
+                        String varpool_domain_sep = varpool.getOrDefault("varpool_domain_sep",";").toString();
+                        String secondKey = varpool_domain+":"+varpool_code;
+
+                        if(varpool_domain_type.equalsIgnoreCase("string")){
+                            if(varpool_operate.equalsIgnoreCase("eq")){
+                                varParams.put(secondKey, varpool_value);
+                            }else if(varpool_operate.equalsIgnoreCase("add")){
+                                Set set = Sets.newHashSet(varpool_value.split(varpool_domain_sep));
+                                if(ext.containsKey(secondKey)){
+                                    Object value = ext.get(secondKey);
+                                    if(value != null && value instanceof Collection){
+                                        ((Collection) value).addAll(set);
+                                        set = Sets.newHashSet(value);
+                                    }
+                                }
+                                varParams.put(secondKey, set);
+                            }else if(varpool_operate.equalsIgnoreCase("concat")){
+                                Object value = ext.get(secondKey);
+                                if(value != null){
+                                    varpool_value = value.toString()+","+varpool_value;
+                                }
+                                varParams.put(secondKey, varpool_value);
+                            }else if(varpool_operate.equalsIgnoreCase("kvadd")){
+                                throw new Exception("字符串类型,不支持KV追加操作");
                             }
-                            JedisPoolUtil.redisClient().hSet(key, secondKey, JSON.toJSONString(set));
-                        }else if(varpool_operate.equalsIgnoreCase("concat")){
-                            Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
-                            if(value != null){
-                                varpool_value = value.toString()+","+varpool_value;
+                        }else if(varpool_domain_type.equalsIgnoreCase("int") || varpool_domain_type.equalsIgnoreCase("decimal")){
+                            if(varpool_operate.equalsIgnoreCase("eq")){
+                                varParams.put(secondKey, varpool_value);
+                            }else if(varpool_operate.equalsIgnoreCase("add")){
+                                Set set = Sets.newHashSet(varpool_value.split(varpool_domain_sep));
+                                if(ext.containsKey(secondKey)){
+                                    Object value = ext.get(secondKey);
+                                    if(value != null && value instanceof Collection){
+                                        ((Collection) value).addAll(set);
+                                        set = Sets.newHashSet(value);
+                                    }
+                                }
+                                varParams.put(secondKey, set);
+                            }else if(varpool_operate.equalsIgnoreCase("concat")){
+                                throw new Exception("数值类型,不支持拼接操作");
+                            }else if(varpool_operate.equalsIgnoreCase("kvadd")){
+                                throw new Exception("数值类型,不支持KV追加操作");
                             }
-                            JedisPoolUtil.redisClient().hSet(key, secondKey, varpool_value);
-                        }else if(varpool_operate.equalsIgnoreCase("kvadd")){
-                            throw new Exception("字符串类型,不支持KV追加操作");
-                        }
-                    }else if(varpool_domain_type.equalsIgnoreCase("int") || varpool_domain_type.equalsIgnoreCase("decimal")){
-                        if(varpool_operate.equalsIgnoreCase("eq")){
-                            JedisPoolUtil.redisClient().hSet(key, secondKey, varpool_value);
-                        }else if(varpool_operate.equalsIgnoreCase("add")){
-                            Set set = Sets.newHashSet(varpool_value.split(varpool_domain_sep));
-                            Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
-                            if(value != null){
-                                Set set2 = JSON.parseObject(value.toString(), Set.class);
-                                set2.add(set);
-                                set = set2;
+                        }else if(varpool_domain_type.equalsIgnoreCase("list")){
+                            if(varpool_operate.equalsIgnoreCase("eq")){
+                                List<Object> list = Lists.newArrayList(varpool_value.split(varpool_domain_sep));
+                                varParams.put(secondKey, list);
+                            }else if(varpool_operate.equalsIgnoreCase("add")){
+                                Set set = Sets.newHashSet(varpool_value.split(varpool_domain_sep));
+                                if(ext.containsKey(secondKey)){
+                                    Object value = ext.get(secondKey);
+                                    if(value != null && value instanceof Collection){
+                                        ((Collection) value).addAll(set);
+                                        set = Sets.newHashSet(value);
+                                    }
+                                }
+                                varParams.put(secondKey, set);
+                            }else if(varpool_operate.equalsIgnoreCase("concat")){
+                                throw new Exception("集合类型,不支持拼接操作");
+                            }else if(varpool_operate.equalsIgnoreCase("kvadd")){
+                                throw new Exception("集合类型,不支持KV追加操作");
                             }
-                            JedisPoolUtil.redisClient().hSet(key, secondKey, JSON.toJSONString(set));
-                        }else if(varpool_operate.equalsIgnoreCase("concat")){
-                            throw new Exception("数值类型,不支持拼接操作");
-                        }else if(varpool_operate.equalsIgnoreCase("kvadd")){
-                            throw new Exception("数值类型,不支持KV追加操作");
-                        }
-                    }else if(varpool_domain_type.equalsIgnoreCase("list")){
-                        if(varpool_operate.equalsIgnoreCase("eq")){
-                            List<Object> list = Lists.newArrayList(varpool_value.split(varpool_domain_sep));
-                            JedisPoolUtil.redisClient().hSet(key, secondKey, JSON.toJSONString(list));
-                        }else if(varpool_operate.equalsIgnoreCase("add")){
-                            Set set = Sets.newHashSet(varpool_value.split(varpool_domain_sep));
-                            Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
-                            if(value != null){
-                                Set set2 = JSON.parseObject(value.toString(), Set.class);
-                                set2.addAll(set);
-                                set = set2;
+                        }else if(varpool_domain_type.equalsIgnoreCase("map")){
+                            if(!varpool_value.contains("=")){
+                                throw new Exception("字典格式 k1=v1;k2=v2");
                             }
-                            JedisPoolUtil.redisClient().hSet(key, secondKey, JSON.toJSONString(set));
-                        }else if(varpool_operate.equalsIgnoreCase("concat")){
-                            throw new Exception("集合类型,不支持拼接操作");
-                        }else if(varpool_operate.equalsIgnoreCase("kvadd")){
-                            throw new Exception("集合类型,不支持KV追加操作");
-                        }
-                    }else if(varpool_domain_type.equalsIgnoreCase("map")){
-                        if(!varpool_value.contains("=")){
-                            throw new Exception("字典格式 k1=v1;k2=v2");
-                        }
-                        if(varpool_operate.equalsIgnoreCase("eq")){
-                            Map<String, String> map = parseKeyValuePairs(varpool_value, varpool_domain_sep);
-                            JedisPoolUtil.redisClient().hSet(key, secondKey, JSON.toJSONString(map));
-                        }else if(varpool_operate.equalsIgnoreCase("add")){
-                            throw new Exception("字典类型,请选择KV追加操作");
-                        }else if(varpool_operate.equalsIgnoreCase("concat")){
-                            throw new Exception("字典类型,不支持拼接操作");
-                        }else if(varpool_operate.equalsIgnoreCase("kvadd")){
-                            Map<String, String> map = parseKeyValuePairs(varpool_value, varpool_domain_sep);
-                            Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
-                            if(value != null){
-                                Map<String,String> old = JSON.parseObject(value.toString(), Map.class);
-                                old.putAll(map);
-                                map = old;
+                            if(varpool_operate.equalsIgnoreCase("eq")){
+                                Map<String, String> map = parseKeyValuePairs(varpool_value, varpool_domain_sep);
+                                varParams.put(secondKey, map);
+                            }else if(varpool_operate.equalsIgnoreCase("add")){
+                                throw new Exception("字典类型,请选择KV追加操作");
+                            }else if(varpool_operate.equalsIgnoreCase("concat")){
+                                throw new Exception("字典类型,不支持拼接操作");
+                            }else if(varpool_operate.equalsIgnoreCase("kvadd")){
+                                Map<String, String> map = parseKeyValuePairs(varpool_value, varpool_domain_sep);
+                                if(ext.containsKey(secondKey)){
+                                    Object value = ext.get(secondKey);
+                                    if(value != null && value instanceof Map){
+                                        map.putAll((Map)value);
+                                        ((Map) value).putAll(map);
+                                        map = (Map)value;
+                                    }
+                                }
+                                varParams.put(secondKey, map);
                             }
-                            JedisPoolUtil.redisClient().hSet(key, secondKey, JSON.toJSONString(map));
+                        }else{
+                            throw new Exception("不支持的数据类型");
                         }
-                    }else{
-                        throw new Exception("不支持的数据类型");
                     }
-                }
 
-                //缓存7天
-                if(JedisPoolUtil.redisClient().isExists(key)){
-                    JedisPoolUtil.redisClient().expire(key, 7*24*60*60L);
+                    ext.putAll(varParams);
+                    dataPipe.setExt(JsonUtil.formatJsonString(ext));
                 }
             }
 
             Set<DataPipe> rs_error = Sets.newHashSet();
-
 
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);

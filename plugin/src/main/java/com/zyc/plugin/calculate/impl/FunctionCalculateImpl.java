@@ -3,7 +3,6 @@ package com.zyc.plugin.calculate.impl;
 import cn.hutool.core.lang.JarClassLoader;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ClassLoaderUtil;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -120,7 +119,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
         try{
 
             //获取plugin code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String rule_id=run_jsmind_data.getOrDefault("rule_id", "").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
@@ -243,14 +242,14 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                 Object clsInstance = cls.newInstance();
                 objectMap.put(clsInstanceName, clsInstance);
                 function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
-                LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JSON.toJSONString(objectMap));
+                LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JsonUtil.formatJsonString(objectMap));
                 Object ret = GroovyFactory.execExpress(function_script, objectMap);
                 return ret;
             }else{
                 Object clsInstance = ClassLoaderUtil.loadClass(function_class).newInstance();
                 objectMap.put(clsInstanceName, clsInstance);
                 function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
-                LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JSON.toJSONString(objectMap));
+                LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JsonUtil.formatJsonString(objectMap));
                 Object ret = GroovyFactory.execExpress(function_script, objectMap);
                 return ret;
             }
@@ -259,7 +258,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             for (String param_code: param_codes){
                 stringObjectMap.put(param_code, objectMap.get(param_code));
             }
-            LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JSON.toJSONString(stringObjectMap));
+            LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JsonUtil.formatJsonString(stringObjectMap));
             Object ret = GroovyFactory.execExpress(function_script, function_name, stringObjectMap);
             return ret;
         }
@@ -339,7 +338,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
 
         function_script = jinjava.render(function_script, tmp);//替换可变参数
 
-        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "结果对比函数: "+function_name+", "+function_script+", 参数: "+JSON.toJSONString(objectMap));
+        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "结果对比函数: "+function_name+", "+function_script+", 参数: "+JsonUtil.formatJsonString(objectMap));
 
         Object obj = GroovyFactory.execExpress(function_script, objectMap);
 
@@ -367,7 +366,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             return false;
         }
 
-        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "结果对比函数: "+function_name+", "+return_operate_value+", 参数: "+JSON.toJSONString(objectMap));
+        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "结果对比函数: "+function_name+", "+return_operate_value+", 参数: "+JsonUtil.formatJsonString(objectMap));
 
         Object obj = GroovyFactory.execExpress(return_operate_value, objectMap);
         LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(),"结果: "+(obj!=null?obj.toString():"空"));
@@ -395,7 +394,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             return null;
         }
 
-        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "取值结果函数: "+function_name+", "+return_value_value+", 参数: "+JSON.toJSONString(objectMap));
+        LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "取值结果函数: "+function_name+", "+return_value_value+", 参数: "+JsonUtil.formatJsonString(objectMap));
 
         Object obj = GroovyFactory.execExpress(return_value_value, objectMap);
         LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(),"取值结果: "+(obj!=null?obj.toString():"空"));

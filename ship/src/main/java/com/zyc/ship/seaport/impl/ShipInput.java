@@ -1,6 +1,6 @@
 package com.zyc.ship.seaport.impl;
 
-import com.alibaba.fastjson.JSON;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.ship.common.Const;
 import com.zyc.ship.engine.Engine;
 import com.zyc.ship.engine.impl.ShipOnLineManagerEngine;
@@ -24,7 +24,7 @@ public class ShipInput implements Input {
     public OutputParam accept(InputParam inputParam){
         try{
             //提前写入队列/日志用于后期数据恢复
-            ShipOnlineRiskLog.putMessage2Queue(JSON.toJSONString(inputParam));
+            ShipOnlineRiskLog.putMessage2Queue(JsonUtil.formatJsonString(inputParam));
             //接入流量,以用户为参数
             ShipCommonInputParam shipCommonInputParam = (ShipCommonInputParam) inputParam;
             //校验参数

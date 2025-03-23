@@ -1,11 +1,9 @@
 package com.zyc.ship.engine.impl.executor;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.groovy.GroovyFactory;
-import com.zyc.common.redis.JedisPoolUtil;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
@@ -24,14 +22,14 @@ public class VariableExecutor extends BaseExecutor{
 
     private static Logger logger= LoggerFactory.getLogger(VariableExecutor.class);
 
-    public ShipResult execute(StrategyInstance strategyInstance, ShipEvent shipEvent){
+    public ShipResult execute(StrategyInstance strategyInstance, ShipEvent shipEvent, Map<String, Object> userParam){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.SUCCESS.code;
-        try{
-            JSONObject jsonObject = JSON.parseObject(strategyInstance.getRun_jsmind_data());
+        Map<String, Object> ext = shipEvent.getRunParam();
+        userParam.putAll(ext);
 
-            //写入变量池
-            String key = "varpool:reqid:"+shipEvent.getRequestId()+":"+shipEvent.getStrategyGroupInstanceId();
+        try{
+            Map<String, Object> jsonObject = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
 
             String varpool_code = jsonObject.getOrDefault("varpool_code","").toString();
             String varpool_operate = jsonObject.getOrDefault("varpool_operate","eq").toString();
@@ -41,10 +39,10 @@ public class VariableExecutor extends BaseExecutor{
             String varpool_expre = jsonObject.getOrDefault("varpool_expre","").toString();
             String secondKey = varpool_domain+":"+varpool_code;
 
-            Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
+            Object value = userParam.get(secondKey);
 
             if(value == null){
-               throw new Exception("无法获取变量信息,变量池key:"+key+", 变量code:"+secondKey);
+               throw new Exception("无法获取变量信息, 变量code:"+secondKey);
             }
 
             boolean ret = false;
@@ -56,10 +54,10 @@ public class VariableExecutor extends BaseExecutor{
                 //获取变量表达式
                 if(!StringUtils.isEmpty(varpool_expre)){
                     Map<String, Object> parmas = new HashMap<>();
-                    parmas.put("varpool_ret",  JSON.parseObject(value.toString(), List.class));
+                    parmas.put("varpool_ret",  JsonUtil.toJavaList(value.toString()));
                     value = GroovyFactory.execExpress(varpool_expre, parmas);
                 }else{
-                    value = JSON.parseObject(value.toString(), List.class);
+                    value = JsonUtil.toJavaList(value.toString());
                 }
 
                 if(value instanceof String){
@@ -76,10 +74,10 @@ public class VariableExecutor extends BaseExecutor{
                 //获取变量表达式
                 if(!StringUtils.isEmpty(varpool_expre)){
                     Map<String, Object> parmas = new HashMap<>();
-                    parmas.put("varpool_ret",  JSON.parseObject(value.toString(), Map.class));
+                    parmas.put("varpool_ret",  JsonUtil.toJavaMap(value.toString()));
                     value = GroovyFactory.execExpress(varpool_expre, parmas);
                 }else{
-                    value = JSON.parseObject(value.toString(), Map.class);
+                    value = JsonUtil.toJavaMap(value.toString());
                 }
 
                 if(value instanceof String){

@@ -1,6 +1,5 @@
 package com.zyc.ship.engine.impl.executor;
 
-import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
@@ -10,15 +9,17 @@ import com.zyc.ship.engine.impl.executor.plugin.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 public class PluginExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(PluginExecutor.class);
 
-    public ShipResult execute(JSONObject run_jsmind_data, String uid, StrategyInstance strategyInstance, ShipEvent shipEvent){
+    public ShipResult execute(Map<String, Object> run_jsmind_data, String uid, StrategyInstance strategyInstance, ShipEvent shipEvent){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{
             //节点,当前不支持在线PLUGIN
-            String rule_id = run_jsmind_data.getString("rule_id");
+            String rule_id = run_jsmind_data.get("rule_id").toString();
 
             Plugin plugin = getPlugin(rule_id, run_jsmind_data, strategyInstance, shipEvent);
             boolean result = plugin.execute();
@@ -37,7 +38,7 @@ public class PluginExecutor extends BaseExecutor{
     }
 
 
-    private Plugin getPlugin(String rule_id, JSONObject run_jsmind_data, StrategyInstance strategyInstance, ShipEvent shipEvent) throws Exception {
+    private Plugin getPlugin(String rule_id, Map<String, Object> run_jsmind_data, StrategyInstance strategyInstance, ShipEvent shipEvent) throws Exception {
 
         if(rule_id.equalsIgnoreCase("kafka")){
             return new KafkaPlugin(rule_id, run_jsmind_data, strategyInstance, shipEvent);

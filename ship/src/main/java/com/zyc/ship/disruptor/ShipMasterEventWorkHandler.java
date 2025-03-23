@@ -1,9 +1,9 @@
 package com.zyc.ship.disruptor;
 
-import com.alibaba.fastjson.JSON;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.WorkHandler;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.zyc.common.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +33,7 @@ public class ShipMasterEventWorkHandler implements WorkHandler<ShipEvent> {
                 throw new Exception("request stop flag");
             }
 
-            logger.info("master: "+JSON.toJSONString(shipEvent));
+            logger.info("master: "+ JsonUtil.formatJsonString(shipEvent));
             String operate = shipEvent.getStrategyInstance().getOperate();
             //判定级别0：成功时运行,1:杀死时运行,2:失败时运行,默认成功时运行,3:上游执行完成后触发(不关心成功/失败)
             String dependLevel = shipEvent.getStrategyInstance().getDepend_level();

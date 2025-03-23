@@ -1,6 +1,5 @@
 package com.zyc.common.util;
 
-import com.alibaba.fastjson.JSON;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -68,7 +67,7 @@ public class HttpClientUtil {
         //不是每次创建新的HttpClient，而是从连接池中获取HttpClient对象
         HttpPost post = new HttpPost(url);
         post.setHeader("Content-Type", "application/json;charset=UTF-8");
-        String jsonString = JSON.toJSONString(params);
+        String jsonString = JsonUtil.formatJsonString(params);
         post.setEntity(new StringEntity(jsonString, "UTF-8"));
         CloseableHttpResponse response = null;
         try {

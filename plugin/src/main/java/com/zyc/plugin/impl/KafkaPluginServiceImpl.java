@@ -1,11 +1,11 @@
 package com.zyc.plugin.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.PluginInfo;
 import com.zyc.common.plugin.PluginParam;
 import com.zyc.common.plugin.PluginResult;
 import com.zyc.common.plugin.PluginService;
+import com.zyc.common.util.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -23,7 +23,7 @@ public class KafkaPluginServiceImpl implements PluginService {
         KafkaPluginResult kafkaPluginResult = new KafkaPluginResult();
         KafkaProducer<String, String> producer=null;
         try{
-            System.out.println("用户: "+rs.getUdata()+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JSON.toJSONString(pluginParam));
+            System.out.println("用户: "+rs.getUdata()+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JsonUtil.formatJsonString(pluginParam));
             Properties props = getParams(pluginParam);
 
             if (!props.containsKey("bootstrap.servers")) {
@@ -56,7 +56,7 @@ public class KafkaPluginServiceImpl implements PluginService {
             RecordMetadata recordMetadata = producer.send(new ProducerRecord<>(topic, msg)).get();
             kafkaPluginResult.setCode(0);
             kafkaPluginResult.setMessage("success");
-            kafkaPluginResult.setResult(JSON.toJSONString(recordMetadata));
+            kafkaPluginResult.setResult(JsonUtil.formatJsonString(recordMetadata));
             return kafkaPluginResult;
         }catch (Exception e){
             e.printStackTrace();

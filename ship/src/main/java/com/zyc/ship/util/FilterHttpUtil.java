@@ -1,7 +1,7 @@
 package com.zyc.ship.util;
 
 import cn.hutool.http.HttpUtil;
-import com.alibaba.fastjson.JSON;
+import com.zyc.common.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ public class FilterHttpUtil {
 
     public static Map<String,Object> post(String body){
         try{
-            Map<String,Object> result = JSON.parseObject(HttpUtil.post(url, body),Map.class);
+            Map<String,Object> result = JsonUtil.toJavaBean(HttpUtil.post(url, body),Map.class);
             return result;
         }catch (Exception e){
             logger.error("ship server filterpost error: ", e);

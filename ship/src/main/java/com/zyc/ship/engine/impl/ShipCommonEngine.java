@@ -1,12 +1,10 @@
 package com.zyc.ship.engine.impl;
 
-import cn.hutool.json.JSONUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.util.DAG;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.ship.common.Const;
 import com.zyc.ship.conf.ShipConf;
@@ -42,7 +40,7 @@ public class ShipCommonEngine implements Engine {
     public List<StrategyGroupInstance> getStrategyGroups(StrategyService strategyService, String scene, String data_node){
         List<StrategyGroupInstance> tmp = strategyService.selectBySceneAndDataNode(scene,data_node);
         if(tmp != null){
-            return JSON.parseArray(JSON.toJSONString(tmp), StrategyGroupInstance.class);
+            return JsonUtil.toJavaListBean(JsonUtil.formatJsonString(tmp), StrategyGroupInstance.class);
         }
         return new ArrayList<>();
     }
@@ -107,12 +105,12 @@ public class ShipCommonEngine implements Engine {
         }
         //解析参数,增加传递过来的标签
         if(!StringUtils.isEmpty(shipCommonInputParam.getParam())){
-            JSONObject jsonObject = JSON.parseObject(shipCommonInputParam.getParam());
+            Map<String, Object> jsonObject = JsonUtil.toJavaMap(shipCommonInputParam.getParam());
             //遍历tag_开头的标签,此处一定需要注意提前映射
             for (String key: jsonObject.keySet()){
                 if(key.startsWith(Const.LABEL_PARAM_PRE)){
-                    Map paramValues = jsonObject.getObject(key, Map.class);
-                    labels.put(key, JSONObject.toJSONString(paramValues));
+                    Map paramValues = (Map<String, Object>)jsonObject.get(key);
+                    labels.put(key, JsonUtil.formatJsonString(paramValues));
                 }
             }
         }
@@ -204,10 +202,10 @@ public class ShipCommonEngine implements Engine {
      */
     public Map<String, Object> getLabelByUser(StrategyInstance strategy, String product_code, String uid, String id_type){
         Map<String, Object> result = new HashMap<>();
-        cn.hutool.json.JSONObject jsonObject = JSONUtil.createObj();
-        jsonObject.putOpt("uid", uid);
-        jsonObject.putOpt("product_code", product_code);
-        result = LabelHttpUtil.post(jsonObject.toString());
+        Map<String, Object> jsonObject = JsonUtil.createEmptyLinkMap();
+        jsonObject.put("uid", uid);
+        jsonObject.put("product_code", product_code);
+        result = LabelHttpUtil.post(JsonUtil.formatJsonString(jsonObject));
         return result;
     }
 
@@ -220,10 +218,10 @@ public class ShipCommonEngine implements Engine {
      */
     public Map<String, Object> getFilterByUser(StrategyInstance strategy, String product_code, String uid, String id_type){
         Map<String, Object> result = new HashMap<>();
-        cn.hutool.json.JSONObject jsonObject = JSONUtil.createObj();
-        jsonObject.putOpt("uid", uid);
-        jsonObject.putOpt("product_code", product_code);
-        result = FilterHttpUtil.post(jsonObject.toString());
+        Map<String, Object> jsonObject = JsonUtil.createEmptyLinkMap();
+        jsonObject.put("uid", uid);
+        jsonObject.put("product_code", product_code);
+        result = FilterHttpUtil.post(JsonUtil.formatJsonString(jsonObject));
         return result;
     }
 

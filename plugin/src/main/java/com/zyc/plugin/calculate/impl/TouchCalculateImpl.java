@@ -1,8 +1,6 @@
 package com.zyc.plugin.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.DataPipe;
@@ -120,7 +118,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
         try{
 
             //获取标签code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String touch_task=run_jsmind_data.get("touch_task").toString();
             String touch_id=run_jsmind_data.get("rule_id").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
@@ -221,7 +219,7 @@ public class TouchCalculateImpl extends BaseCalculate implements TouchCalculate 
             Set<DataPipe> now = Sets.newHashSet(partition);
 
             Set<DataPipe> diff = now.parallelStream().filter(s->!hisSet.contains(s.getUdata())).collect(Collectors.toSet());
-            JSONObject jsonObject=JSONObject.parseObject(touchConfigInfo.getTouch_config());
+            Map<String, Object> jsonObject=JsonUtil.toJavaMap(touchConfigInfo.getTouch_config());
             String sign = touchConfigInfo.getSign();
             String template = touchConfigInfo.getTemplate_code();
 

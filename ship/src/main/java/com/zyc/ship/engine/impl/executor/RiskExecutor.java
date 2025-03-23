@@ -1,6 +1,5 @@
 package com.zyc.ship.engine.impl.executor;
 
-import com.alibaba.fastjson.JSONObject;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
@@ -18,12 +17,12 @@ public class RiskExecutor extends BaseExecutor{
 
     private static Logger logger= LoggerFactory.getLogger(RiskExecutor.class);
 
-    public ShipResult execute(ShipEvent shipEvent, JSONObject run_jsmind_data){
+    public ShipResult execute(ShipEvent shipEvent, Map<String, Object> run_jsmind_data){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
-            String event_code = run_jsmind_data.getString("rule_id");
-            String event_code_result = run_jsmind_data.getString("rule_param");
+            String event_code = run_jsmind_data.get("rule_id").toString();
+            String event_code_result = run_jsmind_data.get("rule_param").toString();
 
             //此处使用变量池结果
             Jinjava jinjava=new Jinjava();

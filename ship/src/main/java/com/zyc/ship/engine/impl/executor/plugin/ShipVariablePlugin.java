@@ -1,6 +1,5 @@
 package com.zyc.ship.engine.impl.executor.plugin;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.common.entity.StrategyInstance;
@@ -18,11 +17,11 @@ import java.util.Properties;
  */
 public class ShipVariablePlugin implements Plugin{
     private String rule_id;
-    private Object run_jsmind_data;
+    private Map<String, Object> run_jsmind_data;
     private StrategyInstance strategyInstance;
     private ShipEvent shipEvent;
 
-    public ShipVariablePlugin(String rule_id, Object run_jsmind_data, StrategyInstance strategyInstance, ShipEvent shipEvent){
+    public ShipVariablePlugin(String rule_id, Map<String, Object> run_jsmind_data, StrategyInstance strategyInstance, ShipEvent shipEvent){
         this.rule_id = rule_id;
         this.run_jsmind_data = run_jsmind_data;
         this.strategyInstance = strategyInstance;
@@ -39,7 +38,7 @@ public class ShipVariablePlugin implements Plugin{
 
         try {
             Gson gson = new Gson();
-            List<Map> rule_params = gson.fromJson(((JSONObject) run_jsmind_data).get("rule_param").toString(), new TypeToken<List<Map>>() {
+            List<Map> rule_params = gson.fromJson((run_jsmind_data).get("rule_param").toString(), new TypeToken<List<Map>>() {
             }.getType());
 
             Properties props = new Properties();

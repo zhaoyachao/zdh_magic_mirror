@@ -1,13 +1,13 @@
 package com.zyc.plugin.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.ShuntCalculate;
@@ -109,9 +109,9 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
         try{
 
             //获取标签code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String shunt_param_str=run_jsmind_data.getOrDefault("shunt_param","").toString();
-            List<Map> shunt_params = JSON.parseArray(shunt_param_str, Map.class);
+            List<Map<String, Object>> shunt_params = JsonUtil.toJavaListMap(shunt_param_str);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
             if(shunt_params.size()!=1){
                 throw new Exception("分流目前只支持一个分流配置");

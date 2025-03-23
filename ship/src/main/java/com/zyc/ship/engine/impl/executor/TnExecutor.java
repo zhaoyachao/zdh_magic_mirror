@@ -2,9 +2,8 @@ package com.zyc.ship.engine.impl.executor;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.NumberUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.rqueue.RQueueClient;
 import com.zyc.rqueue.RQueueManager;
 import com.zyc.rqueue.RQueueMode;
@@ -19,19 +18,20 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class TnExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(TnExecutor.class);
 
-    public ShipResult execute(JSONObject run_jsmind_data, String uid, StrategyInstance strategyInstance, ShipEvent shipEvent){
+    public ShipResult execute(Map<String, Object> run_jsmind_data, String uid, StrategyInstance strategyInstance, ShipEvent shipEvent){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
             //1 获取对比时间类型,相对或者绝对
-            String tn_type = run_jsmind_data.getString("tn_type");
-            String tn_unit = run_jsmind_data.getString("tn_unit");
-            String tn_value = run_jsmind_data.getString("tn_value");
+            String tn_type = run_jsmind_data.getOrDefault("tn_type", "").toString();
+            String tn_unit = run_jsmind_data.getOrDefault("tn_unit", "").toString();
+            String tn_value = run_jsmind_data.getOrDefault("tn_value", "").toString();
             if(StringUtils.isEmpty(tn_value)){
                 throw new Exception("tn模块时间参数不可为空");
             }
@@ -71,13 +71,13 @@ public class TnExecutor extends BaseExecutor{
             String queueName = "ship_tn_queue"+"_"+ DateUtil.format(executeTime, "yyyyMMddHH");
 
             //获取当前执行中间结果,生成延迟队列数据
-            JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(strategyInstance));
+            Map<String, Object> jsonObject = JsonUtil.toJavaMap(JsonUtil.formatJsonString(strategyInstance));
             jsonObject.put("request_id", shipEvent.getRequestId());
             jsonObject.put("input", shipEvent.getInputParam());
 
             //获取当前request_id
             RQueueClient<String> rQueueClient = RQueueManager.getRQueueClient(queueName, RQueueMode.DELAYEDQUEUE);
-            rQueueClient.offer(jsonObject.toJSONString(), delay_senond, TimeUnit.SECONDS);
+            rQueueClient.offer(JsonUtil.formatJsonString(jsonObject), delay_senond, TimeUnit.SECONDS);
         }catch (Exception e){
             logger.error("ship excutor tn error: ", e);
             tmp = ShipResultStatusEnum.ERROR.code;

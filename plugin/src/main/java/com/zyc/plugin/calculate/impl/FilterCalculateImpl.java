@@ -1,6 +1,5 @@
 package com.zyc.plugin.calculate.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.FilterInfo;
@@ -8,6 +7,7 @@ import com.zyc.common.entity.InstanceType;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.FileUtil;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.FilterCalculate;
@@ -114,7 +114,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
         String logStr="";
         try{
             //获取标签code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String[] filter_codes=run_jsmind_data.getOrDefault("rule_id","").toString().split(",");
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 

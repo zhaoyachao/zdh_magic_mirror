@@ -1,9 +1,8 @@
 package com.zyc.ship.engine.impl.executor;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.hash.Hashing;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.RiskShipResultImpl;
@@ -38,9 +37,9 @@ public class ShuntExecutor extends BaseExecutor{
 
     public boolean shunt(StrategyGroupInstance strategyGroup, StrategyInstance strategyInstance, String uid) throws Exception {
         try{
-            JSONObject jsonObject = JSON.parseObject(strategyInstance.getRun_jsmind_data());
+            Map<String, Object> jsonObject = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
             String shunt_param_str=jsonObject.get("shunt_param").toString();
-            List<Map> shunt_params = JSON.parseArray(shunt_param_str, Map.class);
+            List<Map> shunt_params = JsonUtil.toJavaListBean(shunt_param_str, Map.class);
             Map shunt_param = shunt_params.get(0);
             if(shunt_param == null){
                 throw new Exception("分流信息为空");

@@ -1,10 +1,10 @@
 package com.zyc.plugin.calculate.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.IdMappingCalculate;
@@ -109,7 +109,7 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
         try{
 
             //获取标签code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String id_mapping_code=run_jsmind_data.get("rule_id").toString();
             String id_mapping_type=run_jsmind_data.getOrDefault("id_mapping_type","").toString();
             String data_engine=run_jsmind_data.getOrDefault("data_engine", "file").toString();

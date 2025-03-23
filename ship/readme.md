@@ -37,6 +37,8 @@
     v5.3.4 ship新增plugin-kafka,plugin-http功能
     v5.3.4 ship标签执行器新增外部参数
     
+    v5.6.4 删除fastjson
+    
     v1.0 增加暂停能力【未开发】
     v1.0 增加任务参数透传【未开发】
         

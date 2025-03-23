@@ -1,8 +1,8 @@
 package com.zyc.variable.service.impl;
 
 
-import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.redis.JedisPoolUtil;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.variable.service.VariableService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +51,7 @@ public class VariableServiceImpl implements VariableService {
             for(Map.Entry<String,Map<String,Object>> entry: CacheLabelServiceImpl.cache.entrySet()){
                 String variable = entry.getKey();
                 if(!allVariable.containsKey(variable)){
-                    result.put(variable, JSONObject.toJSONString(entry.getValue()));
+                    result.put(variable, JsonUtil.formatJsonString(entry.getValue()));
                 }
             }
             return result;
@@ -72,7 +72,7 @@ public class VariableServiceImpl implements VariableService {
                 if(o == null){
                     o = CacheLabelServiceImpl.cache.get(variable);
                 }
-                result.put(variable, JSONObject.toJSONString(o));
+                result.put(variable, JsonUtil.formatJsonString(o));
             }
             return result;
         }catch (Exception e){

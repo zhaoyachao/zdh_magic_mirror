@@ -2,10 +2,9 @@ package com.zyc.ship.engine.impl.executor;
 
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.ship.engine.impl.RiskShipResultImpl;
@@ -31,7 +30,7 @@ public class LabelExecutor extends BaseExecutor{
      * @param user_param 用户自定义参数,从接口中传进来的参数
      * @return
      */
-    public ShipResult execute(JSONObject run_jsmind_data, Map<String,Object> labelVaues, String uid, JSONObject user_param){
+    public ShipResult execute(Map<String, Object> run_jsmind_data, Map<String,Object> labelVaues, String uid, Map<String, Object> user_param){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
@@ -59,13 +58,13 @@ public class LabelExecutor extends BaseExecutor{
      * @param jsonObject
      * @return
      */
-    public List<LabelValueConfig> labelParam2LableValueConfig(JSONObject jsonObject){
+    public List<LabelValueConfig> labelParam2LableValueConfig(Map<String, Object> jsonObject){
         List<LabelValueConfig> labelValueConfigs = Lists.newArrayList();
         try{
-            String rule_param = jsonObject.getString("rule_param");
-            String rule_id = jsonObject.getString("rule_id");
+            String rule_param = jsonObject.getOrDefault("rule_param", "").toString();
+            String rule_id = jsonObject.get("rule_id").toString();
             if(!StringUtils.isEmpty(rule_param)){
-                List<StrategyLabelParamConfig> strategyLabelParamConfigs = JSON.parseArray(rule_param, StrategyLabelParamConfig.class);
+                List<StrategyLabelParamConfig> strategyLabelParamConfigs = JsonUtil.toJavaListBean(rule_param, StrategyLabelParamConfig.class);
                 for (StrategyLabelParamConfig strategyLabelParamConfig:strategyLabelParamConfigs){
                     LabelValueConfig labelValueConfig=new LabelValueConfig();
                     labelValueConfig.setCode(strategyLabelParamConfig.getParam_code());
@@ -91,7 +90,7 @@ public class LabelExecutor extends BaseExecutor{
      * @param uid 用户id
      * @return
      */
-    public boolean diffLable(LabelValueConfig labelValueConfig, Map<String,Object> labelValues, String uid, JSONObject user_param){
+    public boolean diffLable(LabelValueConfig labelValueConfig, Map<String,Object> labelValues, String uid, Map<String, Object> user_param){
         if(diffValue(labelValues.get(labelValueConfig.getLabel_code()),labelValueConfig, user_param)){
             return true;
         }
@@ -105,7 +104,7 @@ public class LabelExecutor extends BaseExecutor{
      * @param labelValueConfig 用户配置参数
      * @return
      */
-    public boolean diffValue(Object r,LabelValueConfig labelValueConfig, JSONObject user_param){
+    public boolean diffValue(Object r,LabelValueConfig labelValueConfig, Map<String, Object> user_param){
         try{
             String code = labelValueConfig.getCode();//此处使用code获取对应的结果,原因可兼容一个标签有多个参数的场景
             String operate = labelValueConfig.getOperate();
@@ -123,7 +122,7 @@ public class LabelExecutor extends BaseExecutor{
             if(r instanceof Map ){
                 return diffValue(((Map) r).getOrDefault(code, null), value, value_type, operate);
             }else if(r instanceof String){
-                return diffValue(JSONObject.parseObject(r.toString()).getOrDefault(code, null), value, value_type, operate);
+                return diffValue(JsonUtil.toJavaMap(r.toString()).getOrDefault(code, null), value, value_type, operate);
             }
             return diffValue(r,value,value_type, operate);
         }catch (Exception e){

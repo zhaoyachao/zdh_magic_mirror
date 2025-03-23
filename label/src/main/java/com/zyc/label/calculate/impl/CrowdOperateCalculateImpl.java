@@ -1,11 +1,11 @@
 package com.zyc.label.calculate.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.StrategyInstance;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.common.util.MybatisUtil;
 import com.zyc.label.calculate.CrowdRuleCalculate;
@@ -115,7 +115,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
         String logStr="";
         try{
             //客群运算id
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String rule_context=run_jsmind_data.get("rule_context").toString();
             String operate=run_jsmind_data.get("operate").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
@@ -163,7 +163,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
             List<StrategyInstance> list = strategyInstanceMappler.selectByIds(pre_tasks.split(","));
             for (StrategyInstance strategyInstance:list){
                 String rjd = strategyInstance.getRun_jsmind_data();
-                Map parseObject = JSON.parseObject(rjd, Map.class);
+                Map parseObject = JsonUtil.toJavaBean(rjd, Map.class);
                 if(parseObject.getOrDefault("is_base","false").toString().equalsIgnoreCase("true")){
                     base_id = strategyInstance.getId();
                     break;

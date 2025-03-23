@@ -1,6 +1,5 @@
 package com.zyc.plugin.calculate.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -11,6 +10,7 @@ import com.zyc.common.plugin.PluginParam;
 import com.zyc.common.plugin.PluginResult;
 import com.zyc.common.plugin.PluginService;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.PluginCalculate;
@@ -116,7 +116,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
         try{
 
             //获取plugin code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String rule_id=run_jsmind_data.get("rule_id").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 

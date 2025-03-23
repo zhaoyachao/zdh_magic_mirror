@@ -1,10 +1,10 @@
 package com.zyc.common.entity;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
+import com.zyc.common.util.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class PluginInfo {
 
@@ -50,11 +50,11 @@ public class PluginInfo {
      */
     private String is_delete;
 
-    private JSONArray param_json_object;
+    private List<Object> param_json_object;
 
-    public JSONArray getParam_json_object() {
+    public  List<Object> getParam_json_object() {
         if(!StringUtils.isEmpty(plugin_json)){
-            return JSON.parseArray(plugin_json);
+            return JsonUtil.toJavaList(plugin_json);
         }
         return param_json_object;
     }

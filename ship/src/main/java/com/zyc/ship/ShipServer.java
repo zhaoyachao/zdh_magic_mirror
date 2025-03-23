@@ -1,9 +1,7 @@
 package com.zyc.ship;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.zyc.common.redis.JedisPoolUtil;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.common.util.ServerManagerUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
@@ -25,6 +23,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -155,15 +155,15 @@ public class ShipServer {
 
                         if(riskLogStr != null){
                             logger.info(riskLogStr.toString());
-                            JSONArray jsonArray = JSON.parseArray(riskLogStr.toString());
+                            List<Map<String, Object>> jsonArray = JsonUtil.toJavaListMap(riskLogStr.toString());
                             if(jsonArray != null && jsonArray.size()>0){
-                                String requestId = jsonArray.getJSONObject(0).getString("requestId");
+                                String requestId = jsonArray.get(0).get("requestId").toString();
                                 //截取前10位
                                 String task_log_id=requestId;
                                 // strategyGroupInstanceId=task_log_id
                                 for(Object obj: jsonArray){
-                                    String job_id= ((JSONObject)obj).getString("strategyGroupInstanceId");
-                                    LogUtil.info(job_id, task_log_id, ((JSONObject)obj).toJSONString());
+                                    String job_id= ((Map<String, Object>)obj).get("strategyGroupInstanceId").toString();
+                                    LogUtil.info(job_id, task_log_id, JsonUtil.formatJsonString(obj));
                                 }
 
                             }
@@ -174,15 +174,15 @@ public class ShipServer {
                         if(managerLogStr != null){
                             logger.info(managerLogStr.toString());
 
-                            JSONArray jsonArray = JSON.parseArray(managerLogStr.toString());
+                            List<Map<String, Object>> jsonArray = JsonUtil.toJavaListMap(managerLogStr.toString());
                             if(jsonArray != null && jsonArray.size()>0){
-                                String requestId = jsonArray.getJSONObject(0).getString("requestId");
+                                String requestId = jsonArray.get(0).get("requestId").toString();
                                 //截取前10位
                                 String task_log_id=requestId;
                                 // strategyGroupInstanceId=task_log_id
-                                for(Object obj: jsonArray){
-                                    String job_id= ((JSONObject)obj).getString("strategyGroupInstanceId");
-                                    LogUtil.info(job_id, task_log_id, ((JSONObject)obj).toJSONString());
+                                for(Map<String, Object> obj: jsonArray){
+                                    String job_id= obj.get("strategyGroupInstanceId").toString();
+                                    LogUtil.info(job_id, task_log_id, JsonUtil.formatJsonString(obj));
                                 }
 
                             }

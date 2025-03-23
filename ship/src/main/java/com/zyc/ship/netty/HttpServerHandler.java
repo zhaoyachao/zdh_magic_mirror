@@ -1,8 +1,7 @@
 package com.zyc.ship.netty;
 
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.ship.entity.OutputParam;
 import com.zyc.ship.entity.ShipCommonInputParam;
 import com.zyc.ship.seaport.Input;
@@ -50,7 +49,7 @@ public class HttpServerHandler extends HttpBaseHandler{
     }
 
     private Map<String,Object> getBody(String content){
-        return JSON.parseObject(content, Map.class);
+        return JsonUtil.toJavaBean(content, Map.class);
     }
 
     private Map<String,Object> getParam(String uri) throws UnsupportedEncodingException {
@@ -107,7 +106,7 @@ public class HttpServerHandler extends HttpBaseHandler{
             String url=uri.split("\\?")[0];
 
             if(url.startsWith("/api/v1/ship/accept")){
-                resp=JSON.toJSONString(ship(param));
+                resp= JsonUtil.formatJsonString(ship(param));
             }
             logger.info("request:{}, uri:{}, request method:{}, response:{}", request_id, uri, method, resp);
             DefaultFullHttpResponse response = new DefaultFullHttpResponse(
@@ -134,9 +133,8 @@ public class HttpServerHandler extends HttpBaseHandler{
     }
 
     private OutputParam ship(Map<String,Object> param){
-        JSONObject jsonObject=new JSONObject();
-        jsonObject.putAll(param);
-        ShipCommonInputParam inputParam = jsonObject.toJavaObject(ShipCommonInputParam.class);
+        String str=JsonUtil.formatJsonString(param);
+        ShipCommonInputParam inputParam = JsonUtil.toJavaBean(str, ShipCommonInputParam.class);
 
         Input shipInput = new ShipInput();
         OutputParam outputParam = shipInput.accept(inputParam);

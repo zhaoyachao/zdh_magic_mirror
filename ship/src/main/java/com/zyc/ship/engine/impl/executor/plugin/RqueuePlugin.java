@@ -1,11 +1,11 @@
 package com.zyc.ship.engine.impl.executor.plugin;
 
 import cn.hutool.core.util.NumberUtil;
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.rqueue.RQueueClient;
 import com.zyc.rqueue.RQueueManager;
 import com.zyc.rqueue.RQueueMode;
@@ -29,11 +29,11 @@ public class RqueuePlugin implements Plugin{
     private static Logger logger= LoggerFactory.getLogger(RqueuePlugin.class);
 
     private String rule_id;
-    private Object run_jsmind_data;
+    private Map<String, Object> run_jsmind_data;
     private StrategyInstance strategyInstance;
     private ShipEvent shipEvent;
 
-    public RqueuePlugin(String rule_id, Object run_jsmind_data, StrategyInstance strategyInstance, ShipEvent shipEvent){
+    public RqueuePlugin(String rule_id, Map<String, Object> run_jsmind_data, StrategyInstance strategyInstance, ShipEvent shipEvent){
         this.rule_id = rule_id;
         this.run_jsmind_data = run_jsmind_data;
         this.strategyInstance = strategyInstance;
@@ -49,7 +49,7 @@ public class RqueuePlugin implements Plugin{
     public boolean execute() throws Exception {
         try{
             Gson gson=new Gson();
-            List<Map> rule_params = gson.fromJson(((JSONObject)run_jsmind_data).get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
+            List<Map> rule_params = gson.fromJson((run_jsmind_data).get("rule_param").toString(), new TypeToken<List<Map>>(){}.getType());
 
             Properties props = new Properties();
 
@@ -94,15 +94,15 @@ public class RqueuePlugin implements Plugin{
             }
 
             if(queue_type.equalsIgnoreCase("priority")){
-                rQueueClient.offer(JSONObject.toJSONString(shipEvent), NumberUtil.parseInt(priority));
+                rQueueClient.offer(JsonUtil.formatJsonString(shipEvent), NumberUtil.parseInt(priority));
             }
 
             if(queue_type.equalsIgnoreCase("delay")){
-                rQueueClient.offer(JSONObject.toJSONString(shipEvent), NumberUtil.parseLong(delay), TimeUnit.SECONDS);
+                rQueueClient.offer(JsonUtil.formatJsonString(shipEvent), NumberUtil.parseLong(delay), TimeUnit.SECONDS);
             }
 
             if(queue_type.equalsIgnoreCase("block")){
-                rQueueClient.add(JSONObject.toJSONString(shipEvent));
+                rQueueClient.add(JsonUtil.formatJsonString(shipEvent));
             }
 
             return true;

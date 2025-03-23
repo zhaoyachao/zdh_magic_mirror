@@ -1,10 +1,10 @@
 package com.zyc.common.entity;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
+import com.zyc.common.util.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class LabelInfo {
 
@@ -113,11 +113,11 @@ public class LabelInfo {
 
     private String product_code;
 
-    private JSONArray param_json_object;
+    private List<Object> param_json_object;
 
-    public JSONArray getParam_json_object() {
+    public List<Object> getParam_json_object() {
         if(!StringUtils.isEmpty(param_json)){
-            return JSON.parseArray(param_json);
+            return JsonUtil.toJavaList(param_json);
         }
         return param_json_object;
     }

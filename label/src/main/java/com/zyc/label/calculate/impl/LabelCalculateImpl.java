@@ -3,8 +3,6 @@ package com.zyc.label.calculate.impl;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -14,10 +12,7 @@ import com.zyc.common.entity.DataSourcesInfo;
 import com.zyc.common.entity.LabelInfo;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.redis.JedisPoolUtil;
-import com.zyc.common.util.Const;
-import com.zyc.common.util.DBUtil;
-import com.zyc.common.util.HttpClientUtil;
-import com.zyc.common.util.LogUtil;
+import com.zyc.common.util.*;
 import com.zyc.label.calculate.LabelCalculate;
 import com.zyc.label.service.impl.DataSourcesServiceImpl;
 import com.zyc.label.service.impl.LabelServiceImpl;
@@ -141,7 +136,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
         try{
 
             //获取标签code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String label_code=run_jsmind_data.get("rule_id").toString();
             String label_use_type=run_jsmind_data.getOrDefault("label_use_type", "batch").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
@@ -280,11 +275,11 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
     public Map<String, Object> getLabel(String label_url, String uid, String product_code, String variable){
         Map<String, Object> result = new HashMap<>();
         try{
-            cn.hutool.json.JSONObject jsonObject = JSONUtil.createObj();
-            jsonObject.putOpt("uid", uid);
-            jsonObject.putOpt("product_code", product_code);
-            jsonObject.putOpt("variable", variable);
-            result = JSON.parseObject(HttpClientUtil.postJson(label_url, jsonObject.toString()),Map.class);
+            Map<String, Object> jsonObject = JsonUtil.createEmptyLinkMap();
+            jsonObject.put("uid", uid);
+            jsonObject.put("product_code", product_code);
+            jsonObject.put("variable", variable);
+            result = JsonUtil.toJavaBean(HttpClientUtil.postJson(label_url, JsonUtil.formatJsonString(jsonObject)),Map.class);
             return result;
         }catch (Exception e){
 

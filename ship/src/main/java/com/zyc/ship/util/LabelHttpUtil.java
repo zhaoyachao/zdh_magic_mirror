@@ -1,7 +1,7 @@
 package com.zyc.ship.util;
 
-import com.alibaba.fastjson.JSON;
 import com.zyc.common.util.HttpClientUtil;
+import com.zyc.common.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +22,7 @@ public class LabelHttpUtil {
     public static Map<String,Object> post(String body){
         try{
 
-            Map<String,Object> result = JSON.parseObject(HttpClientUtil.postJson(url, body),Map.class);
+            Map<String,Object> result = JsonUtil.toJavaBean(HttpClientUtil.postJson(url, body),Map.class);
             return result;
         }catch (Exception e){
             logger.error("ship server labelpost error: ", e);

@@ -1,14 +1,12 @@
 package com.zyc.ship.engine.impl.executor;
 
 import cn.hutool.core.util.ArrayUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.FunctionInfo;
 import com.zyc.common.groovy.GroovyFactory;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
@@ -24,11 +22,11 @@ import java.util.*;
 public class FunctionExecutor extends BaseExecutor{
     private Logger logger= LoggerFactory.getLogger(this.getClass());
 
-    public ShipResult execute(ShipEvent shipEvent, JSONObject run_jsmind_data, String uid){
+    public ShipResult execute(ShipEvent shipEvent, Map<String, Object> run_jsmind_data, String uid){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{
-            String function_name = run_jsmind_data.getString("rule_id");
+            String function_name = run_jsmind_data.get("rule_id").toString();
             String return_diff_enable = run_jsmind_data.getOrDefault("return_diff_enable", "false").toString();
             String return_value_express = run_jsmind_data.getOrDefault("return_value_express", "ret").toString();
             String return_value_type = run_jsmind_data.getOrDefault("return_value_type", "string").toString();
@@ -111,12 +109,12 @@ public class FunctionExecutor extends BaseExecutor{
             String function_class = functionInfo.getFunction_class();
             String function_load_path = functionInfo.getFunction_load_path();
             String function_script = functionInfo.getFunction_script();
-            JSONArray jsonArray = functionInfo.getParam_json_object();
+            List<Object> jsonArray = functionInfo.getParam_json_object();
 
             Map<String, Object> objectMap = new LinkedHashMap<>();
             List<String> params = new ArrayList<>();
             for(int i=0;i<jsonArray.size();i++){
-                String param_code = jsonArray.getJSONObject(i).getString("param_code");
+                String param_code = ((Map<String, Object>)jsonArray.get(i)).get("param_code").toString();
                 objectMap.put(param_code, param_value[i]);
                 params.add(param_code);
             }
@@ -209,7 +207,7 @@ public class FunctionExecutor extends BaseExecutor{
 
         function_script = jinjava.render(function_script, tmp);//替换可变参数
 
-        logger.info("结果对比函数: "+function_name+", "+function_script+", 参数: "+ JSON.toJSONString(objectMap));
+        logger.info("结果对比函数: "+function_name+", "+function_script+", 参数: "+ JsonUtil.formatJsonString(objectMap));
 
         Object obj = GroovyFactory.execExpress(function_script, objectMap);
 

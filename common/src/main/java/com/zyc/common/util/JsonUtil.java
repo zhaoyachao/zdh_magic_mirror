@@ -100,6 +100,21 @@ public class JsonUtil {
         return t;
     }
 
+    public static <T> List<T> toJavaListBean(String jsonArray, Class<T> tClass) {
+        List<T> t = new ArrayList<>();
+        if(StringUtils.isEmpty(jsonArray)){
+            return t;
+        }
+        try {
+            t = OBJECT_MAPPER.readValue(jsonArray, new TypeReference<List<T>>() {});
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return t;
+    }
+
     /**
      * json 数组字符串转java list<map>
      * @param jsonArray

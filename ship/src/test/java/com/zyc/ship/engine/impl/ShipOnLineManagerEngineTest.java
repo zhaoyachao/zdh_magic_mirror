@@ -1,6 +1,6 @@
 package com.zyc.ship.engine.impl;
 
-import com.alibaba.fastjson.JSON;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.ship.conf.ShipConf;
 import com.zyc.ship.entity.OutputParam;
 import com.zyc.ship.entity.ShipCommonInputParam;
@@ -32,7 +32,7 @@ public class ShipOnLineManagerEngineTest {
             cacheStrategyService.schedule();
             ShipOnLineManagerEngine shipOnLineManagerEngine=new ShipOnLineManagerEngine(inputParam, cacheStrategyService);
             OutputParam execute = shipOnLineManagerEngine.execute();
-            System.out.println(JSON.toJSONString(execute));
+            System.out.println(JsonUtil.formatJsonString(execute));
         }
     }
 }

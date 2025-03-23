@@ -3,7 +3,6 @@ package com.zyc.ship.service.impl;
 import cn.hutool.core.lang.JarClassLoader;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ClassLoaderUtil;
-import com.alibaba.fastjson.JSONArray;
 import com.google.common.collect.Maps;
 import com.zyc.common.entity.FunctionInfo;
 import com.zyc.common.util.MybatisUtil;
@@ -87,7 +86,7 @@ public class CacheFunctionServiceImpl implements FunctionService {
                     String function_class = row.getFunction_class();
                     String function_load_path = row.getFunction_load_path();
                     String function_script = row.getFunction_script();
-                    JSONArray jsonArray = row.getParam_json_object();
+                    List<Object> jsonArray = row.getParam_json_object();
 
                     if(!StringUtils.isEmpty(function_class)){
                         String[] function_packages = function_class.split(",");

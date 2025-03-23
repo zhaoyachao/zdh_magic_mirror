@@ -1,6 +1,5 @@
 package com.zyc.ship.engine.impl.executor;
 
-import com.alibaba.fastjson.JSONObject;
 import com.zyc.ship.disruptor.ShipEvent;
 import com.zyc.ship.disruptor.ShipResult;
 import com.zyc.ship.disruptor.ShipResultStatusEnum;
@@ -13,11 +12,11 @@ import java.util.Map;
 public class IdMappingExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(IdMappingExecutor.class);
 
-    public ShipResult execute(JSONObject run_jsmind_data, Map<String,Object> labelVaues, ShipEvent shipEvent, String uid){
+    public ShipResult execute(Map<String, Object> run_jsmind_data, Map<String,Object> labelVaues, ShipEvent shipEvent, String uid){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
-            String mapping_code = run_jsmind_data.getString("rule_id");
+            String mapping_code = run_jsmind_data.get("rule_id").toString();
             String tag_key = "tag_"+mapping_code;
             Object value = labelVaues.get(tag_key);
             if(value == null){

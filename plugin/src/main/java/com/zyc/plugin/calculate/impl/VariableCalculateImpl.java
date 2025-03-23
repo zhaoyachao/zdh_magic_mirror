@@ -1,13 +1,12 @@
 package com.zyc.plugin.calculate.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.groovy.GroovyFactory;
-import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.VariableCalculate;
@@ -112,7 +111,7 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
         try{
 
             //获取标签code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
 
@@ -126,7 +125,6 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
 
             }else{
                 //写入变量池
-                String key = "varpool:gid:"+strategyLogInfo.getStrategy_group_instance_id();
                 String varpool_code = run_jsmind_data.getOrDefault("varpool_code","").toString();
                 String varpool_operate = run_jsmind_data.getOrDefault("varpool_operate","eq").toString();
                 String varpool_type = run_jsmind_data.getOrDefault("varpool_type","string").toString();
@@ -139,65 +137,70 @@ public class VariableCalculateImpl extends BaseCalculate implements VariableCalc
                 Jinjava jinjava = new Jinjava();
                 varpool_value = jinjava.render(varpool_value, commonParam);
 
-                Object value = JedisPoolUtil.redisClient().hGet(key, secondKey);
 
-                if(value == null){
-                    rs = Sets.newHashSet();
-                }
+                for(DataPipe dataPipe:rs){
+                    Map<String, Object> ext = JsonUtil.toJavaMap(dataPipe.getExt());
+                    Object value = ext.getOrDefault(secondKey, "");
 
-                boolean ret = false;
-                if(varpool_type.equalsIgnoreCase("string") || varpool_type.equalsIgnoreCase("decimal")){
-                    ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
-                }else if(varpool_type.equalsIgnoreCase("int") ){
-                    ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
-                }else if(varpool_type.equalsIgnoreCase("list")){
-                    //获取变量表达式
-                    if(!StringUtils.isEmpty(varpool_expre)){
-                        Map<String, Object> parmas = new HashMap<>();
-                        parmas.put("varpool_ret",  JSON.parseObject(value.toString(), List.class));
-                        value = GroovyFactory.execExpress(varpool_expre, parmas);
-                    }else{
-                        value = JSON.parseObject(value.toString(), List.class);
-                    }
+                    boolean ret = false;
 
-                    if(value instanceof String){
+                    if(varpool_type.equalsIgnoreCase("string") || varpool_type.equalsIgnoreCase("decimal")){
                         ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
-                    }else if(value instanceof Integer){
+                    }else if(varpool_type.equalsIgnoreCase("int") ){
                         ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
-                    }else if(value instanceof List){
-                        ret = diffListValue((List)value,varpool_value, varpool_operate);
-                    }else{
-                        throw new Exception("不支持的数据类型");
+                    }else if(varpool_type.equalsIgnoreCase("list")){
+                        //获取变量表达式
+                        if(!StringUtils.isEmpty(varpool_expre)){
+                            Map<String, Object> parmas = new HashMap<>();
+                            parmas.put("varpool_ret",  JsonUtil.toJavaBean(value.toString(), List.class));
+                            value = GroovyFactory.execExpress(varpool_expre, parmas);
+                        }else{
+                            value = JsonUtil.toJavaBean(value.toString(), List.class);
+                        }
+
+                        if(value instanceof String){
+                            ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
+                        }else if(value instanceof Integer){
+                            ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
+                        }else if(value instanceof List){
+                            ret = diffListValue((List)value,varpool_value, varpool_operate);
+                        }else{
+                            throw new Exception("不支持的数据类型");
+                        }
+
+                    }else if(varpool_type.equalsIgnoreCase("map")){
+                        //获取变量表达式
+                        if(!StringUtils.isEmpty(varpool_expre)){
+                            Map<String, Object> parmas = new HashMap<>();
+                            parmas.put("varpool_ret",  JsonUtil.toJavaBean(value.toString(), Map.class));
+                            value = GroovyFactory.execExpress(varpool_expre, parmas);
+                        }else{
+                            value = JsonUtil.toJavaBean(value.toString(), Map.class);
+                        }
+
+                        if(value instanceof String){
+                            ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
+                        }else if(value instanceof Integer){
+                            ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
+                        }else if(value instanceof Map){
+                            ret = diffMapValue((Map)value,varpool_value, varpool_operate);
+                        }else{
+                            throw new Exception("不支持的数据类型");
+                        }
                     }
 
-                }else if(varpool_type.equalsIgnoreCase("map")){
-                    //获取变量表达式
-                    if(!StringUtils.isEmpty(varpool_expre)){
-                        Map<String, Object> parmas = new HashMap<>();
-                        parmas.put("varpool_ret",  JSON.parseObject(value.toString(), Map.class));
-                        value = GroovyFactory.execExpress(varpool_expre, parmas);
-                    }else{
-                        value = JSON.parseObject(value.toString(), Map.class);
-                    }
+                    LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "变量对比结果:"+ret+", 实际值:"+value.toString()+" ,期望值:"+varpool_value);
 
-                    if(value instanceof String){
-                        ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
-                    }else if(value instanceof Integer){
-                        ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
-                    }else if(value instanceof Map){
-                        ret = diffMapValue((Map)value,varpool_value, varpool_operate);
-                    }else{
-                        throw new Exception("不支持的数据类型");
+                    if(ret == false){
+                        dataPipe.setStatus(Const.FILE_STATUS_FAIL);
+                        dataPipe.setStatus_desc("variable error, expect: "+varpool_value+", real: "+value.toString());
                     }
                 }
-
-                if(ret == false){
-                    rs_error = rs;
-                    rs = Sets.newHashSet();
-                }
-                LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "变量对比结果:"+ret+", 实际值:"+value.toString()+" ,期望值:"+varpool_value);
 
             }
+
+            rs_error = Sets.newHashSet(rs.parallelStream().filter(s->s.getStatus().equalsIgnoreCase(Const.FILE_STATUS_FAIL)).collect(Collectors.toSet()));
+            rs = Sets.newHashSet(rs.parallelStream().filter(s-> s.getStatus().equalsIgnoreCase(Const.FILE_STATUS_SUCCESS)).collect(Collectors.toSet()));
 
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);

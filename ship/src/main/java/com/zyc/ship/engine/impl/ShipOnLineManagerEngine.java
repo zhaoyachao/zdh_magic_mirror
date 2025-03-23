@@ -1,10 +1,10 @@
 package com.zyc.ship.engine.impl;
 
 import cn.hutool.core.date.DateUtil;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.zyc.common.redis.JedisPoolUtil;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.rqueue.RQueueManager;
 import com.zyc.ship.common.Const;
@@ -56,7 +56,7 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                     try{
                         //解析参数
                         ShipCommonInputParam shipCommonInputParam = (ShipCommonInputParam) inputParam;
-                        logger.info("解析参数: {}", JSON.toJSONString(shipCommonInputParam));
+                        logger.info("解析参数: {}", JsonUtil.formatJsonString(shipCommonInputParam));
                         String product_code = shipCommonInputParam.getProduct_code();
                         //获取scene,data_type相关的策略
                         String scene = shipCommonInputParam.getScene();
@@ -82,7 +82,7 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                         //校验分流
                         List<StrategyGroupInstance> hit_strategy_groups = getHitStrategyGroups(flow, strategy_groups, allocate_strategy_group_id_hashset);
 
-                        logger.info("request_id: {}, data_node: {}, hit strategy_groups: {}",request_id_str, data_node, JSON.toJSONString(hit_strategy_groups));
+                        logger.info("request_id: {}, data_node: {}, hit strategy_groups: {}",request_id_str, data_node, JsonUtil.formatJsonString(hit_strategy_groups));
 
                         if(hit_strategy_groups == null || hit_strategy_groups.size() <= 0){
                             return ;
@@ -92,7 +92,7 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                         Map<String, Object> filters = new HashMap<>();
                         loadBaseData(null, labels, filters, shipCommonInputParam);
 
-                        logger.info("request_id: {}, label_values: {}", request_id_str, JSON.toJSONString(labels));
+                        logger.info("request_id: {}, label_values: {}", request_id_str, JsonUtil.formatJsonString(labels));
 
                         //遍历策略信息,对每一个策略解析,拉取标签结果,后期确定是否采用disruptor
                         Map<String, Map<String, ShipResult>> result = new ConcurrentHashMap<>();
@@ -102,7 +102,7 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                         executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch,
                                 shipEventMap, result, request_id_str);
 
-                        RQueueManager.getRQueueClient(Const.SHIP_ONLINE_MANAGER_LOG_QUEUE).add(JSON.toJSONString(shipEventMap.values()));
+                        RQueueManager.getRQueueClient(Const.SHIP_ONLINE_MANAGER_LOG_QUEUE).add(JsonUtil.formatJsonString(shipEventMap.values()));
                     }catch (Exception e){
                         logger.error("ship online manager thread error: ", e);
                     }

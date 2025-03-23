@@ -1,8 +1,7 @@
 package com.zyc.variable.netty;
 
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.variable.service.FilterService;
 import com.zyc.variable.service.VariableService;
 import com.zyc.variable.service.impl.FilterServiceImpl;
@@ -60,7 +59,7 @@ public class HttpServerHandler extends HttpBaseHandler {
     }
 
     private Map<String,Object> getBody(String content){
-        return JSON.parseObject(content, Map.class);
+        return JsonUtil.toJavaBean(content, Map.class);
     }
 
     private Map<String,Object> getParam(String uri) throws UnsupportedEncodingException {
@@ -115,9 +114,9 @@ public class HttpServerHandler extends HttpBaseHandler {
             if(url.startsWith("/api/v1/variable")){
                 resp = variable(param).toString();
             }else if(url.startsWith("/api/v1/all")){
-                resp = JSONObject.toJSONString(all(param));
+                resp = JsonUtil.formatJsonString(all(param));
             }else if(url.startsWith("/api/v1/filter")){
-                resp = JSONObject.toJSONString(filter(param));
+                resp = JsonUtil.formatJsonString(filter(param));
             }else if(url.startsWith("/api/v1/hitfilter")){
                 resp = String.valueOf(filterIsHit(param));
             }

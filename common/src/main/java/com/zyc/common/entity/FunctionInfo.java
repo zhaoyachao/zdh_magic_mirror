@@ -1,9 +1,11 @@
 package com.zyc.common.entity;
 
-import com.alibaba.fastjson.JSONArray;
+import com.zyc.common.util.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FunctionInfo {
 
@@ -79,7 +81,7 @@ public class FunctionInfo {
      */
     private String is_delete;
 
-    private JSONArray param_json_object;
+    private List<Object> param_json_object;
 
     /**
      * @return id
@@ -317,10 +319,10 @@ public class FunctionInfo {
         this.return_type = return_type;
     }
 
-    public JSONArray getParam_json_object() {
+    public List<Object> getParam_json_object() {
         if(!StringUtils.isEmpty(param_json)){
-            return JSONArray.parseArray(param_json);
+            return JsonUtil.toJavaList(param_json);
         }
-        return new JSONArray();
+        return new ArrayList<>();
     }
 }

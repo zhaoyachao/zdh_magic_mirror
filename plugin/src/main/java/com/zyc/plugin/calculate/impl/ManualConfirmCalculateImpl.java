@@ -1,7 +1,6 @@
 package com.zyc.plugin.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.NoticeInfo;
@@ -10,6 +9,7 @@ import com.zyc.common.entity.StrategyLogInfo;
 import com.zyc.common.service.impl.NoticeServiceImpl;
 import com.zyc.common.service.impl.PermissionUserServiceImpl;
 import com.zyc.common.util.Const;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.ManualConfirmCalculate;
@@ -113,7 +113,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
 
             localVar.set(strategyLogInfo.getStrategy_instance_id());
             //获取标签code
-            Map run_jsmind_data = JSON.parseObject(this.param.get("run_jsmind_data").toString(), Map.class);
+            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String[] confirm_notice_types = run_jsmind_data.getOrDefault("confirm_notice_type","").toString().split(",");
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 

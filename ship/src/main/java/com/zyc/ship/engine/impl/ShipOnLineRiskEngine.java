@@ -1,9 +1,9 @@
 package com.zyc.ship.engine.impl;
 
 import cn.hutool.core.date.DateUtil;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Sets;
 import com.zyc.common.redis.JedisPoolUtil;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.rqueue.RQueueManager;
 import com.zyc.ship.common.Const;
@@ -41,7 +41,7 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
         try{
             //解析参数
             ShipCommonInputParam shipCommonInputParam = (ShipCommonInputParam) this.inputParam;
-            logger.info("解析参数: {}", JSON.toJSONString(shipCommonInputParam));
+            logger.info("解析参数: {}", JsonUtil.formatJsonString(shipCommonInputParam));
             String product_code = shipCommonInputParam.getProduct_code();
             //获取scene,data_type相关的策略
             String scene = shipCommonInputParam.getScene();
@@ -73,8 +73,8 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
             Set<StrategyGroupInstance> not_hit_strategy_groups = Sets.difference(Sets.newHashSet(strategy_groups), Sets.newHashSet(hit_strategy_groups));
             Set not_hit_strategy_group_ids = not_hit_strategy_groups.stream().map(strategyGroupInstance -> strategyGroupInstance.getId()).collect(Collectors.toSet());
 
-            logger.info("request_id: {}, data_node: {}, flow not hit strategy_groups: {}",request_id_str, data_node, JSON.toJSONString(not_hit_strategy_group_ids));
-            logger.info("request_id: {}, data_node: {}, hit strategy_groups: {}",request_id_str, data_node, JSON.toJSONString(hit_strategy_groups));
+            logger.info("request_id: {}, data_node: {}, flow not hit strategy_groups: {}",request_id_str, data_node, JsonUtil.formatJsonString(not_hit_strategy_group_ids));
+            logger.info("request_id: {}, data_node: {}, hit strategy_groups: {}",request_id_str, data_node, JsonUtil.formatJsonString(hit_strategy_groups));
 
             if(hit_strategy_groups == null || hit_strategy_groups.size() <= 0){
 
@@ -85,7 +85,7 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
             Map<String, Object> filters = new HashMap<>();
             loadBaseData(null, labels, filters, shipCommonInputParam);
 
-            logger.info("request_id: {}, label_values: {}", request_id_str, JSON.toJSONString(labels));
+            logger.info("request_id: {}, label_values: {}", request_id_str, JsonUtil.formatJsonString(labels));
 
 
             //遍历策略信息,对每一个策略解析,拉取标签结果,后期确定是否采用disruptor
@@ -102,7 +102,7 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
                    }
                }
             }
-            RQueueManager.getRQueueClient(Const.SHIP_ONLINE_RISK_LOG_QUEUE).add(JSON.toJSONString(shipEventMap.values()));
+            RQueueManager.getRQueueClient(Const.SHIP_ONLINE_RISK_LOG_QUEUE).add(JsonUtil.formatJsonString(shipEventMap.values()));
             shipRiskOutputParam.setStrategyGroupResults(result);
             shipRiskOutputParam.setRequestId(request_id_str);
             logger.info("request_id: {}, end", request_id_str);

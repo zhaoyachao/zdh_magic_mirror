@@ -1,10 +1,10 @@
 package com.zyc.ship.disruptor;
 
 import cn.hutool.core.date.DateUtil;
-import com.alibaba.fastjson.JSON;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.WorkHandler;
 import com.zyc.common.entity.StrategyInstance;
+import com.zyc.common.util.JsonUtil;
 import com.zyc.ship.engine.impl.RiskShipResultImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +34,8 @@ public class ShipWorkerEventWorkHandler implements WorkHandler<ShipEvent> {
                 shipEvent.getRunPath().put(shipEvent.getStrategyInstanceId(), ShipConst.STATUS_ERROR);
             }
             int sequence = shipEvent.incrementAndGet();
-            logger.info("worker: "+ JSON.toJSONString(shipEvent));
-            logger.info("worker check: "+ JSON.toJSONString(shipEvent.getStrategyInstance().getStrategy_context()));
+            logger.info("worker: "+ JsonUtil.formatJsonString(shipEvent));
+            logger.info("worker check: "+ JsonUtil.formatJsonString(shipEvent.getStrategyInstance().getStrategy_context()));
             StrategyInstance strategyInstance = shipEvent.getStrategyInstance();
             if(shipEvent.getStatus().equalsIgnoreCase(ShipConst.STATUS_ERROR)){
                 shipEvent.getRunPath().put(shipEvent.getStrategyInstanceId(), ShipConst.STATUS_ERROR);
@@ -72,7 +72,7 @@ public class ShipWorkerEventWorkHandler implements WorkHandler<ShipEvent> {
             shipEvent.getCdl().countDown();
             if(shipEvent.getCdl().getCount() == 0){
                 shipEvent.getGroupCdl().countDown();
-                logger.info("request_id: {}, result: {}", shipEvent.getRequestId(), JSON.toJSONString(shipEvent.getShipResultMap()));
+                logger.info("request_id: {}, result: {}", shipEvent.getRequestId(), JsonUtil.formatJsonString(shipEvent.getShipResultMap()));
             }
             shipEvent.clear();
         }
