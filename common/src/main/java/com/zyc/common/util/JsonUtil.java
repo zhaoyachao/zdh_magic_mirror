@@ -79,6 +79,7 @@ public class JsonUtil {
         OBJECT_MAPPER.registerModule(module);
         OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         OBJECT_MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        OBJECT_MAPPER.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
     }
     /**
      * json 数组字符串转java list
