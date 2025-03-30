@@ -14,10 +14,7 @@ import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
 import com.zyc.plugin.calculate.CalculateResult;
 import com.zyc.plugin.calculate.PluginCalculate;
-import com.zyc.plugin.impl.HttpPluginServiceImpl;
-import com.zyc.plugin.impl.KafkaPluginServiceImpl;
-import com.zyc.plugin.impl.PluginServiceImpl;
-import com.zyc.plugin.impl.StrategyInstanceServiceImpl;
+import com.zyc.plugin.impl.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,8 +126,6 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
             Map<String,Object> params = getJinJavaCommonParam();
             params.put("rule_params", rule_params);
 
-            mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);
-
             params.putAll(getJinJavaParam(strategyLogInfo.getCur_time()));
 
             //生成参数
@@ -154,10 +149,10 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
 
                 for (DataPipe r: diff){
                     PluginParam pluginParam = pluginServiceImpl.getPluginParam(rule_params);
+                    params.putAll(JsonUtil.toJavaMap(r.getExt()));//追加参数
                     PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, r, params);
                     String status=Const.FILE_STATUS_FAIL;
                     if(result.getCode() == 0){
-                        status = Const.FILE_STATUS_SUCCESS;
                         rs3.add(r);
                     }else{
                         r.setStatus(status);
@@ -196,6 +191,8 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
             return new KafkaPluginServiceImpl();
         }else if(plugin_code.equalsIgnoreCase("http")){
             return new HttpPluginServiceImpl();
+        }else if(plugin_code.equalsIgnoreCase("redis")){
+            return new RedisPluginServiceImpl();
         }
         return null;
     }

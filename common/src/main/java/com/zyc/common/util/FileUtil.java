@@ -52,35 +52,51 @@ public class FileUtil {
         return DataPipe.readStringSplit(file, charset, status, split);
     }
 
-    public static List<String> readTextSplit(File file, Charset charset, String split) throws IOException {
-        List<String> result = new ArrayList<>();
+    public static List<DataPipe> readTextSplit(File file, Charset charset, String split) throws IOException {
+        List<DataPipe> result = new ArrayList<>();
         List<String> tmp = Files.readLines(file, charset);
         for (String line: tmp){
-            String[] lines = line.split(split);
-            result.add(lines[0]);
+            DataPipe dataPipe = DataPipe.readStringSplit(line, split);
+            result.add(dataPipe);
         }
         return result;
     }
 
-    public static List<String> readExcelSplit(File file, String excelType, Charset charset, String status) throws IOException {
-        List<String> result = new ArrayList<>();
+    public static List<DataPipe> readExcelSplit(File file, String excelType, Charset charset, String status) throws IOException {
+        List<DataPipe> result = new ArrayList<>();
         ExcelTypeEnum excelTypeEnum = ExcelTypeEnum.XLS;
         if(excelType.endsWith("xlsx")){
             excelTypeEnum = ExcelTypeEnum.XLSX;
         }
         List<Map<Integer, Object>> tmp = FastExcel.read(file).headRowNumber(0).excelType(excelTypeEnum).doReadAllSync();
         for (Map<Integer, Object> line: tmp){
-            if(line.size()>2){
-                if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
-                    result.add(line.get(0).toString());
-                }else{
-                    if(line.get(1).toString().equalsIgnoreCase(status)){
-                        result.add(line.get(0).toString());
-                    }
-                }
+            DataPipe dataPipe = new DataPipe.Builder()
+                    .udata(line.containsKey(0)?line.get(0).toString():"")
+                    .status(line.containsKey(1) && line.get(1) != null ?line.get(1).toString():"")
+                    .status_desc(line.containsKey(2) && line.get(2) != null ?line.get(2).toString():"")
+                    .udata_type(line.containsKey(3) && line.get(3) != null ?line.get(3).toString():"")
+                    .task_type(line.containsKey(4) && line.get(4) != null ?line.get(4).toString():"")
+                    .execute_time(line.containsKey(5) && line.get(5) != null ?line.get(5).toString():"")
+                    .ext(line.containsKey(6) && line.get(6) != null ?JsonUtil.toJavaMap(line.get(6).toString()):JsonUtil.createEmptyLinkMap())
+                    .build();
+
+            if(status.equalsIgnoreCase(Const.FILE_STATUS_ALL)){
+                result.add(dataPipe);
             }else{
-                result.add(line.get(0).toString());
+                if(dataPipe.getStatus().equalsIgnoreCase(status)){
+                    result.add(dataPipe);
+                }
             }
+        }
+        return result;
+    }
+
+    public static List<String> readTextFirstSplit(File file, Charset charset, String split) throws IOException {
+        List<String> result = new ArrayList<>();
+        List<String> tmp = Files.readLines(file, charset);
+        for (String line: tmp){
+            String[] lines = line.split(split);
+            result.add(lines[0]);
         }
         return result;
     }

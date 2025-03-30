@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 标签计算实现
@@ -143,6 +144,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
 
             String label_url=dbConfig.get("label.http.url");
             LabelInfo labelInfo = labelService.selectByCode(label_code, label_use_type);
+            Set<DataPipe> cur_rows = Sets.newHashSet();
             Set<String> rowsStr = Sets.newHashSet();
             //判断是否跳过类的策略,通过is_disenable=true,禁用的任务直接拉取上游任务的结果,并集(),交集(),排除()
             if(is_disenable.equalsIgnoreCase("true")){
@@ -171,6 +173,7 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                     }
 
                     rowsStr = offlineLabel(is_disenable, run_jsmind_data, labelInfo, strategyLogInfo);
+                    cur_rows = rowsStr.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(new HashMap<>()).build()).collect(Collectors.toSet());
                 }
             }
 
@@ -179,10 +182,10 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
                     strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
             if(label_use_type.equalsIgnoreCase("batch")) {
-                rs = calculateCommon(strategyLogInfo,"offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+                rs = calculateCommon(strategyLogInfo,"offline",cur_rows, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
             }else if(label_use_type.equalsIgnoreCase("single")){
                 //使用实时标签,需要确保当前标签是子层标签
-                rs = calculateCommon(strategyLogInfo, "online",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+                rs = calculateCommon(strategyLogInfo, "online",cur_rows, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
                 if(rs == null || rs.size()==0){
 

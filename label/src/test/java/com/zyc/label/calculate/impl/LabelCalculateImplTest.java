@@ -133,6 +133,7 @@ public class LabelCalculateImplTest {
     @Test
     public void testFileWrite() throws IOException {
         File f = new File("/home/data/w1");
+        System.out.println(f.getParent());
 //        BufferedWriter bw = FileUtil.createBufferedWriter(f, Charset.forName("utf-8"));
 //        FileUtil.writeString(bw, "测试1");
 //        FileUtil.writeString(bw, "测试1");

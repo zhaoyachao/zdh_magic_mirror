@@ -129,7 +129,7 @@ public class CodeBlockCalculateImpl extends BaseCalculate implements CodeBlockCa
 
             Map<String,Object> params = getJinJavaCommonParam();
 
-            mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);
+            //mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);
 
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用,不做操作

@@ -14,7 +14,7 @@
     </modules>
 
     <properties>
-        <revision>5.6.4-SNAPSHOT</revision>
+        <revision>5.6.5-SNAPSHOT</revision>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -192,7 +192,7 @@
                 <artifactId>fastexcel</artifactId>
                 <version>${fastexcel.version}</version>
             </dependency>
-
+            
         </dependencies>
     </dependencyManagement>
 

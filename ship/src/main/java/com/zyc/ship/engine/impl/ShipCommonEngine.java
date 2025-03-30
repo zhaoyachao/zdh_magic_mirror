@@ -40,7 +40,7 @@ public class ShipCommonEngine implements Engine {
     public List<StrategyGroupInstance> getStrategyGroups(StrategyService strategyService, String scene, String data_node){
         List<StrategyGroupInstance> tmp = strategyService.selectBySceneAndDataNode(scene,data_node);
         if(tmp != null){
-            return JsonUtil.toJavaListBean(JsonUtil.formatJsonString(tmp), StrategyGroupInstance.class);
+            return tmp;
         }
         return new ArrayList<>();
     }
@@ -301,6 +301,11 @@ public class ShipCommonEngine implements Engine {
             ShipExecutor shipExecutor = new RiskShipExecutorImpl(shipEvent);
             shipEvent.setShipExecutor(shipExecutor);
             shipEvent.setRunParam(new ConcurrentHashMap<>());
+
+            //增加基础运行参数
+
+            shipEvent.getRunParam().put("uid", shipCommonInputParam.getUid());
+            shipEvent.getRunParam().put("udata", shipCommonInputParam.getUid());
 
             shipEvent.setDagMap(strategy_group.getDagMap());
             EventTranslator<ShipEvent> eventEventTranslator = DisruptorManager.buildByShipEvent(shipEvent);

@@ -1,5 +1,6 @@
 package com.zyc.common.util;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -79,26 +80,10 @@ public class JsonUtil {
         OBJECT_MAPPER.registerModule(module);
         OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         OBJECT_MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        OBJECT_MAPPER.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-    }
-    /**
-     * json 数组字符串转java list
-     *
-     * @param jsonArray     json
-     * @param typeReference reference
-     * @param <T>           t
-     * @return list
-     */
-    public static <T> T toJavaListMap(String jsonArray, TypeReference<T> typeReference) {
-        T t = null;
-        try {
-            t = OBJECT_MAPPER.readValue(jsonArray, typeReference);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return t;
+        OBJECT_MAPPER.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false); // 忽略Map中的null值
+        OBJECT_MAPPER.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);//支持解析单引号
+        OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        OBJECT_MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
     public static <T> List<T> toJavaListBean(String jsonArray, Class<T> tClass) {
@@ -106,8 +91,9 @@ public class JsonUtil {
         if(StringUtils.isEmpty(jsonArray)){
             return t;
         }
+        JavaType type = OBJECT_MAPPER.getTypeFactory().constructCollectionType(List.class, tClass);
         try {
-            t = OBJECT_MAPPER.readValue(jsonArray, new TypeReference<List<T>>() {});
+            t = OBJECT_MAPPER.readValue(jsonArray, type);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         } catch (IOException e) {

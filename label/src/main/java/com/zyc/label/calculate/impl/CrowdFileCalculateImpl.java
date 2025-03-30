@@ -130,7 +130,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
             //以文件id作为文件名
             String rule_id=run_jsmind_data.get("rule_id").toString();
 
-            Set<String> rowsStr=Sets.newHashSet();
+            Set<DataPipe> rowsStr=Sets.newHashSet();
             Set<DataPipe> rs=Sets.newHashSet() ;
             if(is_disenable.equalsIgnoreCase("true")){
                 //当前策略跳过状态,则不计算当前策略信息,且跳过校验
@@ -141,7 +141,10 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
 
                 //下载sftp文件存储本地
                 String file_sftp_path = getFilePath(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
-                        strategyLogInfo.getStrategy_group_instance_id(), "sftp_"+strategyLogInfo.getStrategy_instance_id());
+                        strategyLogInfo.getStrategy_group_instance_id(), "sftp_"+strategyLogInfo.getStrategy_instance_id()+"_"+crowdFileInfo.getFile_name());
+
+                File file = new File(file_sftp_path);
+                Files.createParentDirs(file);
 
                 //获取人群文件,sftp
                 String sftp_enable = dbConfig.getOrDefault("sftp.enable", "");
@@ -158,7 +161,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                     Files.copy(new File(local_file), new File(file_sftp_path));
                 }
 
-                List<String> rows = new ArrayList<>();
+                List<DataPipe> rows = new ArrayList<>();
                 //读取本地文件
                 if(crowdFileInfo.getFile_name().endsWith("xlsx")){
                     //excel 文件
@@ -170,15 +173,12 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
                 }
                 rowsStr = Sets.newHashSet(rows);
 
-
             }
 
             String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                     strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
             rs = calculateCommon(strategyLogInfo,"offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
-
-
 
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);

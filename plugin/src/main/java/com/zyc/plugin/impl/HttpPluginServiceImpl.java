@@ -11,6 +11,8 @@ import com.zyc.common.util.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,12 +21,12 @@ import java.util.Properties;
 
 
 public class HttpPluginServiceImpl implements PluginService {
-
+    private static Logger logger= LoggerFactory.getLogger(HttpPluginServiceImpl.class);
     @Override
     public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, DataPipe rs, Map<String,Object> params) {
         HttpPluginResult httpPluginResult = new HttpPluginResult();
         try{
-            System.out.println("用户: "+rs.getUdata()+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JsonUtil.formatJsonString(pluginParam));
+            //logger.info("用户: "+rs.getUdata()+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JsonUtil.formatJsonString(pluginParam));
             Properties props = getParams(pluginParam);
             String method = props.getProperty("method","post");
             String request_params = props.getProperty("request_params", "");

@@ -40,8 +40,8 @@ public class FunctionExecutor extends BaseExecutor{
 
             Jinjava jinjava=new Jinjava();
             Map<String, Object> objectMap = new HashMap<>();
-            //objectMap.putAll(params);
-            objectMap.put("uid", uid);//获取当前结果集信息
+            objectMap.putAll(shipEvent.getRunParam());
+
             List<String> param_values = new ArrayList<>();
             for(Map map: rule_params){
                 String value = map.get("param_value").toString();
@@ -52,8 +52,6 @@ public class FunctionExecutor extends BaseExecutor{
                 String new_param_value = jinjava.render(param_value, objectMap);//替换可变参数
                 objectMap.put(param_code, new_param_value);
             }
-
-            mergeMapByVarPool(shipEvent.getLogGroupId()+"", objectMap);
 
             Object res = functionExcute(functionInfo, param_values.toArray(new String[param_values.size()]));
 
@@ -71,6 +69,7 @@ public class FunctionExecutor extends BaseExecutor{
             //如果开启对比: 开启对比：关闭, 取值表达式不为空且不为ret, 此时需要通过解析表达式获取结果
             if(return_diff_enable.equalsIgnoreCase("false") && !StringUtils.isEmpty(return_value_express) && !return_value_express.equalsIgnoreCase("ret")){
                 objectMap.put("uid", uid);//获取当前结果集信息
+                objectMap.put("udata", uid);//获取当前结果集信息
                 Object ret_express_value = execReturnDiffExpress(res, return_value_express, return_operate, return_operate_value, return_diff_enable, objectMap);
                 if(ret_express_value == null){
                     tmp = ShipResultStatusEnum.ERROR.code;

@@ -27,10 +27,8 @@ public class RiskExecutor extends BaseExecutor{
             //此处使用变量池结果
             Jinjava jinjava=new Jinjava();
             Map<String, Object> objectMap = new HashMap<>();
-            String uid = ((ShipCommonInputParam)shipEvent.getInputParam()).getUid();
-            objectMap.put("uid", uid);//获取当前结果集信息
+            objectMap.putAll(shipEvent.getRunParam());
 
-            mergeMapByVarPool(shipEvent.getLogGroupId()+"", objectMap);
             event_code_result = jinjava.render(event_code_result, objectMap);//替换可变参数
 
             shipResult.setRiskStrategyEventResult(new RiskStrategyEventResult(event_code, event_code_result));

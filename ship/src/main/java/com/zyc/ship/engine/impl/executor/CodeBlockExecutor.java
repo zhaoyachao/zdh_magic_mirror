@@ -26,10 +26,9 @@ public class CodeBlockExecutor extends BaseExecutor{
 
             if(code_type.equalsIgnoreCase("groovy")){
                 Map<String,Object> params = new HashMap<>();
+                params.putAll(shipEvent.getRunParam());
                 params.put("strategy_instance_id", strategyInstance.getId());
                 params.put("strategy_instance", strategyInstance);
-                mergeMapByVarPool(shipEvent.getLogGroupId()+"", params);
-
 
                 boolean result =(boolean) GroovyFactory.execExpress(command, params);
                 tmp = String.valueOf(result);

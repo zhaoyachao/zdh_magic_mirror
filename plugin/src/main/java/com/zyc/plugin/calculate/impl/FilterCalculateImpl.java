@@ -168,7 +168,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
         if(filterInfo.getEngine_type().equalsIgnoreCase("file")){
             String filter_path=base_path+"/filter/"+filterInfo.getFilter_code();
             String split = "\t";
-            List<String> list = FileUtil.readTextSplit(new File(filter_path), Charset.forName("utf-8"), split);
+            List<String> list = FileUtil.readTextFirstSplit(new File(filter_path), Charset.forName("utf-8"), split);
             Set<String> filterDataFrame = Sets.newHashSet();
             filterDataFrame.addAll(list);
             return filterDataFrame;

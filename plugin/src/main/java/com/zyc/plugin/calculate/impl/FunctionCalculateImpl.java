@@ -140,7 +140,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
             Map<String,Object> params = getJinJavaCommonParam();
             params.put("rule_params", rule_params);
 
-            mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);
+            //mergeMapByVarPool(strategyLogInfo.getStrategy_group_instance_id(), params);
 
 
             Set<DataPipe> rs_error = Sets.newHashSet();
@@ -161,6 +161,7 @@ public class FunctionCalculateImpl extends BaseCalculate implements FunctionCalc
                         List<String> param_codes = new ArrayList<>();
                         objectMap.putAll(params);
                         objectMap.put("uid", r.getUdata());//获取当前结果集信息
+                        objectMap.put("udata", r.getUdata());//获取当前结果集信息
 
                         for(Map map: rule_params){
                             String param_code = map.get("param_code").toString();

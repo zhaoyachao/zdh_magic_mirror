@@ -5,7 +5,6 @@ import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.common.entity.DataPipe;
 import com.zyc.common.entity.StrategyLogInfo;
-import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.Const;
 import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
@@ -17,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
  * 变量池实现

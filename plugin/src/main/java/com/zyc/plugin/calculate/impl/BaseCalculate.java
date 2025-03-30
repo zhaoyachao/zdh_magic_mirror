@@ -685,39 +685,6 @@ public abstract class BaseCalculate {
 
     }
 
-
-    /**
-     * 获取变量池信息,并合并到params集合中
-     * @param strategy_group_instance_id
-     * @param params
-     */
-    public void mergeMapByVarPool(String strategy_group_instance_id, Map<String, Object> params){
-        Map<Object, Object> varPoolMap = getVarPoolBy(strategy_group_instance_id);
-
-        if(varPoolMap != null && varPoolMap.size() > 0){
-            for(Map.Entry entry: varPoolMap.entrySet()){
-                String key = entry.getKey().toString();
-                Object value = entry.getKey();
-                params.put(key, value);
-            }
-        }
-    }
-
-
-    public Map<Object, Object> getVarPoolBy(String strategy_group_instance_id){
-        String key = "varpool:gid"+strategy_group_instance_id;
-        if(JedisPoolUtil.redisClient().isExists(key)){
-            return JedisPoolUtil.redisClient().hGetAll(key);
-        }
-        return new HashMap<>();
-    }
-
-    public void addStrategy2VarPool(String strategy_group_instance_id, String varpool_domain, String varpool_code, Object value){
-        String key = "varpool:gid"+strategy_group_instance_id;
-        String secondKey = varpool_domain+":"+varpool_code;
-        JedisPoolUtil.redisClient().hSet(key, secondKey, value);
-    }
-
     public static Map<String, Object> getJinJavaParam(Timestamp cur_time) {
         String msg = "目前支持日期参数以下模式: {{zdh_date}} => yyyy-MM-dd ,{{zdh_date_nodash}}=> yyyyMMdd " +
                 ",{{zdh_date_time}}=> yyyy-MM-dd HH:mm:ss,{{zdh_year}}=> yyyy年,{{zdh_month}}=> 月,{{zdh_day}}=> 日," +

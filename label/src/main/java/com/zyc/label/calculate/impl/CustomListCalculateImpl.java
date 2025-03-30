@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 用户名单实现
@@ -130,6 +131,7 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
 
+            Set<DataPipe> cur_rows = Sets.newHashSet();
             Set<String> rowsStr = Sets.newHashSet();
             //判断是否跳过类的策略,通过is_disenable=true,禁用的任务直接拉取上游任务的结果,并集(),交集(),排除()
             if(is_disenable.equalsIgnoreCase("true")){
@@ -147,13 +149,16 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
                 if(name_list!=null && name_list.length>0){
                     rowsStr.addAll(Lists.newArrayList(name_list));
                 }
+
+                cur_rows = rowsStr.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(new HashMap<>()).build()).collect(Collectors.toSet());
+
             }
 
             Set<DataPipe> rs=Sets.newHashSet();
             String file_dir= getFileDir(strategyLogInfo.getBase_path(), strategyLogInfo.getStrategy_group_id(),
                     strategyLogInfo.getStrategy_group_instance_id());
             //解析上游任务并和当前节点数据做运算
-            rs = calculateCommon(strategyLogInfo, "offline",rowsStr, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
+            rs = calculateCommon(strategyLogInfo, "offline",cur_rows, is_disenable, file_dir, this.param, run_jsmind_data, strategyInstanceService);
 
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);

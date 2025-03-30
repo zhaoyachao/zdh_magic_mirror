@@ -39,6 +39,7 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             String data_node = ((ShipCommonInputParam)shipEvent.getInputParam()).getData_node();
             String param = ((ShipCommonInputParam)shipEvent.getInputParam()).getParam();
             Map<String, Object> params = JsonUtil.toJavaMap(param);
+            //jsonObjectParam 为自定义变量
             Map<String, Object> jsonObjectParam = new LinkedHashMap<>();
 
             if(!StringUtils.isEmpty(param) && params.containsKey("user_param")){
@@ -80,7 +81,7 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 shipResult1 = idMappingExecutor.execute(run_jsmind_data, labelVaues, shipEvent, uid);
             }else if(instance_type.equalsIgnoreCase(InstanceType.PLUGIN.getCode())){
                 PluginExecutor pluginExecutor = new PluginExecutor();
-                shipResult1 = pluginExecutor.execute(run_jsmind_data, uid, strategyInstance, shipEvent);
+                shipResult1 = pluginExecutor.execute(run_jsmind_data, uid, strategyInstance, shipEvent, jsonObjectParam);
             }else if(instance_type.equalsIgnoreCase(InstanceType.MANUAL_CONFIRM.getCode())){
                 //不支持
                 tmp = ShipResultStatusEnum.ERROR.code;

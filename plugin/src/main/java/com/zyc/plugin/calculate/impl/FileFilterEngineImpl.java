@@ -31,7 +31,7 @@ public class FileFilterEngineImpl implements FilterEngine {
     public List<String> get() throws Exception {
         File f=new File(file_path);
         if(f.exists() && f.isFile()){
-            return FileUtil.readTextSplit(f, Charset.forName("utf-8"), ",");
+            return FileUtil.readTextFirstSplit(f, Charset.forName("utf-8"), ",");
         }
         return new ArrayList<>();
     }
@@ -44,7 +44,7 @@ public class FileFilterEngineImpl implements FilterEngine {
         Set<DataPipe> id_map_rs_error = Sets.newHashSet();
         FilterResult idMappingResult = new FilterResult();
         if(f.exists() && f.isFile()){
-            List<String> id_mappings = FileUtil.readTextSplit(f, Charset.forName("utf-8"), ",");
+            List<String> id_mappings = FileUtil.readTextFirstSplit(f, Charset.forName("utf-8"), ",");
             for (String line:id_mappings){
                 String[] idm = line.split(",",2);
                 id_map.put(idm[0], idm[1]);

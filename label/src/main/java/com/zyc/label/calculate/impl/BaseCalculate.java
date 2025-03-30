@@ -307,7 +307,7 @@ public class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<DataPipe> calculateCommon(StrategyLogInfo strategyLogInfo,String label_use_type, Set<String> currentRows, String is_disenable, String file_dir, Map param, Map run_jsmind_data, StrategyInstanceServiceImpl strategyInstanceService) throws Exception {
+    public Set<DataPipe> calculateCommon(StrategyLogInfo strategyLogInfo,String label_use_type, Set<DataPipe> currentRows, String is_disenable, String file_dir, Map param, Map run_jsmind_data, StrategyInstanceServiceImpl strategyInstanceService) throws Exception {
         String pre_tasks = param.get("pre_tasks").toString();
         List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(pre_tasks.split(","));
         String operate=run_jsmind_data.get("operate").toString();
@@ -336,23 +336,35 @@ public class BaseCalculate {
      * @return
      * @throws IOException
      */
-    public Set<DataPipe> calculate(StrategyLogInfo strategyLogInfo, String file_dir, List<String> pre_tasks, String operate, Set<String> cur_rows, List<StrategyInstance> strategyInstances,
+    public Set<DataPipe> calculate(StrategyLogInfo strategyLogInfo, String file_dir, List<String> pre_tasks, String operate, Set<DataPipe> cur_rows, List<StrategyInstance> strategyInstances,
                                  String is_disenable, String status) throws Exception {
 
         //无上游,则直接返回当前结果集
         if(pre_tasks==null || pre_tasks.size()== 0){
-            return cur_rows.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(new HashMap<>()).build()).collect(Collectors.toSet());
+            return cur_rows.parallelStream().map(s->{
+                s.setTask_type(strategyLogInfo.getInstance_type());
+                s.setStatus(Const.FILE_STATUS_SUCCESS);
+                return s;
+            }).collect(Collectors.toSet());
+            //return cur_rows.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(new HashMap<>()).build()).collect(Collectors.toSet());
         }
 
         //指定不使用上游数据,返回当前结果集
         if(operate.equalsIgnoreCase("not_use")){
-            return cur_rows.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(new HashMap<>()).build()).collect(Collectors.toSet());
+            return cur_rows.parallelStream().map(s->{
+                s.setTask_type(strategyLogInfo.getInstance_type());
+                s.setStatus(Const.FILE_STATUS_SUCCESS);
+                return s;
+            }).collect(Collectors.toSet());
+            //return cur_rows.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(new HashMap<>()).build()).collect(Collectors.toSet());
         }
 
         Map<String,StrategyInstance> map=new HashMap<>();
         for (StrategyInstance strategyInstance: strategyInstances){
             map.put(strategyInstance.getId(), strategyInstance);
         }
+
+        Set<String> cur_rows_set = Sets.newHashSet(cur_rows.parallelStream().map(s->s.getUdata()).collect(Collectors.toSet()));
 
         // 临时结果存储透传参数
         Map<String, Map<String, Object>> ext = new ConcurrentHashMap<>();
@@ -369,7 +381,7 @@ public class BaseCalculate {
                 result = Sets.intersection(result, set);
             }
             if(is_disenable.equalsIgnoreCase("false")){
-                result = Sets.difference(result, cur_rows);
+                result = Sets.difference(result, cur_rows_set);
             }
         }else if(operate.equalsIgnoreCase("and")){
             //交集
@@ -389,7 +401,7 @@ public class BaseCalculate {
                 result = Sets.newHashSet();
             }
             if(is_disenable.equalsIgnoreCase("false")){
-                result = Sets.intersection(result, cur_rows);
+                result = Sets.intersection(result, cur_rows_set);
             }
         }else if(operate.equalsIgnoreCase("or")){
             //取并集去重
@@ -409,11 +421,13 @@ public class BaseCalculate {
                 result = Sets.newHashSet();
             }
             if(is_disenable.equalsIgnoreCase("false")){
-                result = Sets.intersection(result, cur_rows);
+                result = Sets.intersection(result, cur_rows_set);
             }
         }else if(operate.equalsIgnoreCase("not_use")){
             //见最上方操作
         }
+
+        loadExt(Lists.newArrayList(cur_rows), ext);
 
         return result.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(ext.getOrDefault(s, new HashMap<>())).build()).collect(Collectors.toSet());
     }

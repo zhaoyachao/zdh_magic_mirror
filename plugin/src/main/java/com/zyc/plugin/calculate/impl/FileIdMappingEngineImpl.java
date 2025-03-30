@@ -30,7 +30,7 @@ public class FileIdMappingEngineImpl implements IdMappingEngine {
     public List<String> get() throws Exception {
         File f=new File(file_path);
         if(f.exists() && f.isFile()){
-            return FileUtil.readTextSplit(f, Charset.forName("utf-8"), ",");
+            return FileUtil.readTextFirstSplit(f, Charset.forName("utf-8"), ",");
         }
         return new ArrayList<>();
     }
@@ -48,7 +48,7 @@ public class FileIdMappingEngineImpl implements IdMappingEngine {
         Set<DataPipe> id_map_rs_error = Sets.newHashSet();
         IdMappingResult idMappingResult = new IdMappingResult();
         if(f.exists() && f.isFile()){
-            List<String> id_mappings = FileUtil.readTextSplit(f, Charset.forName("utf-8"), ",");
+            List<String> id_mappings = FileUtil.readTextFirstSplit(f, Charset.forName("utf-8"), ",");
             for (String line:id_mappings){
                 String[] idm = line.split(",",2);
                 id_map.put(idm[0], idm[1]);

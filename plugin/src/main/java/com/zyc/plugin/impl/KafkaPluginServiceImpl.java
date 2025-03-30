@@ -10,6 +10,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -18,12 +20,14 @@ import java.util.Properties;
 
 public class KafkaPluginServiceImpl implements PluginService {
 
+    private static Logger logger= LoggerFactory.getLogger(KafkaPluginServiceImpl.class);
+
     @Override
     public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, DataPipe rs, Map<String,Object> params) {
         KafkaPluginResult kafkaPluginResult = new KafkaPluginResult();
         KafkaProducer<String, String> producer=null;
         try{
-            System.out.println("用户: "+rs.getUdata()+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JsonUtil.formatJsonString(pluginParam));
+            //logger.info("用户: "+rs.getUdata()+" ,插件: "+pluginInfo.getPlugin_code()+",  参数: "+ JsonUtil.formatJsonString(pluginParam));
             Properties props = getParams(pluginParam);
 
             if (!props.containsKey("bootstrap.servers")) {

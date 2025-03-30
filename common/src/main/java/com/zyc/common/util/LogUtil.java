@@ -92,53 +92,40 @@ public class LogUtil {
 
 
     public static void error(String job_id,String task_logs_id, String msg){
-        StackTraceElement caller = getCaller();
         log().log(LogUtil.class.getName(), Level.ERROR, msg, null);
-        ZdhLogs zdhLogs=new ZdhLogs();
-        zdhLogs.setJob_id(job_id);
-        zdhLogs.setLevel("ERROR");
-        zdhLogs.setTask_logs_id(task_logs_id);
-        zdhLogs.setMsg(msg);
-        zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
+        ZdhLogs zdhLogs=getZdhLogs("ERROR", job_id, task_logs_id, msg);
         send(zdhLogs);
     }
 
     public static void info(String job_id,String task_logs_id, String msg){
-        StackTraceElement caller = getCaller();
         log().log(LogUtil.class.getName(), Level.INFO, msg, null);
-        ZdhLogs zdhLogs=new ZdhLogs();
-        zdhLogs.setLevel("INFO");
-        zdhLogs.setJob_id(job_id);
-        zdhLogs.setTask_logs_id(task_logs_id);
-        zdhLogs.setMsg(msg);
-        zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
+        ZdhLogs zdhLogs=getZdhLogs("INFO", job_id, task_logs_id, msg);
         send(zdhLogs);
     }
 
     public static void warn(String job_id,String task_logs_id, String msg){
-        StackTraceElement caller = getCaller();
         log().log(LogUtil.class.getName(), Level.INFO, msg, null);
-        ZdhLogs zdhLogs=new ZdhLogs();
-        zdhLogs.setLevel("WARN");
-        zdhLogs.setJob_id(job_id);
-        zdhLogs.setTask_logs_id(task_logs_id);
-        zdhLogs.setMsg(msg);
-        zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
+        ZdhLogs zdhLogs=getZdhLogs("WARN", job_id, task_logs_id, msg);
         send(zdhLogs);
     }
 
     public static void debug(String job_id,String task_logs_id, String msg){
-        StackTraceElement caller = getCaller();
         log().log(LogUtil.class.getName(), Level.DEBUG, msg, null);
-        ZdhLogs zdhLogs=new ZdhLogs();
-        zdhLogs.setLevel("DEBUG");
-        zdhLogs.setTask_logs_id(task_logs_id);
-        zdhLogs.setMsg(msg);
-        zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
+        ZdhLogs zdhLogs=getZdhLogs("DEBUG", job_id, task_logs_id, msg);
         send(zdhLogs);
     }
 
     public static void console(String job_id,String task_logs_id, String msg){
         log().log(LogUtil.class.getName(), Level.INFO, "策略id: "+job_id+", 策略实例id: "+task_logs_id+", "+msg, null);
+    }
+
+    public static ZdhLogs getZdhLogs(String level, String job_id,String task_logs_id, String msg){
+        ZdhLogs zdhLogs=new ZdhLogs();
+        zdhLogs.setLevel(level);
+        zdhLogs.setJob_id(job_id);
+        zdhLogs.setTask_logs_id(task_logs_id);
+        zdhLogs.setMsg(msg);
+        zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
+        return zdhLogs;
     }
 }
