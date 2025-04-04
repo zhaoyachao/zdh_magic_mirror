@@ -1,4 +1,4 @@
-package com.zyc.variable.netty;
+package com.zyc.common.http;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInboundHandlerAdapter;

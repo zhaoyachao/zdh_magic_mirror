@@ -14,7 +14,7 @@
     </modules>
 
     <properties>
-        <revision>5.6.5-SNAPSHOT</revision>
+        <revision>5.6.6-SNAPSHOT</revision>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -42,6 +42,7 @@
         <rocksdb.version>7.10.2</rocksdb.version>
         <minio.version>8.5.10</minio.version>
         <fastexcel.version>1.0.0</fastexcel.version>
+        <netty-all.version>4.1.75.Final</netty-all.version>
     </properties>
 
     <name>zdh magic mirror Tapestry 5 Application</name>
@@ -191,6 +192,12 @@
                 <groupId>cn.idev.excel</groupId>
                 <artifactId>fastexcel</artifactId>
                 <version>${fastexcel.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${netty-all.version}</version>
             </dependency>
             
         </dependencies>

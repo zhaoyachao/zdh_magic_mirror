@@ -1,8 +1,5 @@
 package com.zyc.common.groovy;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * 5.3.2及之前版本
  */

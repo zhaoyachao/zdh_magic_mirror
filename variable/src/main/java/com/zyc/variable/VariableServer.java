@@ -1,7 +1,8 @@
 package com.zyc.variable;
 
+import com.zyc.common.http.HttpServer;
 import com.zyc.common.redis.JedisPoolUtil;
-import com.zyc.variable.netty.NettyServer;
+import com.zyc.variable.action.*;
 import com.zyc.variable.service.impl.CacheLabelServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,8 +58,21 @@ public class VariableServer {
             schedule.setName("variable_schedule");
             threadPoolExecutor.execute(schedule);
 
-            NettyServer nettyServer=new NettyServer();
-            nettyServer.start(properties);
+
+            HttpServer httpServer = new HttpServer();
+            FilterAction filterAction = new FilterAction();
+            FilterHitAction filterHitAction = new FilterHitAction();
+            VariableAction variableAction = new VariableAction();
+            VariableAllAction variableAllAction = new VariableAllAction();
+            VariableUpdateAction variableUpdateAction = new VariableUpdateAction();
+
+            httpServer.registerAction(filterAction.getUri(), filterAction);
+            httpServer.registerAction(filterHitAction.getUri(), filterHitAction);
+            httpServer.registerAction(variableAction.getUri(), variableAction);
+            httpServer.registerAction(variableAllAction.getUri(), variableAllAction);
+            httpServer.registerAction(variableUpdateAction.getUri(), variableUpdateAction);
+
+            httpServer.start(properties);
 
         }catch (Exception e){
             logger.error("variable server error: ", e);

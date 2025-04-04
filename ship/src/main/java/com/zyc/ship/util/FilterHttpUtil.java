@@ -1,6 +1,7 @@
 package com.zyc.ship.util;
 
 import cn.hutool.http.HttpUtil;
+import com.zyc.common.http.HttpAction;
 import com.zyc.common.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,18 +16,22 @@ public class FilterHttpUtil {
 
     private static String url;
 
+    private static String signKey;
+
     public static void init(Properties properties){
         FilterHttpUtil.url = properties.getProperty("filter.http.url");
+        FilterHttpUtil.signKey = properties.getProperty("variable.service.key");
     }
 
-    public static Map<String,Object> post(String body){
+    public static Map<String,Object> post(Map<String, Object> body){
         try{
-            Map<String,Object> result = JsonUtil.toJavaBean(HttpUtil.post(url, body),Map.class);
+            String sign = HttpAction.generatSign(body, signKey);
+            body.put("sign", sign);
+            Map<String,Object> result = JsonUtil.toJavaBean(HttpUtil.post(url, JsonUtil.formatJsonString(body)),Map.class);
             return result;
         }catch (Exception e){
             logger.error("ship server filterpost error: ", e);
         }
         return new HashMap<>();
     }
-
 }

@@ -14,10 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class LabelExecutor extends BaseExecutor{
 
@@ -25,21 +22,25 @@ public class LabelExecutor extends BaseExecutor{
     /**
      *
      * @param run_jsmind_data
-     * @param labelVaues
+     * @param labelValues
      * @param uid
      * @param user_param 用户自定义参数,从接口中传进来的参数
      * @return
      */
-    public ShipResult execute(Map<String, Object> run_jsmind_data, Map<String,Object> labelVaues, String uid, Map<String, Object> user_param){
+    public ShipResult execute(Map<String, Object> run_jsmind_data, Map<String,Object> labelValues, String uid, Map<String, Object> user_param){
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
             List<LabelValueConfig> labelValueConfigs = labelParam2LableValueConfig(run_jsmind_data);
             for (LabelValueConfig labelValueConfig:labelValueConfigs){
                 //此处遍历实现,默认仅支持多个参数and操作
-                if(!diffLable(labelValueConfig, labelVaues, uid, user_param)) {
+                if(!diffLable(labelValueConfig, labelValues, uid, user_param)) {
                     tmp = ShipResultStatusEnum.ERROR.code;
-                    shipResult.setMessage("标签不满足, 标签: "+labelValueConfig.getLabel_code());
+                    if(labelValues.containsKey(labelValueConfig.getLabel_code())){
+                        shipResult.setMessage("标签不满足, 标签: "+labelValueConfig.getLabel_code()+", 标签信息: "+JsonUtil.formatJsonString(labelValues.get(labelValueConfig.getLabel_code())));
+                    }else{
+                        shipResult.setMessage("标签不满足, 标签: "+labelValueConfig.getLabel_code()+", 标签信息: 用户无此标签");
+                    }
                     break;
                 }
             }
@@ -106,6 +107,9 @@ public class LabelExecutor extends BaseExecutor{
      */
     public boolean diffValue(Object r,LabelValueConfig labelValueConfig, Map<String, Object> user_param){
         try{
+            if(Objects.isNull(r)){
+                return false;
+            }
             String code = labelValueConfig.getCode();//此处使用code获取对应的结果,原因可兼容一个标签有多个参数的场景
             String operate = labelValueConfig.getOperate();
             String value_type = labelValueConfig.getValue_type();
@@ -418,4 +422,24 @@ public class LabelExecutor extends BaseExecutor{
         }
     }
 
+    public static class DiffValue{
+        private boolean diff;
+        private String message;
+
+        public boolean isDiff() {
+            return diff;
+        }
+
+        public void setDiff(boolean diff) {
+            this.diff = diff;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+    }
 }

@@ -39,6 +39,7 @@
     
     v5.6.4 删除fastjson
     
+    v5.6.6 删除netty使用common包中的httpserver
+    
     v1.0 增加暂停能力【未开发】
-    v1.0 增加任务参数透传【未开发】
         

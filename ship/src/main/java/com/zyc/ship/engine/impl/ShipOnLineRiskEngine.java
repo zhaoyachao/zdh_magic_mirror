@@ -2,6 +2,7 @@ package com.zyc.ship.engine.impl;
 
 import cn.hutool.core.date.DateUtil;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
@@ -16,9 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +26,9 @@ import java.util.stream.Collectors;
 public class ShipOnLineRiskEngine extends ShipCommonEngine{
 
     private Logger logger= LoggerFactory.getLogger(this.getClass());
+
+    public static ExecutorService executorService= new ThreadPoolExecutor(10, 1024, 500,
+            TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactoryBuilder().setNameFormat("ship_online_risk_").build(), new ThreadPoolExecutor.AbortPolicy());
 
     private InputParam inputParam;
     private StrategyService strategyService;
@@ -83,7 +85,7 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
 
             Map<String, Object> labels = new HashMap<>();
             Map<String, Object> filters = new HashMap<>();
-            loadBaseData(null, labels, filters, shipCommonInputParam);
+            loadBaseData(executorService, labels, filters, shipCommonInputParam);
 
             logger.info("request_id: {}, label_values: {}", request_id_str, JsonUtil.formatJsonString(labels));
 

@@ -80,4 +80,15 @@ public class VariableServiceImpl implements VariableService {
         }
         return null;
     }
+
+    @Override
+    public Object update(String product_code, String uid, String variable, String value) {
+        try{
+            String key = product_code+"_tag_"+uid;
+            JedisPoolUtil.redisClient().hSet(key, variable, value);
+        }catch (Exception e){
+
+        }
+        return null;
+    }
 }

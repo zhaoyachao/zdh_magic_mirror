@@ -1,7 +1,6 @@
 package com.zyc.common.util;
 
 import cn.idev.excel.FastExcel;
-import cn.idev.excel.read.metadata.ReadSheet;
 import cn.idev.excel.support.ExcelTypeEnum;
 import com.google.common.io.FileWriteMode;
 import com.google.common.io.Files;
@@ -11,7 +10,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 

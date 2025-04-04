@@ -11,4 +11,6 @@ public interface VariableService {
 
     public Map<String,String> getMul(String product_code, List<String> variables, String uid);
 
+    public Object update(String product_code, String uid, String variable, String value);
+
 }

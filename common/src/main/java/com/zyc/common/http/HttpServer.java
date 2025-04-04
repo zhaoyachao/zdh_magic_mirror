@@ -1,4 +1,4 @@
-package com.zyc.ship.netty;
+package com.zyc.common.http;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -13,28 +13,55 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * http server
+ *
+ * example:
+ *
+ * HttpServer httpServer = new HttpServer();
+ * httpServer.registerAction("/api/v1/xxx", httpAction);
+ *
+ * httpServer.start(properties)
+ */
+public class HttpServer {
+    private Logger logger= LoggerFactory.getLogger(HttpServer.class);
 
-public class NettyServer {
-    Logger logger= LoggerFactory.getLogger(NettyServer.class);
+    public static String signKey;
+    public static Properties properties;
+    public static Map<String, HttpAction> actions = new ConcurrentHashMap<>();
 
-    public void start(Properties properties) throws IOException, InterruptedException {
+    public void registerAction(String uri, HttpAction httpAction){
+        logger.info("HttpServer注册路由,uri: {},action: {}", uri, httpAction.getClass().getName());
+        actions.put(uri, httpAction);
+    }
+
+    public void start(Properties properties) throws Exception {
+        HttpServer.properties = properties;
         String host=properties.getProperty("host");
         String port=properties.getProperty("port");
-        int bossGroupNum=Integer.valueOf(properties.getProperty("boss.group.num", "1"));
-        int workerGroupNum=Integer.valueOf(properties.getProperty("worker.group.num", "10"));
-        this.bind(host,port, bossGroupNum, workerGroupNum);
+        if(!properties.containsKey("service.key")){
+            throw new Exception("HttpServer缺失service.key参数");
+        }
+        HttpServer.signKey = properties.getProperty("service.key");
+
+        int bossSize = Integer.valueOf(properties.getOrDefault("boss_size", 1).toString());
+        int workerSize = Integer.valueOf(properties.getOrDefault("worker_size", 10).toString());
+        int contentLength = Integer.valueOf(properties.getOrDefault("content_length", 1024 * 1024).toString());
+
+        bind(host,port, contentLength, bossSize, workerSize);
     }
 
 
-    public void bind(String host, String port, int bossGroupNum, int workerGroupNum) throws InterruptedException {
+    public void bind(String host, String port, int contentLength, int bossSize, int workerSize) throws InterruptedException {
         //配置服务端线程池组
         //用于服务器接收客户端连接
-        NioEventLoopGroup bossGroup = new NioEventLoopGroup(bossGroupNum);
+        NioEventLoopGroup bossGroup = new NioEventLoopGroup(bossSize);
         //用户进行SocketChannel的网络读写
-        NioEventLoopGroup workerGroup = new NioEventLoopGroup(workerGroupNum);
+        NioEventLoopGroup workerGroup = new NioEventLoopGroup(workerSize);
 
         try {
             //是Netty用户启动NIO服务端的辅助启动类，降低服务端的开发复杂度
@@ -49,14 +76,14 @@ public class NettyServer {
                         protected void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new HttpServerCodec());
                             //HttpObjectAggregator解码器 将多个消息对象转换为full
-                            ch.pipeline().addLast("aggregator", new HttpObjectAggregator(512*1024));
+                            ch.pipeline().addLast("aggregator", new HttpObjectAggregator(contentLength));
                             //压缩
                             ch.pipeline().addLast("deflater", new HttpContentCompressor());
                             ch.pipeline().addLast(new HttpServerHandler());
                         }
                     }).option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
-            logger.info("启动完成");
+            logger.info("HttpServer启动完成,host: {},port: {}", host, port);
             //绑定端口，调用sync方法等待绑定操作完成
             ChannelFuture channelFuture = bootstrap.bind(Integer.parseInt(port)).sync();
             //等待服务关闭

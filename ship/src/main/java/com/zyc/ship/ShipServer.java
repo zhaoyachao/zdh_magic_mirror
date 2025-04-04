@@ -1,5 +1,6 @@
 package com.zyc.ship;
 
+import com.zyc.common.http.HttpServer;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.JsonUtil;
 import com.zyc.common.util.LogUtil;
@@ -7,12 +8,12 @@ import com.zyc.common.util.ServerManagerUtil;
 import com.zyc.common.util.SnowflakeIdWorker;
 import com.zyc.rqueue.RQueueClient;
 import com.zyc.rqueue.RQueueManager;
+import com.zyc.ship.action.ShipAction;
 import com.zyc.ship.common.Const;
 import com.zyc.ship.conf.ShipConf;
 import com.zyc.ship.disruptor.DisruptorManager;
 import com.zyc.ship.disruptor.ShipMasterEventWorkHandler;
 import com.zyc.ship.disruptor.ShipWorkerEventWorkHandler;
-import com.zyc.ship.netty.NettyServer;
 import com.zyc.ship.service.impl.CacheFunctionServiceImpl;
 import com.zyc.ship.service.impl.CacheStrategyServiceImpl;
 import com.zyc.ship.util.FilterHttpUtil;
@@ -106,11 +107,17 @@ public class ShipServer {
             DisruptorManager.getDisruptor("ship_master", masterHandlerNum, new ShipMasterEventWorkHandler(), masterRingBufferSize);
             DisruptorManager.getDisruptor("ship_worker", workerHandlerNum, new ShipWorkerEventWorkHandler(), workerRingBufferSize);
 
-            NettyServer nettyServer=new NettyServer();
-            nettyServer.start(properties);
+
+            HttpServer httpServer = new HttpServer();
+            ShipAction shipAction = new ShipAction();
+
+            httpServer.registerAction(shipAction.getUri(), shipAction);
+
+            httpServer.start(properties);
 
         }catch (Exception e){
             logger.error("ship server error: ", e);
+            System.exit(-1);
         }
 
     }

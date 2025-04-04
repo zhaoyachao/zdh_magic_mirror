@@ -21,7 +21,6 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
 
-        <netty-all.version>4.1.75.Final</netty-all.version>
         <antlr4.version>4.10.1</antlr4.version>
     </properties>
 
@@ -71,7 +70,6 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>${netty-all.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

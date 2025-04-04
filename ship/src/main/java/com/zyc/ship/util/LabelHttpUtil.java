@@ -1,5 +1,6 @@
 package com.zyc.ship.util;
 
+import com.zyc.common.http.HttpAction;
 import com.zyc.common.util.HttpClientUtil;
 import com.zyc.common.util.JsonUtil;
 import org.slf4j.Logger;
@@ -15,19 +16,23 @@ public class LabelHttpUtil {
 
     private static String url;
 
+    private static String signKey;
+
     public static void init(Properties properties){
-        LabelHttpUtil.url = properties.getProperty("label.http.url");
+        LabelHttpUtil.url = properties.getProperty("variable.http.url");
+        LabelHttpUtil.signKey = properties.getProperty("variable.service.key");
     }
 
-    public static Map<String,Object> post(String body){
+    public static Map<String,Object> post(Map<String, Object> body){
         try{
+            String sign = HttpAction.generatSign(body, signKey);
+            body.put("sign", sign);
 
-            Map<String,Object> result = JsonUtil.toJavaBean(HttpClientUtil.postJson(url, body),Map.class);
+            Map<String,Object> result = JsonUtil.toJavaBean(HttpClientUtil.postJson(url, JsonUtil.formatJsonString(body)),Map.class);
             return result;
         }catch (Exception e){
             logger.error("ship server labelpost error: ", e);
         }
         return new HashMap<>();
     }
-
 }

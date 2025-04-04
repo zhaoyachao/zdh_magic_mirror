@@ -205,8 +205,11 @@ public class ShipCommonEngine implements Engine {
         Map<String, Object> jsonObject = JsonUtil.createEmptyLinkMap();
         jsonObject.put("uid", uid);
         jsonObject.put("product_code", product_code);
-        result = LabelHttpUtil.post(JsonUtil.formatJsonString(jsonObject));
-        return result;
+        result = LabelHttpUtil.post(jsonObject);
+        if(result.getOrDefault("code", "-1").toString().equals("0")){
+            return (Map<String, Object>)result.get("data");
+        }
+        return new HashMap<>();
     }
 
     /**
@@ -221,8 +224,11 @@ public class ShipCommonEngine implements Engine {
         Map<String, Object> jsonObject = JsonUtil.createEmptyLinkMap();
         jsonObject.put("uid", uid);
         jsonObject.put("product_code", product_code);
-        result = FilterHttpUtil.post(JsonUtil.formatJsonString(jsonObject));
-        return result;
+        result = FilterHttpUtil.post(jsonObject);
+        if(result.getOrDefault("code", "-1").toString().equals("0")){
+            return (Map<String, Object>)result.get("data");
+        }
+        return new HashMap<>();
     }
 
     @Override

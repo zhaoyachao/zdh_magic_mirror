@@ -1,6 +1,7 @@
 package com.zyc.variable.service.impl;
 
 
+import cn.hutool.core.net.url.UrlBuilder;
 import com.zyc.common.redis.JedisPoolUtil;
 import com.zyc.common.util.JsonUtil;
 import org.junit.Test;
@@ -43,4 +44,15 @@ public class VariableServiceImplTest {
         Map map = JsonUtil.toJavaBean(str, Map.class);
 
     }
+
+    @Test
+    public void testUrl(){
+        String url="http://127.0.0.1/api/v1/all?a1=b1";
+
+        Map map = UrlBuilder.of(url).getQuery().getQueryMap();
+
+        System.out.println(JsonUtil.formatJsonString(map));
+    }
+
+
 }

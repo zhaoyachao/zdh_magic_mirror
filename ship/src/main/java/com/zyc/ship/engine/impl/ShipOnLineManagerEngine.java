@@ -27,8 +27,8 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
 
     private Logger logger= LoggerFactory.getLogger(this.getClass());
 
-    public static ExecutorService executorService= new ThreadPoolExecutor(10, 10, 500,
-            TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactoryBuilder().build(), new ThreadPoolExecutor.AbortPolicy());
+    public static ExecutorService executorService= new ThreadPoolExecutor(10, 1024, 500,
+            TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new ThreadFactoryBuilder().setNameFormat("ship_online_manager_").build(), new ThreadPoolExecutor.AbortPolicy());
 
     private InputParam inputParam;
     private StrategyService strategyService;
@@ -90,7 +90,7 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
 
                         Map<String, Object> labels = new HashMap<>();
                         Map<String, Object> filters = new HashMap<>();
-                        loadBaseData(null, labels, filters, shipCommonInputParam);
+                        loadBaseData(executorService, labels, filters, shipCommonInputParam);
 
                         logger.info("request_id: {}, label_values: {}", request_id_str, JsonUtil.formatJsonString(labels));
 
