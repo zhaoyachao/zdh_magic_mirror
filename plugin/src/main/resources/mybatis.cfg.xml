@@ -9,7 +9,7 @@
     <!-- 别名是一个较短的Java 类型的名称。用来设置别名 -->
     <typeAliases>
         <!-- 为指定的包下所有类设置别名，别名默认为类名 -->
-        <package name="com.zyc.plugin.dao"/>
+        <package name="com.zyc.magic_mirror.plugin.dao"/>
         <!-- 为指定的类型设置别名
         <typeAlias type="cn.sxt.vo.User" alias="User"/>
         -->
@@ -62,7 +62,7 @@
 
 
     <mappers>
-        <package name="com.zyc.plugin.dao"/>
-        <package name="com.zyc.common.dao"/>
+        <package name="com.zyc.magic_mirror.plugin.dao"/>
+        <package name="com.zyc.magic_mirror.common.dao"/>
     </mappers>
 </configuration>

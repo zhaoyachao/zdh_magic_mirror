@@ -1,7 +1,7 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0">
     <parent>
-        <groupId>com.zyc</groupId>
+        <groupId>com.zyc.magic_mirror</groupId>
         <artifactId>zdh_magic_mirror</artifactId>
         <version>${revision}</version>
     </parent>
@@ -38,7 +38,7 @@
     <dependencies>
         <!-- Unit Testing -->
         <dependency>
-            <groupId>com.zyc</groupId>
+            <groupId>com.zyc.magic_mirror</groupId>
             <artifactId>common</artifactId>
             <version>${revision}</version>
         </dependency>
@@ -134,7 +134,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.zyc.variable.VariableServer</mainClass>
+                            <mainClass>com.zyc.magic_mirror.variable.VariableServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

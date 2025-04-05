@@ -3,7 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>com.zyc</groupId>
+        <groupId>com.zyc.magic_mirror</groupId>
         <artifactId>zdh_magic_mirror</artifactId>
         <version>${revision}</version>
     </parent>
@@ -38,7 +38,7 @@
 
 
         <dependency>
-            <groupId>com.zyc</groupId>
+            <groupId>com.zyc.magic_mirror</groupId>
             <artifactId>common</artifactId>
             <version>${revision}</version>
         </dependency>
@@ -157,7 +157,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.zyc.label.LabelServer</mainClass>
+                            <mainClass>com.zyc.magic_mirror.label.LabelServer</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
