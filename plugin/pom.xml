@@ -20,7 +20,6 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
 
-        <netty-all.version>4.1.75.Final</netty-all.version>
         <javax.mail.version>1.6.2</javax.mail.version>
         <aliyun-java-sdk-core.version>4.6.1</aliyun-java-sdk-core.version>
         <aliyun-java-sdk-dysmsapi.version>2.2.1</aliyun-java-sdk-dysmsapi.version>
@@ -80,7 +79,6 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>${netty-all.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
