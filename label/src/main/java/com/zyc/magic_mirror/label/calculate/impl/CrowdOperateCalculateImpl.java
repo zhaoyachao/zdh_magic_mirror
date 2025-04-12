@@ -3,14 +3,11 @@ package com.zyc.magic_mirror.label.calculate.impl;
 import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.entity.DataPipe;
 import com.zyc.magic_mirror.common.entity.StrategyInstance;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.common.util.MybatisUtil;
-import com.zyc.magic_mirror.label.calculate.CrowdRuleCalculate;
 import com.zyc.magic_mirror.label.dao.StrategyInstanceMapper;
-import com.zyc.magic_mirror.label.service.impl.StrategyInstanceServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,11 +18,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 运算符任务
  */
-public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRuleCalculate {
+public class CrowdOperateCalculateImpl extends BaseCalculate{
     private static Logger logger= LoggerFactory.getLogger(CrowdOperateCalculateImpl.class);
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
+
 
     /**
      * "id" : 1032062601107869696,
@@ -79,11 +74,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
      * @param dbConfig
      */
     public CrowdOperateCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -107,11 +98,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
+    public void process() {
         String logStr="";
         try{
             //客群运算id
@@ -148,8 +135,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate implements CrowdRul
             writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+
         }
     }
 

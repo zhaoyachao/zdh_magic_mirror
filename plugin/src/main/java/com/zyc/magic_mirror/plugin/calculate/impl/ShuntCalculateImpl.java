@@ -5,24 +5,24 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.hash.Hashing;
 import com.zyc.magic_mirror.common.entity.DataPipe;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
-import com.zyc.magic_mirror.plugin.calculate.ShuntCalculate;
-import com.zyc.magic_mirror.plugin.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
  * 分流实现
  */
-public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate {
+public class ShuntCalculateImpl extends BaseCalculate implements Runnable {
     private static Logger logger= LoggerFactory.getLogger(ShuntCalculateImpl.class);
 
     /**
@@ -62,16 +62,9 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
      }
      ]}
      */
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
 
     public ShuntCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -100,11 +93,7 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
+    public void process() {
         String logStr="";
         try{
 
@@ -210,8 +199,7 @@ public class ShuntCalculateImpl extends BaseCalculate implements ShuntCalculate 
             //执行失败,更新标签任务失败
             logger.error("plugin shunt run error: ", e);
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+
         }
     }
 

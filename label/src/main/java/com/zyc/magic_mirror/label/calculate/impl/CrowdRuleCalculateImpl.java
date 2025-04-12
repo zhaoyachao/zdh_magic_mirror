@@ -3,27 +3,21 @@ package com.zyc.magic_mirror.label.calculate.impl;
 import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.entity.DataPipe;
 import com.zyc.magic_mirror.common.entity.InstanceType;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.DateUtil;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
-import com.zyc.magic_mirror.label.calculate.CrowdRuleCalculate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleCalculate {
+public class CrowdRuleCalculateImpl extends  BaseCalculate{
     private static Logger logger= LoggerFactory.getLogger(CrowdRuleCalculateImpl.class);
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
 
     /**
      * "id" : 1032062601107869696,
@@ -77,11 +71,7 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
      * @param dbConfig
      */
     public CrowdRuleCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -105,10 +95,7 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
+    public void process() {
         String logStr="";
         try{
             //客群id
@@ -143,8 +130,7 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate implements CrowdRuleC
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             logger.error("label crowdrule run error: ", e);
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+
         }
 
 

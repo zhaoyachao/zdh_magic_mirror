@@ -7,9 +7,7 @@ import com.zyc.magic_mirror.common.entity.CrowdFileInfo;
 import com.zyc.magic_mirror.common.entity.DataPipe;
 import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.*;
-import com.zyc.magic_mirror.label.calculate.CrowdFileCalculate;
 import com.zyc.magic_mirror.label.service.impl.CrowdFileServiceImpl;
-import com.zyc.magic_mirror.label.service.impl.StrategyInstanceServiceImpl;
 import io.minio.MinioClient;
 import io.minio.errors.*;
 import org.slf4j.Logger;
@@ -28,11 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 人群文件任务
  */
-public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCalculate {
+public class CrowdFileCalculateImpl extends BaseCalculate{
     private static Logger logger= LoggerFactory.getLogger(CrowdFileCalculateImpl.class);
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
 
     /**
      * "id" : 1032062601107869696,
@@ -88,11 +83,7 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
      * @param dbConfig
      */
     public CrowdFileCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -116,14 +107,10 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
+    public void process() {
+        super.process();
         String logStr="";
         try{
-
             //客群运算id
             Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
@@ -187,10 +174,8 @@ public class CrowdFileCalculateImpl extends BaseCalculate implements CrowdFileCa
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             logger.error("label crowdfile run error: ", e);
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
-        }
 
+        }
     }
 
     private void sftpDownload(StrategyLogInfo strategyLogInfo, String fileName, String saveLocalFilePath) throws FileNotFoundException, SftpException {

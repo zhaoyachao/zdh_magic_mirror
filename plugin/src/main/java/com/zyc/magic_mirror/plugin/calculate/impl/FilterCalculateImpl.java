@@ -4,16 +4,13 @@ import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.entity.DataPipe;
 import com.zyc.magic_mirror.common.entity.FilterInfo;
 import com.zyc.magic_mirror.common.entity.InstanceType;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.FileUtil;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
-import com.zyc.magic_mirror.plugin.calculate.FilterCalculate;
 import com.zyc.magic_mirror.plugin.calculate.FilterEngine;
 import com.zyc.magic_mirror.plugin.impl.FilterServiceImpl;
-import com.zyc.magic_mirror.plugin.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +23,7 @@ import java.util.stream.Collectors;
 /**
  * 过滤实现
  */
-public class FilterCalculateImpl extends BaseCalculate implements FilterCalculate {
+public class FilterCalculateImpl extends BaseCalculate{
     private static Logger logger= LoggerFactory.getLogger(FilterCalculateImpl.class);
 
     /**
@@ -67,16 +64,9 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
      ]}
 
      */
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
 
     public FilterCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -105,12 +95,8 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
+    public void process() {
         FilterServiceImpl filterService=new FilterServiceImpl();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
             //获取标签code
@@ -158,8 +144,7 @@ public class FilterCalculateImpl extends BaseCalculate implements FilterCalculat
             //执行失败,更新标签任务失败
             logger.error("plugin filter run error: ", e);
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+
         }
     }
 

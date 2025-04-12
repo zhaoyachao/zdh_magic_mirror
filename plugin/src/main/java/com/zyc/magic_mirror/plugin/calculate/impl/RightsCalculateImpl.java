@@ -4,24 +4,24 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.magic_mirror.common.entity.DataPipe;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.DateUtil;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
-import com.zyc.magic_mirror.plugin.calculate.RightsCalculate;
-import com.zyc.magic_mirror.plugin.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 权益实现
  */
-public class RightsCalculateImpl extends BaseCalculate implements RightsCalculate {
+public class RightsCalculateImpl extends BaseCalculate implements Runnable {
     private static Logger logger= LoggerFactory.getLogger(RightsCalculateImpl.class);
 
     /**
@@ -63,16 +63,9 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
      }
      ]}
      */
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
 
     public RightsCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -101,11 +94,7 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
+    public void process() {
         String logStr="";
         try{
             //获取标签code
@@ -145,8 +134,7 @@ public class RightsCalculateImpl extends BaseCalculate implements RightsCalculat
             //执行失败,更新标签任务失败
             logger.error("plugin rights run error: ", e);
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+
         }
     }
 

@@ -2,18 +2,14 @@ package com.zyc.magic_mirror.plugin.calculate.impl;
 
 import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.entity.DataPipe;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
-import com.zyc.magic_mirror.plugin.calculate.IdMappingCalculate;
 import com.zyc.magic_mirror.plugin.calculate.IdMappingEngine;
-import com.zyc.magic_mirror.plugin.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -22,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * id_mapping实现
  */
-public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCalculate {
+public class IdMappingCalculateImpl extends BaseCalculate {
     private static Logger logger= LoggerFactory.getLogger(IdMappingCalculateImpl.class);
 
     /**
@@ -62,16 +58,8 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
      }
      ]}
      */
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
-
     public IdMappingCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -100,11 +88,7 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
+    public void process() {
         String logStr="";
         try{
 
@@ -152,8 +136,7 @@ public class IdMappingCalculateImpl extends BaseCalculate implements IdMappingCa
             //执行失败,更新标签任务失败
             logger.error("plugin idmapping run error: ", e);
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+
         }
     }
 

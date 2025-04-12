@@ -97,11 +97,12 @@ public class ShipCommonEngine implements Engine {
         if(ShipConf.getOnLineManagerSync()){
             Future<Map<String, Object>> futureLabel = syncGetLabelByUser(executorService, null, product_code, uid, id_type);
             Future<Map<String, Object>> futureFilter = syncGetFilterByUser(executorService, null, product_code, uid, id_type);
-            getResult(executorService, futureLabel, futureFilter,labels, filters);
+            getResult(futureLabel, futureFilter,labels, filters);
         }else{
             Map<String, Object> labels_tmp = getLabelByUser(null, product_code,uid, id_type);
             labels.putAll(labels_tmp);
-            filters = getFilterByUser(null, product_code, uid, id_type);
+            Map<String, Object> filter_tmp = getFilterByUser(null, product_code, uid, id_type);
+            filters.putAll(filter_tmp);
         }
         //解析参数,增加传递过来的标签
         if(!StringUtils.isEmpty(shipCommonInputParam.getParam())){
@@ -131,14 +132,19 @@ public class ShipCommonEngine implements Engine {
     }
 
 
-    public void getResult(ExecutorService executorService,Future<Map<String, Object>> futureLabel,Future<Map<String, Object>> futureFilter, Map<String, Object> resultLabel, Map<String, Object> filters) throws Exception {
+    public void getResult(Future<Map<String, Object>> futureLabel,Future<Map<String, Object>> futureFilter, Map<String, Object> resultLabel, Map<String, Object> filters) throws Exception {
         try{
-            resultLabel = futureLabel.get(12000, TimeUnit.MILLISECONDS);
-            filters = futureFilter.get(12000, TimeUnit.MILLISECONDS);
+            long start = System.currentTimeMillis();
+            Map<String, Object> tmpLabel = futureLabel.get(15000, TimeUnit.MILLISECONDS);
+            resultLabel.putAll(tmpLabel);
+            long end = System.currentTimeMillis();
+            Map<String, Object> tmpFilter = futureFilter.get((end-start)>15000?1:(end-start), TimeUnit.MILLISECONDS);
+            filters.putAll(tmpFilter);
         }catch (InterruptedException e){
             throw new Exception("get label or filter server, error", e);
         }catch (TimeoutException e){
-            executorService.shutdown();
+            futureLabel.cancel(true);
+            futureFilter.cancel(true);
             throw new Exception("get label or filter server, time out", e);
         }
     }
@@ -162,7 +168,7 @@ public class ShipCommonEngine implements Engine {
                 }finally {
 
                 }
-                return null;
+                return new HashMap<>();
             }
         });
         return future;
@@ -187,7 +193,7 @@ public class ShipCommonEngine implements Engine {
                 }finally {
 
                 }
-                return null;
+                return new HashMap<>();
             }
         });
         return future;

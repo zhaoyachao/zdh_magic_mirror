@@ -5,12 +5,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.magic_mirror.common.entity.DataPipe;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
-import com.zyc.magic_mirror.label.calculate.CustomListCalculate;
-import com.zyc.magic_mirror.label.service.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +21,7 @@ import java.util.stream.Collectors;
 /**
  * 用户名单实现
  */
-public class CustomListCalculateImpl extends BaseCalculate implements CustomListCalculate {
+public class CustomListCalculateImpl extends BaseCalculate implements Runnable {
     private static Logger logger= LoggerFactory.getLogger(CustomListCalculateImpl.class);
 
     /**
@@ -84,16 +81,9 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
      * 	"status": "create"
      * }
      */
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
 
     public CustomListCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -117,11 +107,7 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
+    public void process() {
         String logStr="";
         try{
 
@@ -169,8 +155,7 @@ public class CustomListCalculateImpl extends BaseCalculate implements CustomList
             //执行失败,更新标签任务失败
             logger.error("label customlist run error: ", e);
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+
         }
     }
 

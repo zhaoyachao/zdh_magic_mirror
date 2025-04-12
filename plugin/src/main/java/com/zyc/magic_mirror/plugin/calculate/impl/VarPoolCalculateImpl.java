@@ -4,13 +4,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.magic_mirror.common.entity.DataPipe;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
-import com.zyc.magic_mirror.plugin.calculate.VarPoolCalculate;
-import com.zyc.magic_mirror.plugin.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 变量池实现
  */
-public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalculate {
+public class VarPoolCalculateImpl extends BaseCalculate implements Runnable {
     private static Logger logger= LoggerFactory.getLogger(VarPoolCalculateImpl.class);
 
     /**
@@ -62,16 +59,9 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
      *        }]
      * }
      */
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
 
     public VarPoolCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -100,11 +90,7 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
+    public void process() {
         String logStr="";
         try{
 
@@ -118,7 +104,6 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
 
             List<Map<String, Object>> varpool_params = JsonUtil.toJavaListMap(varpool_params_str);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
-
 
             //生成参数
             CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
@@ -243,8 +228,7 @@ public class VarPoolCalculateImpl extends BaseCalculate implements VarPoolCalcul
             //执行失败,更新标签任务失败
             logger.error("plugin varpool run error: ", e);
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+
         }
     }
 

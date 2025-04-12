@@ -77,7 +77,7 @@ public class ServerManagerUtil {
         serviceInstanceConf.setLast_time(System.currentTimeMillis()+"");
         String value = JsonUtil.formatJsonString(serviceInstanceConf);
         JedisPoolUtil.redisClient().hSet(instance, "service", value);
-        JedisPoolUtil.redisClient().expire(instance, 60*5L);
+        JedisPoolUtil.redisClient().expire(instance, 60*1L);
 
         //检查其他实例是否可用
         Map<Object, Object> objectObjectMap = JedisPoolUtil.redisClient().hGetAll(key);
@@ -113,9 +113,24 @@ public class ServerManagerUtil {
         if(mode!=null){
             if(mode.toString().equalsIgnoreCase(SERVICE_MODE_STOP)){
                 //停止
-                JedisPoolUtil.redisClient().hDel(instance, "mode");
-                logger.info("服务停止...");
-                System.exit(0);
+                while (true){
+                    mode = JedisPoolUtil.redisClient().hGet(instance, "mode");
+                    if(!mode.toString().equalsIgnoreCase(SERVICE_MODE_STOP)){
+                        break;
+                    }
+                    Object taskNum = JedisPoolUtil.redisClient().hGet(instance, "task_num");
+                    if(taskNum == null || (taskNum != null && Integer.valueOf(taskNum.toString())==0) ){
+                        JedisPoolUtil.redisClient().hDel(instance, "mode");
+                        logger.info("服务停止...");
+                        System.exit(0);
+                    }
+                    try{
+                        Thread.sleep(1000);
+                    }catch (Exception e){
+
+                    }
+
+                }
             }else if(mode.toString().equalsIgnoreCase(SERVICE_MODE_SUSPEND)){
                 while (true){
                     try {
@@ -124,6 +139,7 @@ public class ServerManagerUtil {
                         reportTaskNum(serviceInstanceConf);
                         Object value1 = JedisPoolUtil.redisClient().hGet(instance, "mode");
                         if(value1 == null || !value1.toString().equalsIgnoreCase("suspend")){
+                            logger.info("服务暂停恢复...");
                             break;
                         }
 
@@ -136,7 +152,7 @@ public class ServerManagerUtil {
             }
         }else{
             JedisPoolUtil.redisClient().hSet(instance, "mode", SERVICE_MODE_RUN);
-            JedisPoolUtil.redisClient().expire(instance, 60*5L);
+            JedisPoolUtil.redisClient().expire(instance, 60*1L);
         }
 
         return SERVICE_MODE_RUN;
@@ -157,13 +173,13 @@ public class ServerManagerUtil {
 
     public static void reportSlot(String instaceId, String slot_num, String slot){
         JedisPoolUtil.redisClient().hSet(instaceId, "slot", slot);
-        JedisPoolUtil.redisClient().expire(instaceId, 60*5L);
+        JedisPoolUtil.redisClient().expire(instaceId, 60*1L);
     }
 
     public static void reportTaskNum(ServiceInstanceConf serviceInstanceConf){
         String instance = getServiceInstanceKey(serviceInstanceConf);
         JedisPoolUtil.redisClient().hSet(instance, "task_num", serviceInstanceConf.atomicInteger.toString());
-        JedisPoolUtil.redisClient().expire(instance, 60*5L);
+        JedisPoolUtil.redisClient().expire(instance, 60*1L);
     }
 
 

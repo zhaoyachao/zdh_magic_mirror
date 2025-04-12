@@ -60,6 +60,7 @@ public class DbQueueHandler implements QueueHandler {
                     Map run_jsmind_data = JsonUtil.toJavaBean(strategyInstance.getRun_jsmind_data(), Map.class);
                     String version_tag=run_jsmind_data.getOrDefault("version_tag","").toString();
 
+                    logger.info("db handler task: {}, data_version_tag: {}, data_slot: {},  server_version_tag: {}, server_slot: {}",strategyInstance.getStrategy_id(), version_tag, Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1, versionTag, slotStr);
                     //指定版本执行,判断当前实例是否可执行指定版本
                     if(!versionTag.equalsIgnoreCase(version_tag)){
                         continue;

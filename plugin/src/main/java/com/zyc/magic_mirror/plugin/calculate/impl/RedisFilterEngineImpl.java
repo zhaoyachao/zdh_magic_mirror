@@ -66,7 +66,7 @@ public class RedisFilterEngineImpl implements FilterEngine {
     }
 
     @Override
-    public FilterResult getMap(Collection<DataPipe> rs) throws Exception {
+    public FilterEngine.FilterResult getMap(Collection<DataPipe> rs) throws Exception {
         RedissonClient redissonClient = redisConfMap.getOrDefault(getFilterKey(), redisConfMap.get("default")).redisson();
         try{
             FilterResult filterResult = new FilterResult();

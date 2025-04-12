@@ -93,16 +93,9 @@ public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
      * 	"status": "create"
      * }
      */
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
 
     public LabelCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger,Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override

@@ -10,6 +10,7 @@ import com.zyc.magic_mirror.common.entity.StrategyInstance;
 import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.*;
 import com.zyc.magic_mirror.plugin.PluginServer;
+import com.zyc.magic_mirror.plugin.calculate.BaseProcessCalculate;
 import com.zyc.magic_mirror.plugin.calculate.CalculateCommomParam;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
 import com.zyc.magic_mirror.plugin.impl.StrategyInstanceServiceImpl;
@@ -30,9 +31,10 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public abstract class BaseCalculate {
+public abstract class BaseCalculate extends BaseProcessCalculate {
     private static Logger logger= LoggerFactory.getLogger(BaseCalculate.class);
 
     public static ThreadLocal<String> localVar = new ThreadLocal<>();
@@ -42,12 +44,26 @@ public abstract class BaseCalculate {
 
     public abstract String getOperate(Map run_jsmind_data);
 
+    protected StrategyInstanceServiceImpl strategyInstanceService = new StrategyInstanceServiceImpl();
+
+    protected Map<String,Object> param=new HashMap<String, Object>();
+    protected AtomicInteger atomicInteger;
+    protected Map<String,String> dbConfig=new HashMap<String, String>();
+    protected StrategyLogInfo strategyLogInfo;
 
     private SFTPUtil sftpUtil;
 
     private MinioClient minioClient;
 
     private Map<String, Object> jinJavaCommonParam = new HashMap<>();
+
+    public BaseCalculate(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
+        this.param=param;
+        this.atomicInteger=atomicInteger;
+        this.dbConfig=new HashMap<>((Map)dbConfig);
+        getSftpUtil(this.dbConfig);
+        initMinioClient(this.dbConfig);
+    }
 
     public SFTPUtil getSftpUtil(Map<String,String> dbConfig){
         if(!dbConfig.getOrDefault("sftp.enable", "false").equalsIgnoreCase("true")){
@@ -721,5 +737,29 @@ public abstract class BaseCalculate {
      */
     public Map<String, Object> getJinJavaCommonParam(){
         return this.jinJavaCommonParam;
+    }
+
+    @Override
+    public void before() {
+        if(atomicInteger != null){
+            atomicInteger.incrementAndGet();
+        }
+        strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
+        logger.info("before task: {} finished", strategyLogInfo.getStrategy_instance_id());
+    }
+
+    @Override
+    public void process() {
+
+    }
+
+    @Override
+    public void after() {
+        if(atomicInteger != null && atomicInteger.get()>0){
+            atomicInteger.decrementAndGet();
+        }
+        removeTask(strategyLogInfo.getStrategy_instance_id());
+        logger.info("after task: {} finished", strategyLogInfo.getStrategy_instance_id());
     }
 }

@@ -6,22 +6,19 @@ import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.common.util.ServerManagerUtil;
 import com.zyc.magic_mirror.plugin.PluginServer;
-import com.zyc.magic_mirror.plugin.calculate.KillCalculate;
 import com.zyc.magic_mirror.plugin.impl.StrategyInstanceServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 监控任务杀死实现
  */
-public class KillCalculateImpl extends BaseCalculate implements KillCalculate {
+public class KillCalculateImpl extends BaseCalculate {
     private static Logger logger= LoggerFactory.getLogger(KillCalculateImpl.class);
 
     /**
@@ -81,13 +78,9 @@ public class KillCalculateImpl extends BaseCalculate implements KillCalculate {
      * 	"status": "create"
      * }
      */
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
 
     public KillCalculateImpl(Map<String, Object> param, Properties dbConfig){
-        this.param=param;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
+        super(param, null, dbConfig);
     }
 
     @Override

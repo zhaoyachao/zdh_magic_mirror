@@ -5,7 +5,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zyc.magic_mirror.common.entity.DataPipe;
 import com.zyc.magic_mirror.common.entity.PluginInfo;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.plugin.PluginParam;
 import com.zyc.magic_mirror.common.plugin.PluginResult;
 import com.zyc.magic_mirror.common.plugin.PluginService;
@@ -13,19 +12,24 @@ import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
-import com.zyc.magic_mirror.plugin.calculate.PluginCalculate;
-import com.zyc.magic_mirror.plugin.impl.*;
+import com.zyc.magic_mirror.plugin.impl.HttpPluginServiceImpl;
+import com.zyc.magic_mirror.plugin.impl.KafkaPluginServiceImpl;
+import com.zyc.magic_mirror.plugin.impl.PluginServiceImpl;
+import com.zyc.magic_mirror.plugin.impl.RedisPluginServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
  * 插件实现
  */
-public class PluginCalculateImpl extends BaseCalculate implements PluginCalculate {
+public class PluginCalculateImpl extends BaseCalculate {
     private static Logger logger= LoggerFactory.getLogger(PluginCalculateImpl.class);
 
     /**
@@ -65,16 +69,8 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
      }
      ]}
      */
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
-
     public PluginCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -103,12 +99,8 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
+    public void process() {
         PluginServiceImpl pluginService=new PluginServiceImpl();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 
@@ -180,8 +172,7 @@ public class PluginCalculateImpl extends BaseCalculate implements PluginCalculat
             //执行失败,更新标签任务失败
             logger.error("plugin plugin run error: ", e);
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+
         }
     }
 

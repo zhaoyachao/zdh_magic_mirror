@@ -10,6 +10,7 @@ import com.zyc.magic_mirror.common.entity.StrategyInstance;
 import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.*;
 import com.zyc.magic_mirror.label.LabelServer;
+import com.zyc.magic_mirror.label.calculate.BaseProcessCalculate;
 import com.zyc.magic_mirror.label.service.impl.StrategyInstanceServiceImpl;
 import io.minio.MinioClient;
 import org.apache.commons.io.IOUtils;
@@ -26,12 +27,19 @@ import java.nio.charset.Charset;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("ALL")
-public class BaseCalculate {
+public class BaseCalculate extends BaseProcessCalculate {
 
     private static Logger logger= LoggerFactory.getLogger(BaseCalculate.class);
+
+    protected AtomicInteger atomicInteger;
+    protected Map<String,Object> param=new HashMap<String, Object>();
+    protected Map<String,String> dbConfig=new HashMap<String, String>();
+    protected StrategyInstanceServiceImpl strategyInstanceService = new StrategyInstanceServiceImpl();
+    protected StrategyLogInfo strategyLogInfo;
 
     private SFTPUtil sftpUtil;
 
@@ -40,6 +48,15 @@ public class BaseCalculate {
     private Map<String, Object> jinJavaCommonParam = new HashMap<>();
 
     private String split = "\t";
+
+
+    public BaseCalculate(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
+        this.param=param;
+        this.atomicInteger=atomicInteger;
+        this.dbConfig=new HashMap<>((Map)dbConfig);
+        getSftpUtil(this.dbConfig);
+        initMinioClient(this.dbConfig);
+    }
 
     public SFTPUtil getSftpUtil(Map<String,String> dbConfig){
         if(!dbConfig.getOrDefault("sftp.enable", "false").equalsIgnoreCase("true")){
@@ -742,5 +759,29 @@ public class BaseCalculate {
      */
     public Map<String, Object> getJinJavaCommonParam(){
         return this.jinJavaCommonParam;
+    }
+
+    @Override
+    public void before() {
+        if(atomicInteger != null){
+            atomicInteger.incrementAndGet();
+        }
+        strategyLogInfo = init(this.param, this.dbConfig);
+        initJinJavaCommonParam(strategyLogInfo, this.param);
+        logger.info("before task: {} finished", strategyLogInfo.getStrategy_instance_id());
+    }
+
+    @Override
+    public void process() {
+
+    }
+
+    @Override
+    public void after() {
+        if(atomicInteger != null && atomicInteger.get()>0){
+            atomicInteger.decrementAndGet();
+        }
+        removeTask(strategyLogInfo.getStrategy_instance_id());
+        logger.info("after task: {} finished", strategyLogInfo.getStrategy_instance_id());
     }
 }

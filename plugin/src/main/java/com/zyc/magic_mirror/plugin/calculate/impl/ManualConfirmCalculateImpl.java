@@ -5,26 +5,26 @@ import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.entity.DataPipe;
 import com.zyc.magic_mirror.common.entity.NoticeInfo;
 import com.zyc.magic_mirror.common.entity.PermissionUserInfo;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.service.impl.NoticeServiceImpl;
 import com.zyc.magic_mirror.common.service.impl.PermissionUserServiceImpl;
 import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
-import com.zyc.magic_mirror.plugin.calculate.ManualConfirmCalculate;
-import com.zyc.magic_mirror.plugin.impl.StrategyInstanceServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 人工确认
  */
-public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualConfirmCalculate {
+public class ManualConfirmCalculateImpl extends BaseCalculate {
     private static Logger logger= LoggerFactory.getLogger(ManualConfirmCalculateImpl.class);
 
     /**
@@ -65,16 +65,9 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
      ]}
 
      */
-    private Map<String,Object> param=new HashMap<String, Object>();
-    private AtomicInteger atomicInteger;
-    private Map<String,String> dbConfig=new HashMap<String, String>();
 
     public ManualConfirmCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
-        this.param=param;
-        this.atomicInteger=atomicInteger;
-        this.dbConfig=new HashMap<>((Map)dbConfig);
-        getSftpUtil(this.dbConfig);
-        initMinioClient(this.dbConfig);
+        super(param, atomicInteger, dbConfig);
     }
 
     @Override
@@ -103,20 +96,14 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
     }
 
     @Override
-    public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
+    public void process() {
         String logStr="";
         try{
 
-            localVar.set(strategyLogInfo.getStrategy_instance_id());
             //获取标签code
             Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String[] confirm_notice_types = run_jsmind_data.getOrDefault("confirm_notice_type","").toString().split(",");
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
-
 
             String product_code=dbConfig.get("product.code");
             String zdh_web_url=dbConfig.get("zdh_web_url");
@@ -183,9 +170,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
             //执行失败,更新标签任务失败
             logger.error("plugin manual confirm run error: ", e);
         }finally {
-            localVar.remove();
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+
         }
     }
 
@@ -228,9 +213,9 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
                 return sendZdh(account, noticeInfo);
             }
         }catch (Exception e){
-            String logStr = StrUtil.format("task: {}, send error: {}", localVar.get(), e.getMessage());
+            String logStr = StrUtil.format("task: {}, send error: {}", this.strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             logger.info(logStr);
-            LogUtil.error("",localVar.get(), logStr);
+            LogUtil.error("",this.strategyLogInfo.getStrategy_instance_id(), logStr);
         }
         return false;
     }
@@ -242,9 +227,9 @@ public class ManualConfirmCalculateImpl extends BaseCalculate implements ManualC
             noticeService.send(noticeInfo);
             return true;
         }catch (Exception e){
-            String logStr = StrUtil.format("task: {}, send zdh error: {}", localVar.get(), e.getMessage());
+            String logStr = StrUtil.format("task: {}, send zdh error: {}", this.strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             logger.info(logStr);
-            LogUtil.error("",localVar.get(), logStr);
+            LogUtil.error("",this.strategyLogInfo.getStrategy_instance_id(), logStr);
         }
 
         return false;
