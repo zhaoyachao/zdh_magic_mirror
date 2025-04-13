@@ -99,6 +99,7 @@ public class PluginServer {
             resetStatus(config);
 
             while (true){
+                ServerManagerUtil.registerServiceInstance(serviceName);
                 ServerManagerUtil.heartbeatReport(serviceInstanceConf);
                 ServerManagerUtil.reportTaskNum(serviceInstanceConf);
                 ServerManagerUtil.checkServiceRunningMode(serviceInstanceConf);

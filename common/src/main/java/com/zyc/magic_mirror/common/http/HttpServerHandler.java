@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
@@ -101,6 +103,21 @@ public class HttpServerHandler extends HttpBaseHandler {
             if(HttpServer.actions.containsKey(url)){
                 httpBaseResponse = HttpServer.actions.get(url).execute(param);
             }else{
+                //判断是否正则url, 正则url 必须以^开头, $结尾
+                boolean isFind = false;
+                for (Map.Entry<Pattern, HttpAction> entry: HttpServer.regexActions.entrySet()){
+                    Matcher matcher = entry.getKey().matcher(url);
+                    if(matcher.matches()){
+                        isFind = true;
+                        httpBaseResponse =entry.getValue().execute(param);
+                        break;
+                    }
+                }
+
+                if(!isFind){
+                    httpBaseResponse.setCode(-1);
+                    httpBaseResponse.setMsg("not found path");
+                }
                 httpBaseResponse.setCode(-1);
                 httpBaseResponse.setMsg("not found path");
             }

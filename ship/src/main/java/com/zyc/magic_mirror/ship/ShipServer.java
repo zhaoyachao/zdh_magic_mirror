@@ -152,7 +152,7 @@ public class ShipServer {
 
                 while (true){
                     try{
-
+                        ServerManagerUtil.registerServiceInstance(serviceInstanceConf.getService_name());
                         ServerManagerUtil.heartbeatReport(serviceInstanceConf);
                         ServerManagerUtil.checkServiceRunningMode(serviceInstanceConf);
 

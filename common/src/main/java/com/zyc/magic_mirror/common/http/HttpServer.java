@@ -13,9 +13,11 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 /**
  * http server
@@ -24,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * HttpServer httpServer = new HttpServer();
  * httpServer.registerAction("/api/v1/xxx", httpAction);
- *
+ *httpServer.registerAction("^/api/v1/.*$", httpAction);
  * httpServer.start(properties)
  */
 public class HttpServer {
@@ -33,10 +35,16 @@ public class HttpServer {
     public static String signKey;
     public static Properties properties;
     public static Map<String, HttpAction> actions = new ConcurrentHashMap<>();
+    public static Map<Pattern, HttpAction> regexActions = new LinkedHashMap<>();
 
     public void registerAction(String uri, HttpAction httpAction){
         logger.info("HttpServer注册路由,uri: {},action: {}", uri, httpAction.getClass().getName());
         actions.put(uri, httpAction);
+        if(uri.startsWith("^") && uri.endsWith("$")){
+            String regex = uri;
+            Pattern pattern = Pattern.compile(regex);
+            regexActions.put(pattern, httpAction);
+        }
     }
 
     public void start(Properties properties) throws Exception {
