@@ -13,7 +13,6 @@ import com.zyc.magic_mirror.common.entity.LabelInfo;
 import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
 import com.zyc.magic_mirror.common.util.*;
-import com.zyc.magic_mirror.label.calculate.LabelCalculate;
 import com.zyc.magic_mirror.label.service.impl.DataSourcesServiceImpl;
 import com.zyc.magic_mirror.label.service.impl.LabelServiceImpl;
 import com.zyc.magic_mirror.label.service.impl.StrategyInstanceServiceImpl;
@@ -33,7 +32,7 @@ import java.util.stream.Collectors;
 /**
  * 标签计算实现
  */
-public class LabelCalculateImpl extends BaseCalculate implements LabelCalculate{
+public class LabelCalculateImpl extends BaseCalculate{
     private static Logger logger= LoggerFactory.getLogger(LabelCalculateImpl.class);
 
     /**
