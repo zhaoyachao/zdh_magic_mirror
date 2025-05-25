@@ -119,12 +119,8 @@ public class LabelCalculateImpl extends BaseCalculate{
 
     @Override
     public void run() {
-        atomicInteger.incrementAndGet();
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
+        before();
         LabelServiceImpl labelService=new LabelServiceImpl();
-
-        StrategyLogInfo strategyLogInfo = init(this.param, this.dbConfig);
-        initJinJavaCommonParam(strategyLogInfo, this.param);
         String logStr="";
         try{
 
@@ -196,8 +192,7 @@ public class LabelCalculateImpl extends BaseCalculate{
             //执行失败,更新标签任务失败
             logger.error("label label run error: ", e);
         }finally {
-            atomicInteger.decrementAndGet();
-            removeTask(strategyLogInfo.getStrategy_instance_id());
+            after();
         }
     }
 

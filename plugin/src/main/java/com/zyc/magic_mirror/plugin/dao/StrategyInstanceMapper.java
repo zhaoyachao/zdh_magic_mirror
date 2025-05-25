@@ -12,10 +12,15 @@ public interface StrategyInstanceMapper {
 
     @Update({
             "<script>",
-            "update strategy_instance set ",
+            "update strategy_instance ",
+            "<set>",
             "<if test = 'status != null and status != \"\"'> ",
-            "status=#{status}",
+            "status=#{status} ,",
             "</if> ",
+            "<if test = 'update_time != null'> ",
+            "update_time=#{update_time} ,",
+            "</if> ",
+            "</set>",
             "where id = #{id}",
             "</script>"
     }

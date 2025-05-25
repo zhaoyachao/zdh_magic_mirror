@@ -428,6 +428,7 @@ public abstract class BaseCalculate extends BaseProcessCalculate {
         StrategyInstance strategyInstance=new StrategyInstance();
         strategyInstance.setId(task_id);
         strategyInstance.setStatus(status);
+        strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
         strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
     }
 
