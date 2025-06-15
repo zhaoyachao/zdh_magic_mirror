@@ -102,7 +102,6 @@ public class CrowdOperateCalculateImpl extends BaseCalculate{
         String logStr="";
         try{
             //客群运算id
-            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String rule_context=run_jsmind_data.get("rule_context").toString();
             String operate=run_jsmind_data.get("operate").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
@@ -132,8 +131,8 @@ public class CrowdOperateCalculateImpl extends BaseCalculate{
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
 
         }catch (Exception e){
-            writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
+            writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 
         }
@@ -149,7 +148,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate{
             List<StrategyInstance> list = strategyInstanceMappler.selectByIds(pre_tasks.split(","));
             for (StrategyInstance strategyInstance:list){
                 String rjd = strategyInstance.getRun_jsmind_data();
-                Map parseObject = JsonUtil.toJavaBean(rjd, Map.class);
+                Map parseObject = JsonUtil.toJavaMap(rjd);
                 if(parseObject.getOrDefault("is_base","false").toString().equalsIgnoreCase("true")){
                     base_id = strategyInstance.getId();
                     break;

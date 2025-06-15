@@ -54,10 +54,10 @@ public class DbQueueHandler implements QueueHandler {
                     if(!NumberUtil.isLong(strategyInstance.getStrategy_id())){
                         LogUtil.error("",strategyInstance.getId(), "当前任务配置信息异常");
                         strategyInstance.setStatus(Const.STATUS_ERROR);
-                        strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
+                        strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
                         continue ;
                     }
-                    Map run_jsmind_data = JsonUtil.toJavaBean(strategyInstance.getRun_jsmind_data(), Map.class);
+                    Map run_jsmind_data = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
                     String version_tag=run_jsmind_data.getOrDefault("version_tag","").toString();//版本标志,用于小流量测试
 
                     logger.info("db handler task: {}, data_version_tag: {}, data_slot: {},  server_version_tag: {}, server_slot: {}",strategyInstance.getStrategy_id(), version_tag, Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1, versionTag, slotStr);

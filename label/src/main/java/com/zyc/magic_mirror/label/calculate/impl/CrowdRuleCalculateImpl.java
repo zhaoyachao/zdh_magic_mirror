@@ -99,7 +99,6 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate{
         String logStr="";
         try{
             //客群id
-            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String crowd_rule_id=run_jsmind_data.get("crowd_rule").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
@@ -126,9 +125,9 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate{
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rowsObj);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rowsObj, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             logger.error("label crowdrule run error: ", e);
+            writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 
         }

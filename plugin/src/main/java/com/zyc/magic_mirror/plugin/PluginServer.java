@@ -96,7 +96,7 @@ public class PluginServer {
             //提交一个监控杀死任务线程
             threadPoolExecutor.execute(new KillCalculateImpl(null, config));
 
-            resetStatus(config);
+            resetStatus(threadPoolExecutor);
 
             while (true){
                 ServerManagerUtil.registerServiceInstance(serviceName);
@@ -142,7 +142,12 @@ public class PluginServer {
                         StrategyInstance strategyInstance=new StrategyInstance();
                         strategyInstance.setId(m.get("id").toString());
                         strategyInstance.setStatus("etl");
-                        strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
+                        Map run_jsmind_data = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
+                        run_jsmind_data.put("instance_id", instanceId);
+                        strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
+                        strategyInstance.setRun_jsmind_data(JsonUtil.formatJsonString(run_jsmind_data));
+
+                        strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
 
                     }catch (Exception e){
                         logger.error("plugin server check error: ", e);
@@ -313,16 +318,56 @@ public class PluginServer {
         RedisFilterEngineImpl.redisConfMap = mapping_code_conf;
     }
 
-    public static void resetStatus(Properties config){
-
-        String slotStr = ServerManagerUtil.getReportSlot("");
-        String[] slots = slotStr.split(",");
-        int slot_num = 100;
-        int start_slot =  Integer.valueOf(slots[0]);
-        int end_slot =  Integer.valueOf(slots[1]);
-
+    public static void resetStatus(ThreadPoolExecutor threadPoolExecutor){
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        strategyInstanceService.updateStatus2CheckFinishBySlot(Const.STATUS_ETL, DbQueueHandler.instanceTypes, start_slot, end_slot, slot_num);
+        threadPoolExecutor.submit(new Runnable() {
+            @Override
+            public void run() {
+
+                while (true){
+                    try{
+                        String slotStr = ServerManagerUtil.getReportSlot("");
+                        String[] slots = slotStr.split(",");
+                        int slot_num = 100;
+                        int start_slot =  Integer.valueOf(slots[0]);
+                        int end_slot =  Integer.valueOf(slots[1]);
+                        //查询复合slot的策略
+                        List<StrategyInstance> strategyInstances = strategyInstanceService.selectByStatus(new String[]{Const.STATUS_ETL}, DbQueueHandler.instanceTypes);
+
+                        for (StrategyInstance strategyInstance: strategyInstances){
+                            Map run_jsmind_data = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
+                            if(!run_jsmind_data.containsKey("is_async") || run_jsmind_data.getOrDefault("is_async", "false").toString().equalsIgnoreCase("true")){
+                                continue;
+                            }
+                            if(Long.valueOf(strategyInstance.getStrategy_id())% slot_num + 1 >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1 <= end_slot){
+                                run_jsmind_data.remove("instance_id");
+                                strategyInstance.setRun_jsmind_data(JsonUtil.formatJsonString(run_jsmind_data));
+                                strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
+                                strategyInstance.setStatus(Const.STATUS_CHECK_DEP_FINISH);
+                                RLock rLock = JedisPoolUtil.redisClient().rLock("reset_task_"+strategyInstance.getId());
+                                try{
+                                    if(!rLock.tryLock()){
+                                        logger.info("reset_task: {} ,try lock error: ", strategyInstance.getId());
+                                        continue;
+                                    }
+                                    strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
+                                }catch (Exception e){
+                                    e.printStackTrace();
+                                }finally {
+                                    rLock.unlock();
+                                }
+
+                            }
+                        }
+                        Thread.sleep(1000*60);
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+
+                }
+
+            }
+        });
     }
     public static void setStatus(String task_id,String status){
         StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
@@ -330,7 +375,7 @@ public class PluginServer {
         strategyInstance.setId(task_id);
         strategyInstance.setStatus(status);
         strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
-        strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
+        strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
     }
 
 }

@@ -101,13 +101,11 @@ public class ManualConfirmCalculateImpl extends BaseCalculate {
         try{
 
             //获取标签code
-            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String[] confirm_notice_types = run_jsmind_data.getOrDefault("confirm_notice_type","").toString().split(",");
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
             String product_code=dbConfig.get("product.code");
             String zdh_web_url=dbConfig.get("zdh_web_url");
-
 
 
             CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);
@@ -160,15 +158,16 @@ public class ManualConfirmCalculateImpl extends BaseCalculate {
             if(is_disenable.equalsIgnoreCase("true")){
 
                 writeFileAndPrintLog(strategyLogInfo, rs);
-                setStatus(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_FINISH);
+                run_jsmind_data.put("success_num",rs.size());
+                setStatusAndRunJsmindData(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_FINISH, JsonUtil.formatJsonString(run_jsmind_data));
                 logStr = StrUtil.format("task: {}, update status finish", strategyLogInfo.getStrategy_instance_id());
                 LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
             }
         }catch (Exception e){
-            writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             logger.error("plugin manual confirm run error: ", e);
+            writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 
         }

@@ -36,6 +36,8 @@ public class StrategyLogInfo {
 
     private String error_num;
 
+    private StrategyGroupInstance strategyGroupInstance;
+
     public String getStrategy_instance_id() {
         return strategy_instance_id;
     }
@@ -138,5 +140,13 @@ public class StrategyLogInfo {
 
     public void setError_num(String error_num) {
         this.error_num = error_num;
+    }
+
+    public StrategyGroupInstance getStrategyGroupInstance() {
+        return strategyGroupInstance;
+    }
+
+    public void setStrategyGroupInstance(StrategyGroupInstance strategyGroupInstance) {
+        this.strategyGroupInstance = strategyGroupInstance;
     }
 }

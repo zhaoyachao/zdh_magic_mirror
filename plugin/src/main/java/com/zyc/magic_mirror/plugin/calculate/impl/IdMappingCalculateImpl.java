@@ -93,7 +93,6 @@ public class IdMappingCalculateImpl extends BaseCalculate {
         try{
 
             //获取标签code
-            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String id_mapping_code=run_jsmind_data.get("rule_id").toString();
             String id_mapping_type=run_jsmind_data.getOrDefault("id_mapping_type","").toString();
             String data_engine=run_jsmind_data.getOrDefault("data_engine", "file").toString();
@@ -131,10 +130,10 @@ public class IdMappingCalculateImpl extends BaseCalculate {
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             logger.error("plugin idmapping run error: ", e);
+            writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 
         }

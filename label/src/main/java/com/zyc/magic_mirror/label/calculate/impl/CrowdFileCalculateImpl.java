@@ -112,7 +112,6 @@ public class CrowdFileCalculateImpl extends BaseCalculate{
         String logStr="";
         try{
             //客群运算id
-            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
             //以文件id作为文件名
             String rule_id=run_jsmind_data.get("rule_id").toString();
@@ -152,11 +151,11 @@ public class CrowdFileCalculateImpl extends BaseCalculate{
                 //读取本地文件
                 if(crowdFileInfo.getFile_name().endsWith("xlsx")){
                     //excel 文件
-                    rows = FileUtil.readExcelSplit(new File(file_sftp_path),"xlsx", Charset.forName("utf-8"), Const.FILE_STATUS_ALL);
+                    rows = FileUtil.readExcelSplit(new File(file_sftp_path),"xlsx", Charset.forName("utf-8"), Const.FILE_STATUS_ALL, true);
                 }else if(crowdFileInfo.getFile_name().endsWith("xls")){
-                    rows = FileUtil.readExcelSplit(new File(file_sftp_path),"xls", Charset.forName("utf-8"), Const.FILE_STATUS_ALL);
+                    rows = FileUtil.readExcelSplit(new File(file_sftp_path),"xls", Charset.forName("utf-8"), Const.FILE_STATUS_ALL, true);
                 }else{
-                    rows = FileUtil.readTextSplit(new File(file_sftp_path), Charset.forName("utf-8"), "\t");
+                    rows = FileUtil.readTextSplit(new File(file_sftp_path), Charset.forName("utf-8"), "\t", true);
                 }
                 rowsStr = Sets.newHashSet(rows);
 
@@ -170,16 +169,16 @@ public class CrowdFileCalculateImpl extends BaseCalculate{
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rs);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             logger.error("label crowdfile run error: ", e);
+            writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 
         }
     }
 
     private void sftpDownload(StrategyLogInfo strategyLogInfo, String fileName, String saveLocalFilePath) throws FileNotFoundException, SftpException {
-        String path = strategyLogInfo.getBase_path()+"/crowd_file";
+        String path = dbConfig.get("sftp.path")+"/crowd_file";
         String username=dbConfig.get("sftp.username");
         String password=dbConfig.get("sftp.password");
         String host=dbConfig.get("sftp.host");

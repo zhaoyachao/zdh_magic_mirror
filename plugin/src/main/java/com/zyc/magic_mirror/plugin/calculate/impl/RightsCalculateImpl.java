@@ -98,7 +98,6 @@ public class RightsCalculateImpl extends BaseCalculate implements Runnable {
         String logStr="";
         try{
             //获取标签code
-            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String rights_param_str=run_jsmind_data.getOrDefault("rights_param","").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
             //调度逻辑时间,yyyy-MM-dd HH:mm:ss
@@ -129,10 +128,10 @@ public class RightsCalculateImpl extends BaseCalculate implements Runnable {
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             logger.error("plugin rights run error: ", e);
+            writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 
         }

@@ -3,14 +3,12 @@ package com.zyc.magic_mirror.label.calculate.impl;
 import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
-import com.zyc.magic_mirror.common.entity.DataPipe;
-import com.zyc.magic_mirror.common.entity.DataSourcesInfo;
-import com.zyc.magic_mirror.common.entity.LabelInfo;
-import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
+import com.zyc.magic_mirror.common.entity.*;
 import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
 import com.zyc.magic_mirror.common.util.*;
 import com.zyc.magic_mirror.label.service.impl.DataSourcesServiceImpl;
@@ -125,7 +123,6 @@ public class LabelCalculateImpl extends BaseCalculate{
         try{
 
             //获取标签code
-            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String label_code=run_jsmind_data.get("rule_id").toString();
             String label_use_type=run_jsmind_data.getOrDefault("label_use_type", "batch").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
@@ -152,15 +149,29 @@ public class LabelCalculateImpl extends BaseCalculate{
                         boolean is_dep = checkLabelDep(labelInfo, DateUtil.format(strategyLogInfo.getCur_time(), DatePattern.NORM_DATETIME_PATTERN));
                         if(!is_dep){
                             //依赖未完成,直接返回,此处应该打印日志
+                            run_jsmind_data.put(Const.STRATEGY_INSTANCE_DOUBLECHECK_TIME, System.currentTimeMillis() + 1000 * 60 * 5);
+                            setStatusAndRunJsmindData(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_CHECK_DEP, JsonUtil.formatJsonString(run_jsmind_data));
                             logger.warn("task: {}, labele: {} ,depend data is not found, please wait retry", strategyLogInfo.getStrategy_instance_id(), labelInfo.getLabel_code());
                             //当前任务写入延迟队列,5分钟后重置状态
-                            RQueueClient rQueueClient = RQueueManager.getRQueueClient(Const.LABEL_DOUBLE_CHECK_DEPENDS_QUEUE_NAME, RQueueMode.DELAYEDQUEUE);
-                            rQueueClient.offer(strategyLogInfo.getStrategy_instance_id(), 5L, TimeUnit.MINUTES);
+                            //RQueueClient rQueueClient = RQueueManager.getRQueueClient(Const.LABEL_DOUBLE_CHECK_DEPENDS_QUEUE_NAME, RQueueMode.DELAYEDQUEUE);
+                            //rQueueClient.offer(strategyLogInfo.getStrategy_instance_id(), 5L, TimeUnit.MINUTES);
                             return ;
                         }
                     }
-
-                    rowsStr = offlineLabel(is_disenable, run_jsmind_data, labelInfo, strategyLogInfo);
+                    //判断是否异步,异步则判断 是否有结果
+                    AsyncResult asyncResult = offlineLabel(is_disenable, run_jsmind_data, labelInfo, strategyLogInfo);
+                    if(rowsStr==null && run_jsmind_data.getOrDefault("is_async", "false").toString().equalsIgnoreCase("true")){
+                        if(asyncResult.getStatus().equalsIgnoreCase("fail")){
+                            throw new Exception("异步任务失败");
+                        }
+                        if(asyncResult.getStatus().equalsIgnoreCase("running")){
+                            run_jsmind_data.put(Const.STRATEGY_INSTANCE_DOUBLECHECK_TIME, System.currentTimeMillis() + 1000 * 60 * 5);
+                            setStatusAndRunJsmindData(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_CHECK_DEP, JsonUtil.formatJsonString(run_jsmind_data));
+                            logger.warn("task: {}, labele: {} ,depend data is not found, please wait retry", strategyLogInfo.getStrategy_instance_id(), labelInfo.getLabel_code());
+                            return ;
+                        }
+                    }
+                    rowsStr = asyncResult.getResult();
                     cur_rows = rowsStr.parallelStream().map(s->new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_SUCCESS).task_type(strategyLogInfo.getInstance_type()).ext(new HashMap<>()).build()).collect(Collectors.toSet());
                 }
             }
@@ -187,17 +198,17 @@ public class LabelCalculateImpl extends BaseCalculate{
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
 
         }catch (Exception e){
-            writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             logger.error("label label run error: ", e);
+            writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
             after();
         }
     }
 
 
-    public Set<String> offlineLabel(String is_disenable, Map run_jsmind_data, LabelInfo labelInfo, StrategyLogInfo strategyLogInfo) throws Exception {
+    public AsyncResult offlineLabel(String is_disenable, Map run_jsmind_data, LabelInfo labelInfo, StrategyLogInfo strategyLogInfo) throws Exception {
         Set<String> rowsStr = Sets.newHashSet();
         DataSourcesServiceImpl dataSourcesService=new DataSourcesServiceImpl();
 
@@ -226,7 +237,17 @@ public class LabelCalculateImpl extends BaseCalculate{
         if(is_disenable.equalsIgnoreCase("true")){
             //禁用任务不做处理,认为结果为空
         }else{
-            rows = execute_sql(new_sql, this.param, dataSourcesInfo);
+            String engine = labelInfo.getLabel_engine();
+            if(engine.equalsIgnoreCase("mysql") || engine.equalsIgnoreCase("hive")
+                    || engine.equalsIgnoreCase("presto") || engine.equalsIgnoreCase("spark")){
+                rows = execute_sql(new_sql, dataSourcesInfo);
+            }else if(engine.equalsIgnoreCase("http")){
+                AsyncResult asyncResult = async_http(dataSourcesInfo, run_jsmind_data);
+                return asyncResult;
+            }else{
+                throw new Exception("不支持的计算引擎:"+engine);
+            }
+
             if(rows==null || rows.size()==0){
                 System.err.println("数据执行为空");
             }
@@ -234,8 +255,10 @@ public class LabelCalculateImpl extends BaseCalculate{
         for(Map<String,Object> r: rows){
             rowsStr.add(String.join(",",r.values().toArray(new String[]{})));
         }
-
-        return rowsStr;
+        AsyncResult asyncResult = new AsyncResult();
+        asyncResult.setResult(rowsStr);
+        asyncResult.setStatus("finish");
+        return asyncResult;
     }
 
 
@@ -285,6 +308,10 @@ public class LabelCalculateImpl extends BaseCalculate{
      */
     public boolean checkLabelDep(LabelInfo labelInfo, String cur_time) throws Exception{
         try{
+            if(labelInfo.getLabel_engine().equalsIgnoreCase("http")){
+                //http 引擎使用异步处理
+                return true;
+            }
             String format = "yyyy-MM-dd 00:00:00";
             String label_data_time_effect = labelInfo.getLabel_data_time_effect();//day,hour,second
             if(label_data_time_effect.equalsIgnoreCase("day")){
@@ -406,22 +433,61 @@ public class LabelCalculateImpl extends BaseCalculate{
         return jinJavaParam;
     }
 
-    public List<Map<String,Object>> execute_sql(String sql, Map<String,Object> label, DataSourcesInfo dataSourcesInfo) throws Exception {
-        String engine = label.getOrDefault("engine", "mysql").toString();
-        if(engine.equalsIgnoreCase("mysql") || engine.equalsIgnoreCase("hive")
-                || engine.equalsIgnoreCase("presto") || engine.equalsIgnoreCase("spark")){
+    public List<Map<String,Object>> execute_sql(String sql, DataSourcesInfo dataSourcesInfo) throws Exception {
 
-            String sparkDriver=dataSourcesInfo.getDriver();
-            String sparkUrl=dataSourcesInfo.getUrl();
-            String sparkUser=dataSourcesInfo.getUsername();
-            String sparkPassword=dataSourcesInfo.getPassword();
-            DBUtil dbUtil=new DBUtil();
-            List<Map<String,Object>> list = dbUtil.R5(sparkDriver,sparkUrl, sparkUser, sparkPassword, sql, null);
-            return list;
-        }
-        throw new Exception("不支持的计算引擎:"+engine);
+        String sparkDriver=dataSourcesInfo.getDriver();
+        String sparkUrl=dataSourcesInfo.getUrl();
+        String sparkUser=dataSourcesInfo.getUsername();
+        String sparkPassword=dataSourcesInfo.getPassword();
+        DBUtil dbUtil=new DBUtil();
+        List<Map<String,Object>> list = dbUtil.R5(sparkDriver,sparkUrl, sparkUser, sparkPassword, sql, null);
+        return list;
     }
 
+    /**
+     * 检查是否有异步任务,无则提交任务,有则检查任务是否完成,完成读取数据
+     * @param dataSourcesInfo
+     */
+    private AsyncResult async_http(DataSourcesInfo dataSourcesInfo, Map run_jsmind_data) throws Exception {
+        AsyncResult asyncResult = new AsyncResult();
+        if(!run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID)){
+            //提交任务
+            String task_id = "";//待处理
+            run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID, task_id);
+        }
+        if(run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID) &&
+                (!run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS) || run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS).toString().equalsIgnoreCase("running"))){
+            //已经提交过异步任务,检查任务状态
+            String status = "";//待处理
+            asyncResult.setStatus(status);
+            run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, status);
+            asyncResult.setResult(null);
+
+        }
+        if(run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID) && run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS)){
+            //获取执行结果
+            if(run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS).toString().equalsIgnoreCase("finish")){
+                // 获取执行结果
+                asyncResult.setStatus("finish");
+                run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, "finish");
+                asyncResult.setResult(null);
+
+            }else if(run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS).toString().equalsIgnoreCase("fail")){
+                // 执行失败, 抛出异常, 在最外层捕获,判定是否进行重试
+                asyncResult.setStatus("fail");
+                run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, "fail");
+
+            }else if(run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS).toString().equalsIgnoreCase("running")){
+                // 执行中,再次检查状态
+                String status = "";//待处理
+                asyncResult.setStatus(status);
+                run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, status);
+                asyncResult.setResult(null);
+
+            }
+        }
+        return asyncResult;
+    }
 
     /**
      *

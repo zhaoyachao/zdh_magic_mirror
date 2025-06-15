@@ -54,7 +54,7 @@ public class DbQueueHandler implements QueueHandler {
                     if(!NumberUtil.isLong(strategyInstance.getStrategy_id())){
                         LogUtil.error("",strategyInstance.getId(), "当前任务配置信息异常");
                         strategyInstance.setStatus(Const.STATUS_ERROR);
-                        strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
+                        strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
                         continue ;
                     }
                     Map run_jsmind_data = JsonUtil.toJavaBean(strategyInstance.getRun_jsmind_data(), Map.class);
@@ -67,7 +67,7 @@ public class DbQueueHandler implements QueueHandler {
                     }
                     if(Long.valueOf(strategyInstance.getStrategy_id())% slot_num + 1 >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1 <= end_slot){
                         return BeanUtil.beanToMap(strategyInstance);
-                }
+                    }
                 }
 
             }

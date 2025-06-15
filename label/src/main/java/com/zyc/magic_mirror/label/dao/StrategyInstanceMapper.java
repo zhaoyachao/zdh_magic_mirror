@@ -20,12 +20,15 @@ public interface StrategyInstanceMapper {
             "<if test = 'update_time != null'> ",
             "update_time=#{update_time} ,",
             "</if> ",
+            "<if test = 'run_jsmind_data != null and run_jsmind_data != \"\"'> ",
+            "run_jsmind_data=#{run_jsmind_data} ,",
+            "</if> ",
             "</set>",
             "where id = #{id}",
             "</script>"
     }
     )
-    public int update(StrategyInstance strategyInstance);
+    public int updateStatusAndUpdateTimeById(StrategyInstance strategyInstance);
 
     @Select({
             "<script>",

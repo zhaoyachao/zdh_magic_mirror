@@ -106,7 +106,7 @@ public class KillCalculateImpl extends BaseCalculate {
                         if(!NumberUtil.isLong(strategyInstance.getStrategy_id())){
                             LogUtil.error("",strategyInstance.getId(), "当前任务配置信息异常");
                             strategyInstance.setStatus(Const.STATUS_ERROR);
-                            strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
+                            strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
                             continue ;
                         }
                         if(!(Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1 >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1<= end_slot)){

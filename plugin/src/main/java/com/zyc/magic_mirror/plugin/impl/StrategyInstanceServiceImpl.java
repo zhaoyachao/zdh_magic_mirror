@@ -15,12 +15,12 @@ import java.util.List;
 public class StrategyInstanceServiceImpl {
 
     private static Logger logger= LoggerFactory.getLogger(FunctionServiceImpl.class);
-    public int updateByPrimaryKeySelective(StrategyInstance strategyInstance){
+    public int updateStatusAndUpdateTimeById(StrategyInstance strategyInstance){
         SqlSession sqlSession = null;
         try {
             sqlSession=MybatisUtil.getSqlSession();
             StrategyInstanceMapper strategyInstanceMappler = sqlSession.getMapper(StrategyInstanceMapper.class);
-            int result = strategyInstanceMappler.update(strategyInstance);
+            int result = strategyInstanceMappler.updateStatusAndUpdateTimeById(strategyInstance);
             return result;
         } catch (IOException e) {
             logger.error("plugin service updateByPrimaryKeySelective error: ", e);

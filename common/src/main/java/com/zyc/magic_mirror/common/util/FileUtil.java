@@ -50,23 +50,29 @@ public class FileUtil {
         return DataPipe.readStringSplit(file, charset, status, split);
     }
 
-    public static List<DataPipe> readTextSplit(File file, Charset charset, String split) throws IOException {
+    public static List<DataPipe> readTextSplit(File file, Charset charset, String split, boolean isHeader) throws IOException {
         List<DataPipe> result = new ArrayList<>();
         List<String> tmp = Files.readLines(file, charset);
+        int i=0;
         for (String line: tmp){
+            i++;
+            if(isHeader && i<=1){
+                continue;
+            }
             DataPipe dataPipe = DataPipe.readStringSplit(line, split);
             result.add(dataPipe);
         }
         return result;
     }
 
-    public static List<DataPipe> readExcelSplit(File file, String excelType, Charset charset, String status) throws IOException {
+    public static List<DataPipe> readExcelSplit(File file, String excelType, Charset charset, String status, boolean isHeader) throws IOException {
         List<DataPipe> result = new ArrayList<>();
         ExcelTypeEnum excelTypeEnum = ExcelTypeEnum.XLS;
         if(excelType.endsWith("xlsx")){
             excelTypeEnum = ExcelTypeEnum.XLSX;
         }
-        List<Map<Integer, Object>> tmp = FastExcel.read(file).headRowNumber(0).excelType(excelTypeEnum).doReadAllSync();
+        int headRowNumber = isHeader?1:0;
+        List<Map<Integer, Object>> tmp = FastExcel.read(file).headRowNumber(headRowNumber).excelType(excelTypeEnum).doReadAllSync();
         for (Map<Integer, Object> line: tmp){
             DataPipe dataPipe = new DataPipe.Builder()
                     .udata(line.containsKey(0)?line.get(0).toString():"")

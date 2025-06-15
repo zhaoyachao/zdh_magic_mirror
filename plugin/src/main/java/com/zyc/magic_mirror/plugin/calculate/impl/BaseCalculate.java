@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.jcraft.jsch.SftpException;
 import com.zyc.magic_mirror.common.entity.DataPipe;
+import com.zyc.magic_mirror.common.entity.StrategyGroupInstance;
 import com.zyc.magic_mirror.common.entity.StrategyInstance;
 import com.zyc.magic_mirror.common.entity.StrategyLogInfo;
 import com.zyc.magic_mirror.common.util.*;
@@ -13,6 +14,7 @@ import com.zyc.magic_mirror.plugin.PluginServer;
 import com.zyc.magic_mirror.plugin.calculate.BaseProcessCalculate;
 import com.zyc.magic_mirror.plugin.calculate.CalculateCommomParam;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
+import com.zyc.magic_mirror.common.service.impl.StrategyGroupInstanceServiceImpl;
 import com.zyc.magic_mirror.plugin.impl.StrategyInstanceServiceImpl;
 import io.minio.MinioClient;
 import org.apache.commons.io.IOUtils;
@@ -45,8 +47,11 @@ public abstract class BaseCalculate extends BaseProcessCalculate {
     public abstract String getOperate(Map run_jsmind_data);
 
     protected StrategyInstanceServiceImpl strategyInstanceService = new StrategyInstanceServiceImpl();
+    protected StrategyGroupInstanceServiceImpl strategyGroupInstanceService = new StrategyGroupInstanceServiceImpl();
 
     protected Map<String,Object> param=new HashMap<String, Object>();
+    //统一运行中run_jsmind_data信息,查询修改更新均用此变量
+    protected Map<String,Object> run_jsmind_data=new LinkedHashMap<>();
     protected AtomicInteger atomicInteger;
     protected Map<String,String> dbConfig=new HashMap<String, String>();
     protected StrategyLogInfo strategyLogInfo;
@@ -157,7 +162,12 @@ public abstract class BaseCalculate extends BaseProcessCalculate {
         String file_path=getFilePathByParam(base_path, param, dbConfig);
         String file_rocksdb_path = getRocksdbFileDirByParam(base_rocksdb_path, param, dbConfig);
 
+        this.run_jsmind_data = JsonUtil.toJavaMap(this.param.get("run_jsmind_data").toString());
+
+        StrategyGroupInstance strategyGroupInstance = strategyGroupInstanceService.selectById(group_instance_id);
+
         StrategyLogInfo strategyLogInfo = new StrategyLogInfo();
+        strategyLogInfo.setStrategyGroupInstance(strategyGroupInstance);
         strategyLogInfo.setStrategy_instance_id(id);
         strategyLogInfo.setStrategy_group_instance_id(group_instance_id);
         strategyLogInfo.setStrategy_group_id(group_id);
@@ -353,8 +363,24 @@ public abstract class BaseCalculate extends BaseProcessCalculate {
     }
 
     public void writeEmptyFileAndStatus(StrategyLogInfo strategyLogInfo){
+        if(checkRetry()){
+            return ;
+        }
         writeEmptyFile(strategyLogInfo.getFile_path());
         setStatus(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_ERROR);
+    }
+
+    public boolean checkRetry(){
+        //判断是否可进行重试
+        Long retry_count = Long.valueOf(run_jsmind_data.getOrDefault(Const.STRATEGY_INSTANCE_RETRY_COUNT, "0").toString());
+        if( retry_count < Long.valueOf(run_jsmind_data.getOrDefault("plan_retry_count", "0").toString())){
+            //可重试
+            run_jsmind_data.put(Const.STRATEGY_INSTANCE_DOUBLECHECK_TIME, System.currentTimeMillis() + 1000 * 60 * 5);
+            run_jsmind_data.put(Const.STRATEGY_INSTANCE_RETRY_COUNT, retry_count+1);
+            setStatusAndRunJsmindData(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_CHECK_DEP, JsonUtil.formatJsonString(run_jsmind_data));
+            return true;
+        }
+        return false;
     }
 
     public String writeEmptyFile(String file_path){
@@ -429,7 +455,17 @@ public abstract class BaseCalculate extends BaseProcessCalculate {
         strategyInstance.setId(task_id);
         strategyInstance.setStatus(status);
         strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
-        strategyInstanceService.updateByPrimaryKeySelective(strategyInstance);
+        strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
+    }
+
+    public void setStatusAndRunJsmindData(String task_id,String status, String run_jsmind_data){
+        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
+        StrategyInstance strategyInstance=new StrategyInstance();
+        strategyInstance.setId(task_id);
+        strategyInstance.setStatus(status);
+        strategyInstance.setRun_jsmind_data(run_jsmind_data);
+        strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
+        strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
     }
 
     public void loadExt(List<DataPipe> lines, Map<String, Map<String, Object>> ext){
@@ -548,8 +584,9 @@ public abstract class BaseCalculate extends BaseProcessCalculate {
                 retry+=1;
             }
         }
-
-        setStatus(id, Const.STATUS_FINISH);
+        run_jsmind_data.put("success_num",rs.size());
+        run_jsmind_data.put("failed_num",rs_error.size());
+        setStatusAndRunJsmindData(id, Const.STATUS_FINISH, JsonUtil.formatJsonString(run_jsmind_data));
         logStr = StrUtil.format("task: {}, update status finish", id);
         LogUtil.info(strategy_id, id, logStr);
     }
@@ -604,13 +641,18 @@ public abstract class BaseCalculate extends BaseProcessCalculate {
             file.mkdirs();
         }
         RocksDB rocksDB = RocksDBUtil.getConnection(file_rocksdb_path);
-        if(rs != null && rs.size() > 0){
-            for (DataPipe r: rs){
-                String key = r.getUdata()+"_"+id;
-                rocksDB.put(key.getBytes(), status.getBytes());
+        try{
+            if(rs != null && rs.size() > 0){
+                for (DataPipe r: rs){
+                    String key = r.getUdata()+"_"+id;
+                    rocksDB.put(key.getBytes(), status.getBytes());
+                }
             }
+        }catch (Exception e){
+            throw e;
+        }finally {
+            rocksDB.close();
         }
-        rocksDB.close();
     }
 
 

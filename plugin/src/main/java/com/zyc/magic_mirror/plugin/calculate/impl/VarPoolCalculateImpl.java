@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.magic_mirror.common.entity.DataPipe;
+import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
 import com.zyc.magic_mirror.common.util.Const;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
@@ -95,7 +96,6 @@ public class VarPoolCalculateImpl extends BaseCalculate implements Runnable {
         try{
 
             //获取标签code
-            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String varpool_params_str=run_jsmind_data.getOrDefault("varpool_param","").toString();
 
             Map<String, Object> commonParam = getJinJavaCommonParam();
@@ -125,6 +125,9 @@ public class VarPoolCalculateImpl extends BaseCalculate implements Runnable {
                         String varpool_domain_type = varpool.getOrDefault("varpool_domain_type","").toString();
                         String varpool_domain_sep = varpool.getOrDefault("varpool_domain_sep",";").toString();
                         String secondKey = varpool_domain+":"+varpool_code;
+
+                        //动态获取变量
+                        varpool_value = dynamicsData(dataPipe, varpool_value).toString();
 
                         if(varpool_domain_type.equalsIgnoreCase("string")){
                             if(varpool_operate.equalsIgnoreCase("eq")){
@@ -223,10 +226,10 @@ public class VarPoolCalculateImpl extends BaseCalculate implements Runnable {
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             logger.error("plugin varpool run error: ", e);
+            writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 
         }
@@ -246,4 +249,28 @@ public class VarPoolCalculateImpl extends BaseCalculate implements Runnable {
         return map;
     }
 
+    /**
+     * 是否可以动态获取变量信息,否则返回原数据
+     * @param dataPipe
+     * @param varpool_value
+     * @return
+     */
+    private Object dynamicsData(DataPipe dataPipe, String varpool_value){
+        //千人千值,此处默认采用redis实现(方便),不同的服务可自行改造(使用http接口,mysql等都可以)
+        if(varpool_value.startsWith("redis:")){
+            String udata = dataPipe.getUdata();
+            String product_code = this.strategyLogInfo.getStrategyGroupInstance().getProduct_code();
+
+            String new_varpool_value = varpool_value.replaceAll("redis:", "");
+            String key = product_code+"_tag_"+udata;
+            Object o = JedisPoolUtil.redisClient().hGet(key, new_varpool_value);
+            if(o != null){
+                Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(o.toString());
+                String value = stringObjectMap.values().iterator().next().toString();
+                return value;
+            }
+        }
+
+        return varpool_value;
+    }
 }

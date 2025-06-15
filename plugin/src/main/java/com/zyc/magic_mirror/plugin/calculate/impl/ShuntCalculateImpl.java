@@ -98,7 +98,6 @@ public class ShuntCalculateImpl extends BaseCalculate implements Runnable {
         try{
 
             //获取标签code
-            Map run_jsmind_data = JsonUtil.toJavaBean(this.param.get("run_jsmind_data").toString(), Map.class);
             String shunt_param_str=run_jsmind_data.getOrDefault("shunt_param","").toString();
             List<Map<String, Object>> shunt_params = JsonUtil.toJavaListMap(shunt_param_str);
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
@@ -194,10 +193,10 @@ public class ShuntCalculateImpl extends BaseCalculate implements Runnable {
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs3, rs_error);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs3, Const.STATUS_FINISH);
         }catch (Exception e){
-            writeEmptyFileAndStatus(strategyLogInfo);
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
             //执行失败,更新标签任务失败
             logger.error("plugin shunt run error: ", e);
+            writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 
         }
