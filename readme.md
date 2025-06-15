@@ -15,8 +15,8 @@
     对于实时模块,可以采用多机部署以支持更高的并发
 
 # 项目依赖
-    前端配置：github: https://github.com/zhaoyachao/zdh_web
-    数据库等配置,全部在zdh_web项目中维护,分支版本和zdh_web一一对应
+   前端github： [https://github.com/zhaoyachao/zdh_web](https://github.com/zhaoyachao/zdh_web)
+   数据库等配置,全部在zdh_web项目中维护,分支版本和zdh_web一一对应
     
 # 在线预览
    [http://zycblog.cn:8081/login](http://zycblog.cn:8081/login)
