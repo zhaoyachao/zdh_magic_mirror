@@ -146,10 +146,7 @@ public class LabelServer {
                         StrategyInstance strategyInstance=new StrategyInstance();
                         strategyInstance.setId(m.get("id").toString());
                         strategyInstance.setStatus("etl");
-                        Map run_jsmind_data = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
-                        run_jsmind_data.put("instance_id", instanceId);
                         strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
-                        strategyInstance.setRun_jsmind_data(JsonUtil.formatJsonString(run_jsmind_data));
                         strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
 
                     }catch (Exception e){
