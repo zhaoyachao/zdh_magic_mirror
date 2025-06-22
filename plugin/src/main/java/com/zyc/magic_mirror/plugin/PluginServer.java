@@ -135,18 +135,14 @@ public class PluginServer {
                         }
 
                         //检查状态
-                        if(!strategyInstances.get(0).getStatus().equalsIgnoreCase("check_dep_finish")){
+                        if(!strategyInstances.get(0).getStatus().equalsIgnoreCase(Const.STATUS_CHECK_DEP_FINISH)){
                             continue;
                         }
                         //更新状态为执行中
                         StrategyInstance strategyInstance=new StrategyInstance();
                         strategyInstance.setId(m.get("id").toString());
-                        strategyInstance.setStatus("etl");
-                        Map run_jsmind_data = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
-                        run_jsmind_data.put("instance_id", instanceId);
+                        strategyInstance.setStatus(Const.STATUS_ETL);
                         strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
-                        strategyInstance.setRun_jsmind_data(JsonUtil.formatJsonString(run_jsmind_data));
-
                         strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
 
                     }catch (Exception e){
@@ -183,7 +179,7 @@ public class PluginServer {
                     }else{
                         //不支持的任务类型
                         LogUtil.error(m.get("strategy_id").toString(), m.get("id").toString(), "不支持的任务类型, "+m.get("instance_type").toString());
-                        setStatus(m.get("id").toString(), "error");
+                        setStatus(m.get("id").toString(), Const.STATUS_ERROR);
                         continue;
                     }
 

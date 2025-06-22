@@ -5,6 +5,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.StrUtil;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
@@ -22,6 +23,10 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -160,14 +165,14 @@ public class LabelCalculateImpl extends BaseCalculate{
                     }
                     //判断是否异步,异步则判断 是否有结果
                     AsyncResult asyncResult = offlineLabel(is_disenable, run_jsmind_data, labelInfo, strategyLogInfo);
-                    if(rowsStr==null && run_jsmind_data.getOrDefault("is_async", "false").toString().equalsIgnoreCase("true")){
-                        if(asyncResult.getStatus().equalsIgnoreCase("fail")){
+                    if(run_jsmind_data.getOrDefault("is_async", "false").toString().equalsIgnoreCase("true")){
+                        if(asyncResult.getStatus().equalsIgnoreCase(Const.ASYNC_TASK_STATUS_FAIL)){
                             throw new Exception("异步任务失败");
                         }
-                        if(asyncResult.getStatus().equalsIgnoreCase("running")){
+                        if(asyncResult.getStatus().equalsIgnoreCase(Const.ASYNC_TASK_STATUS_RUNNING)){
                             run_jsmind_data.put(Const.STRATEGY_INSTANCE_DOUBLECHECK_TIME, System.currentTimeMillis() + 1000 * 60 * 5);
                             setStatusAndRunJsmindData(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_CHECK_DEP, JsonUtil.formatJsonString(run_jsmind_data));
-                            logger.warn("task: {}, labele: {} ,depend data is not found, please wait retry", strategyLogInfo.getStrategy_instance_id(), labelInfo.getLabel_code());
+                            logger.warn("task: {}, labele: {} ,async task running, please wait retry", strategyLogInfo.getStrategy_instance_id(), labelInfo.getLabel_code());
                             return ;
                         }
                     }
@@ -242,7 +247,7 @@ public class LabelCalculateImpl extends BaseCalculate{
                     || engine.equalsIgnoreCase("presto") || engine.equalsIgnoreCase("spark")){
                 rows = execute_sql(new_sql, dataSourcesInfo);
             }else if(engine.equalsIgnoreCase("http")){
-                AsyncResult asyncResult = async_http(dataSourcesInfo, run_jsmind_data);
+                AsyncResult asyncResult = async_http(dataSourcesInfo, run_jsmind_data, labelInfo);
                 return asyncResult;
             }else{
                 throw new Exception("不支持的计算引擎:"+engine);
@@ -446,47 +451,95 @@ public class LabelCalculateImpl extends BaseCalculate{
 
     /**
      * 检查是否有异步任务,无则提交任务,有则检查任务是否完成,完成读取数据
+     *
+     * 异步任务 通过http 实现, 异步接口需要满足如下基础信息
+     *
+     * 创建任务:
+     *     请求参数: rule_param 字符串类型
+     *     返回结果: AsyncResult 类型, 必须包含task_id
+     *
+     * 获取任务状态:
+     *     请求参数: task_id
+     *     返回结果: AsyncResult 类型, 必须包含task_id, status,  成功时必须包含download_file_url或result 参数
+     *
      * @param dataSourcesInfo
      */
-    private AsyncResult async_http(DataSourcesInfo dataSourcesInfo, Map run_jsmind_data) throws Exception {
+    private AsyncResult async_http(DataSourcesInfo dataSourcesInfo, Map run_jsmind_data, LabelInfo labelInfo) throws Exception {
         AsyncResult asyncResult = new AsyncResult();
+        Jinjava jinjava=new Jinjava();
+        Map<String, Object> commonParam = getJinJavaCommonParam();
+        String new_rule_param = jinjava.render(run_jsmind_data.get("rule_param").toString(), commonParam);
+
+        String url = dataSourcesInfo.getUrl();
+        Map<String, Object> param = new HashMap<>();
+        param.put("rule_param", new_rule_param);
+        //ak, sk非必须,实现接口方可选
+        param.put("ak", dataSourcesInfo.getUsername());
+        param.put("sk", dataSourcesInfo.getPassword());
+
         if(!run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID)){
             //提交任务
-            String task_id = "";//待处理
-            run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID, task_id);
+            String postJson = HttpClientUtil.postJson(url, param);
+            asyncResult = JsonUtil.toJavaBean(postJson, AsyncResult.class);
+            if(StringUtils.isEmpty(asyncResult.getTask_id())){
+               throw new Exception("请求创建任务失败");
+            }
+            run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID, asyncResult.getTask_id());
         }
         if(run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID) &&
-                (!run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS) || run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS).toString().equalsIgnoreCase("running"))){
+                (!run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS) || run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS).toString().equalsIgnoreCase(Const.ASYNC_TASK_STATUS_RUNNING))){
             //已经提交过异步任务,检查任务状态
-            String status = "";//待处理
-            asyncResult.setStatus(status);
-            run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, status);
-            asyncResult.setResult(null);
-
+            param.put("task_id", run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID));
+            String postJson = HttpClientUtil.postJson(url, param);
+            asyncResult = JsonUtil.toJavaBean(postJson, AsyncResult.class);
         }
-        if(run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID) && run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS)){
+        if(run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID)){
             //获取执行结果
-            if(run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS).toString().equalsIgnoreCase("finish")){
+            if(asyncResult.getStatus().equalsIgnoreCase(Const.ASYNC_TASK_STATUS_FINISH)){
                 // 获取执行结果
-                asyncResult.setStatus("finish");
-                run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, "finish");
-                asyncResult.setResult(null);
+                if(!StringUtils.isEmpty(asyncResult.getDownload_file_url())){
+                    String tmp_file = this.strategyLogInfo.getFile_path()+"_tmp";
+                    writeEmptyFile(tmp_file);
+                    downloadFile(asyncResult.getDownload_file_url(), tmp_file);
+                    List<String> res = FileUtil.readString(new File(tmp_file), Charset.forName("utf-8"));
+                    asyncResult.setResult(Sets.newHashSet(res));
+                }
+                run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, Const.ASYNC_TASK_STATUS_FINISH);
 
-            }else if(run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS).toString().equalsIgnoreCase("fail")){
+            }else if(asyncResult.getStatus().equalsIgnoreCase(Const.ASYNC_TASK_STATUS_FAIL)){
                 // 执行失败, 抛出异常, 在最外层捕获,判定是否进行重试
-                asyncResult.setStatus("fail");
-                run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, "fail");
-
-            }else if(run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS).toString().equalsIgnoreCase("running")){
+                run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, Const.ASYNC_TASK_STATUS_FAIL);
+                asyncResult.setResult(null);
+            }else if(asyncResult.getStatus().equalsIgnoreCase(Const.ASYNC_TASK_STATUS_RUNNING)){
                 // 执行中,再次检查状态
-                String status = "";//待处理
-                asyncResult.setStatus(status);
-                run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, status);
+                run_jsmind_data.put(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS, Const.ASYNC_TASK_STATUS_RUNNING);
                 asyncResult.setResult(null);
 
             }
         }
         return asyncResult;
+    }
+
+    public static void downloadFile(String fileUrl, String savePath) throws IOException {
+        URL url = new URL(fileUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        try{
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                try (BufferedInputStream in = new BufferedInputStream(connection.getInputStream());
+                     OutputStream out = new FileOutputStream(savePath)) {
+                    // 使用 Guava 的 ByteStreams 复制输入流到输出流
+                    ByteStreams.copy(in, out);
+                }
+            } else {
+                throw new IOException("HTTP 请求失败，状态码: " + responseCode);
+            }
+        }finally {
+            connection.disconnect();
+        }
+
+
     }
 
     /**

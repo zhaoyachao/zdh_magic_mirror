@@ -31,4 +31,8 @@ public class Const {
     public static String STRATEGY_INSTANCE_ASYNC_TASK_STATUS = "async_task_status";
     public static String STRATEGY_INSTANCE_ASYNC_TASK_EXT = "async_task_ext";
 
+    public static String ASYNC_TASK_STATUS_RUNNING = "running";
+    public static String ASYNC_TASK_STATUS_FINISH = "finish";
+    public static String ASYNC_TASK_STATUS_FAIL = "fail";
+
 }

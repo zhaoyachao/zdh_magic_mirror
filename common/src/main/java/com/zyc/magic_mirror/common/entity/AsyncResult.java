@@ -1,6 +1,5 @@
 package com.zyc.magic_mirror.common.entity;
 
-import java.util.List;
 import java.util.Set;
 
 public class AsyncResult {
@@ -12,6 +11,21 @@ public class AsyncResult {
      * fail, finish, running
      */
     private String status;
+
+    /**
+     * 错误码
+     */
+    private String code;
+
+    /**
+     * 中文信息
+     */
+    private String msg;
+
+    /**
+     * 结果下载地址
+     */
+    private String download_file_url;
 
     private Set<String> result;
 
@@ -45,5 +59,29 @@ public class AsyncResult {
 
     public void setResult(Set<String> result) {
         this.result = result;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public void setMsg(String msg) {
+        this.msg = msg;
+    }
+
+    public String getDownload_file_url() {
+        return download_file_url;
+    }
+
+    public void setDownload_file_url(String download_file_url) {
+        this.download_file_url = download_file_url;
     }
 }
