@@ -131,27 +131,44 @@ public class PluginCalculateImpl extends BaseCalculate {
             }else{
                 PluginInfo pluginInfo = pluginService.selectById(rule_id);
                 PluginService pluginServiceImpl = getPluginService(rule_id);
-                //读取已经推送的信息
+                //读取已经执行过的信息
                 List<DataPipe> his = readHisotryFile(file_dir, rule_id+"_"+strategyLogInfo.getStrategy_instance_id(), Const.FILE_STATUS_ALL);
                 Set<String> his2 = his.stream().map(str->str.getUdata()).collect(Collectors.toSet());
                 Set<String> hisSet = Sets.newHashSet(his2);
 
+                //获取批量处理还是单个处理?
+                String is_batch=run_jsmind_data.getOrDefault("is_batch", "false").toString();
+
                 Set<DataPipe> diff = rs.parallelStream().filter(s->!hisSet.contains(s.getUdata())).collect(Collectors.toSet());
-
-                for (DataPipe r: diff){
-                    PluginParam pluginParam = pluginServiceImpl.getPluginParam(rule_params);
-                    params.putAll(JsonUtil.toJavaMap(r.getExt()));//追加参数
-                    PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, r, params);
-                    String status=Const.FILE_STATUS_FAIL;
-                    if(result.getCode() == 0){
-                        rs3.add(r);
-                    }else{
-                        r.setStatus(status);
-                        r.setStatus_desc("plugin error");
-                        rs_error.add(r);
+                PluginParam pluginParam = pluginServiceImpl.getPluginParam(rule_params);
+                if(is_batch.equalsIgnoreCase("false")){
+                    for (DataPipe r: diff){
+                        params.putAll(JsonUtil.toJavaMap(r.getExt()));//追加参数
+                        PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, r, params);
+                        String status=Const.FILE_STATUS_FAIL;
+                        if(result.getCode() == 0){
+                            rs3.add(r);
+                        }else{
+                            r.setStatus(status);
+                            r.setStatus_desc("plugin error");
+                            rs_error.add(r);
+                        }
                     }
-
+                }else{
+                    PluginResult result = pluginServiceImpl.execute(pluginInfo, pluginParam, diff, params);
+                    if(result.getBatchResult() != null){
+                        for(DataPipe r: result.getBatchResult()){
+                            if(r.getStatus() == Const.FILE_STATUS_SUCCESS){
+                                rs3.add(r);
+                            }else{
+                                rs_error.add(r);
+                            }
+                        }
+                    }else{
+                        throw new Exception("插件批量处理返回结果必须是Set<DataPipe>类型");
+                    }
                 }
+
 
                 his.parallelStream().forEach(s->{
                     if(s.getStatus().equalsIgnoreCase(Const.FILE_STATUS_SUCCESS)){

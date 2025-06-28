@@ -332,7 +332,8 @@ public class PluginServer {
 
                         for (StrategyInstance strategyInstance: strategyInstances){
                             Map run_jsmind_data = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
-                            if(!run_jsmind_data.containsKey("is_async") || run_jsmind_data.getOrDefault("is_async", "false").toString().equalsIgnoreCase("true")){
+                            if(run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_IS_ASYNC) && run_jsmind_data.getOrDefault(Const.STRATEGY_INSTANCE_IS_ASYNC, "false").toString().equalsIgnoreCase("true")
+                                    && !run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID)){
                                 continue;
                             }
                             if(Long.valueOf(strategyInstance.getStrategy_id())% slot_num + 1 >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1 <= end_slot){

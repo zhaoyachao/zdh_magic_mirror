@@ -48,12 +48,33 @@ public class FunctionExecutor extends BaseExecutor{
                 param_values.add(value);
                 String param_code = map.get("param_code").toString();
                 String param_value = map.get("param_value").toString();
-
+                String param_type = map.getOrDefault("param_type", "").toString();
                 String new_param_value = jinjava.render(param_value, objectMap);//替换可变参数
+
+                if(param_type.equalsIgnoreCase("int")){
+                    objectMap.put(param_code, Integer.valueOf(new_param_value));
+                }else if(param_type.equalsIgnoreCase("long")){
+                    objectMap.put(param_code, Long.valueOf(new_param_value));
+                }else if(param_type.equalsIgnoreCase("boolean")){
+                    objectMap.put(param_code, Boolean.valueOf(new_param_value));
+                }else if(param_type.equalsIgnoreCase("array")){
+                    objectMap.put(param_code, new_param_value.split(","));
+                }else if(param_type.equalsIgnoreCase("map")){
+                    objectMap.put(param_code, JsonUtil.toJavaMap(new_param_value));
+                }else if(param_type.equalsIgnoreCase("object")){
+                    objectMap.put(param_code, (Object)new_param_value);
+                }else if(param_type.equalsIgnoreCase("list")){
+                    objectMap.put(param_code, JsonUtil.toJavaList(new_param_value));
+                }else if(param_type.equalsIgnoreCase("set")){
+                    objectMap.put(param_code, JsonUtil.toJavaBean(new_param_value, Set.class));
+                }else{
+                    objectMap.put(param_code, new_param_value);
+                }
+
                 objectMap.put(param_code, new_param_value);
             }
 
-            Object res = functionExcute(functionInfo, param_values.toArray(new String[param_values.size()]));
+            Object res = functionExcute(functionInfo, objectMap);
 
             //在线模块尽量直接使用返回结果, 需要设置 开启对比：关闭,取值表达式：为空或者ret
             if(return_diff_enable.equalsIgnoreCase("false") && (StringUtils.isEmpty(return_value_express) || return_value_express.equalsIgnoreCase("ret"))){
@@ -102,7 +123,7 @@ public class FunctionExecutor extends BaseExecutor{
         return shipResult;
     }
 
-    public Object functionExcute(FunctionInfo functionInfo, String[] param_value){
+    public Object functionExcute(FunctionInfo functionInfo, Map<String, Object> objectMap){
         try{
             String function_name = functionInfo.getFunction_name();
             String function_class = functionInfo.getFunction_class();
@@ -110,18 +131,16 @@ public class FunctionExecutor extends BaseExecutor{
             String function_script = functionInfo.getFunction_script();
             List<Object> jsonArray = functionInfo.getParam_json_object();
 
-            Map<String, Object> objectMap = new LinkedHashMap<>();
             List<String> params = new ArrayList<>();
             for(int i=0;i<jsonArray.size();i++){
                 String param_code = ((Map<String, Object>)jsonArray.get(i)).get("param_code").toString();
-                objectMap.put(param_code, param_value[i]);
                 params.add(param_code);
             }
 
             if(CacheFunctionServiceImpl.cacheFunctionInstance.containsKey(function_name)){
                 Object clsInstance = CacheFunctionServiceImpl.cacheFunctionInstance.get(function_name);
                 if(!StringUtils.isEmpty(function_class)){
-                    String[] function_packages = function_class.split(",");
+                    String[] function_packages = function_class.split("\\.");
                     String clsName = ArrayUtil.get(function_packages, function_packages.length-1);
                     String clsInstanceName = StringUtils.uncapitalize(clsName);
                     //加载三方工具类

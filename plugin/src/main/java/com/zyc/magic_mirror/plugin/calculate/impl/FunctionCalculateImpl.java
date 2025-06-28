@@ -150,8 +150,30 @@ public class FunctionCalculateImpl extends BaseCalculate {
 
                         for(Map map: rule_params){
                             String param_code = map.get("param_code").toString();
+                            String param_type = map.getOrDefault("param_type", "").toString();
                             String param_value = map.get("param_value").toString();
                             String new_param_value = jinjava.render(param_value, objectMap);//替换可变参数
+
+                            if(param_type.equalsIgnoreCase("int")){
+                                objectMap.put(param_code, Integer.valueOf(new_param_value));
+                            }else if(param_type.equalsIgnoreCase("long")){
+                                objectMap.put(param_code, Long.valueOf(new_param_value));
+                            }else if(param_type.equalsIgnoreCase("boolean")){
+                                objectMap.put(param_code, Boolean.valueOf(new_param_value));
+                            }else if(param_type.equalsIgnoreCase("array")){
+                                objectMap.put(param_code, new_param_value.split(","));
+                            }else if(param_type.equalsIgnoreCase("map")){
+                                objectMap.put(param_code, JsonUtil.toJavaMap(new_param_value));
+                            }else if(param_type.equalsIgnoreCase("object")){
+                                objectMap.put(param_code, (Object)new_param_value);
+                            }else if(param_type.equalsIgnoreCase("list")){
+                                objectMap.put(param_code, JsonUtil.toJavaList(new_param_value));
+                            }else if(param_type.equalsIgnoreCase("set")){
+                                objectMap.put(param_code, JsonUtil.toJavaBean(new_param_value, Set.class));
+                            }else{
+                                objectMap.put(param_code, new_param_value);
+                            }
+
                             objectMap.put(param_code, new_param_value);
                             param_codes.add(param_code);
                         }
@@ -216,7 +238,7 @@ public class FunctionCalculateImpl extends BaseCalculate {
         String function_script = functionInfo.getFunction_script();
 
         if(!StringUtils.isEmpty(function_class)){
-            String[] function_packages = function_class.split(",");
+            String[] function_packages = function_class.split("\\.");
             String clsName = ArrayUtil.get(function_packages, function_packages.length-1);
             String clsInstanceName = StringUtils.uncapitalize(clsName);
 

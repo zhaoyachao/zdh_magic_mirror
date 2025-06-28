@@ -14,10 +14,7 @@ import org.apache.http.NameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 
 public class HttpPluginServiceImpl implements PluginService {
@@ -82,6 +79,19 @@ public class HttpPluginServiceImpl implements PluginService {
         return httpPluginResult;
     }
 
+    /**
+     * 批量处理待实现
+     * @param pluginInfo
+     * @param pluginParam
+     * @param rs
+     * @param params
+     * @return
+     */
+    @Override
+    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, Set<DataPipe> rs, Map<String, Object> params) {
+        return null;
+    }
+
     @Override
     public PluginParam getPluginParam(Object param) {
         return new HttpPluginParam((List<Map>)param);
@@ -124,6 +134,8 @@ public class HttpPluginServiceImpl implements PluginService {
 
         private Object result;
 
+        private Set<DataPipe> batchResult;
+
         private String message;
 
         @Override
@@ -137,6 +149,11 @@ public class HttpPluginServiceImpl implements PluginService {
         }
 
         @Override
+        public Set<DataPipe> getBatchResult() {
+            return batchResult;
+        }
+
+        @Override
         public String getMessage() {
             return this.message;
         }
@@ -147,6 +164,10 @@ public class HttpPluginServiceImpl implements PluginService {
 
         public void setResult(Object result) {
             this.result = result;
+        }
+
+        public void setBatchResult(Set<DataPipe> batchResult) {
+            this.batchResult = batchResult;
         }
 
         public void setMessage(String message) {

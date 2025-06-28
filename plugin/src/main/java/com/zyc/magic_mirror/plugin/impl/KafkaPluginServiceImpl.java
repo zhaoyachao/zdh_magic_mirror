@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 
 public class KafkaPluginServiceImpl implements PluginService {
@@ -74,6 +75,19 @@ public class KafkaPluginServiceImpl implements PluginService {
         return kafkaPluginResult;
     }
 
+    /**
+     * 批量处理待实现
+     * @param pluginInfo
+     * @param pluginParam
+     * @param rs
+     * @param params
+     * @return
+     */
+    @Override
+    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, Set<DataPipe> rs, Map<String, Object> params) {
+        return null;
+    }
+
     @Override
     public PluginParam getPluginParam(Object param) {
         return new KafkaPluginParam((List<Map>)param);
@@ -116,6 +130,8 @@ public class KafkaPluginServiceImpl implements PluginService {
 
         private Object result;
 
+        private Set<DataPipe> batchResult;
+
         private String message;
 
         @Override
@@ -129,6 +145,11 @@ public class KafkaPluginServiceImpl implements PluginService {
         }
 
         @Override
+        public Set<DataPipe> getBatchResult() {
+            return batchResult;
+        }
+
+        @Override
         public String getMessage() {
             return this.message;
         }
@@ -139,6 +160,10 @@ public class KafkaPluginServiceImpl implements PluginService {
 
         public void setResult(Object result) {
             this.result = result;
+        }
+
+        public void setBatchResult(Set<DataPipe> batchResult) {
+            this.batchResult = batchResult;
         }
 
         public void setMessage(String message) {

@@ -94,6 +94,19 @@ public class RedisPluginServiceImpl implements PluginService {
         return redisPluginResult;
     }
 
+    /**
+     * 批量处理待实现
+     * @param pluginInfo
+     * @param pluginParam
+     * @param rs
+     * @param params
+     * @return
+     */
+    @Override
+    public PluginResult execute(PluginInfo pluginInfo, PluginParam pluginParam, Set<DataPipe> rs, Map<String, Object> params) {
+        return null;
+    }
+
     @Override
     public PluginParam getPluginParam(Object param) {
         return new RedisPluginParam((List<Map>)param);
@@ -136,6 +149,8 @@ public class RedisPluginServiceImpl implements PluginService {
 
         private Object result;
 
+        private Set<DataPipe> batchResult;
+
         private String message;
 
         @Override
@@ -149,6 +164,11 @@ public class RedisPluginServiceImpl implements PluginService {
         }
 
         @Override
+        public Set<DataPipe> getBatchResult() {
+            return batchResult;
+        }
+
+        @Override
         public String getMessage() {
             return this.message;
         }
@@ -159,6 +179,10 @@ public class RedisPluginServiceImpl implements PluginService {
 
         public void setResult(Object result) {
             this.result = result;
+        }
+
+        public void setBatchResult(Set<DataPipe> batchResult) {
+            this.batchResult = batchResult;
         }
 
         public void setMessage(String message) {

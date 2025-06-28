@@ -165,7 +165,7 @@ public class LabelCalculateImpl extends BaseCalculate{
                     }
                     //判断是否异步,异步则判断 是否有结果
                     AsyncResult asyncResult = offlineLabel(is_disenable, run_jsmind_data, labelInfo, strategyLogInfo);
-                    if(run_jsmind_data.getOrDefault("is_async", "false").toString().equalsIgnoreCase("true")){
+                    if(run_jsmind_data.getOrDefault(Const.STRATEGY_INSTANCE_IS_ASYNC, "false").toString().equalsIgnoreCase("true")){
                         if(asyncResult.getStatus().equalsIgnoreCase(Const.ASYNC_TASK_STATUS_FAIL)){
                             throw new Exception("异步任务失败");
                         }
