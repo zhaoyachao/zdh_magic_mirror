@@ -12,6 +12,8 @@ public class Const {
     public static String STATUS_ETL="etl";
     public static String STATUS_FINISH="finish";
     public static String STATUS_ERROR="error";
+    public static String STATUS_KILL="kill";
+    public static String STATUS_KILLED="killed";
 
     public static String ZDH_STOP_FLAG_KEY="zdh_stop_flag";
     public static String ZDH_LABEL_STOP_FLAG_KEY="zdh_label_stop_flag";

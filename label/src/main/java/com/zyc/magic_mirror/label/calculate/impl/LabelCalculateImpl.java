@@ -262,7 +262,7 @@ public class LabelCalculateImpl extends BaseCalculate{
         }
         AsyncResult asyncResult = new AsyncResult();
         asyncResult.setResult(rowsStr);
-        asyncResult.setStatus("finish");
+        asyncResult.setStatus(Const.STATUS_FINISH);
         return asyncResult;
     }
 

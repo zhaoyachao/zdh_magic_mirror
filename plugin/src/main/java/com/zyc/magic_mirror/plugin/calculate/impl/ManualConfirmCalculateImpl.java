@@ -137,7 +137,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate {
                             if(is_success) {
                                 check=true;
                             }
-                            logStr = StrUtil.format("task: {}, notice {} {}, owner: {}", strategyLogInfo.getStrategy_instance_id(), confirm_notice_type, is_success, owner);
+                            logStr = StrUtil.format("task: {}, notice {} {}, message: {}, owner: {}", strategyLogInfo.getStrategy_instance_id(), confirm_notice_type, is_success, noticeInfo.getMsg(), owner);
                             LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
                         }
                     }
@@ -162,6 +162,9 @@ public class ManualConfirmCalculateImpl extends BaseCalculate {
                 setStatusAndRunJsmindData(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_FINISH, JsonUtil.formatJsonString(run_jsmind_data));
                 logStr = StrUtil.format("task: {}, update status finish", strategyLogInfo.getStrategy_instance_id());
                 LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
+            }else{
+                run_jsmind_data.put(Const.STRATEGY_INSTANCE_DOUBLECHECK_TIME, System.currentTimeMillis() + 1000 * 60 * 5);
+                setStatusAndRunJsmindData(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_CHECK_DEP, JsonUtil.formatJsonString(run_jsmind_data));
             }
         }catch (Exception e){
             LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());

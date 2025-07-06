@@ -118,10 +118,10 @@ public class KillCalculateImpl extends BaseCalculate {
                         if(future != null && !future.isDone() && !future.isCancelled()){
                             boolean is_cannel = future.cancel(true);
                             if(is_cannel){
-                                setStatus(strategyInstance.getId(), "killed");
+                                setStatus(strategyInstance.getId(), Const.STATUS_KILLED);
                             }
                         }else{
-                            setStatus(strategyInstance.getId(), "killed");
+                            setStatus(strategyInstance.getId(), Const.STATUS_KILLED);
                         }
                         LogUtil.info(strategyInstance.getStrategy_id(), strategyInstance.getId(), "killed");
                     }

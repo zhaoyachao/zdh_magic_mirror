@@ -147,7 +147,7 @@ public class LabelServer {
                         strategyInstance.setId(m.get("id").toString());
                         strategyInstance.setStatus(Const.STATUS_ETL);
                         strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
-                        strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
+                        strategyInstanceService.updateStatusAndUpdateTimeByIdAndOldStatus(strategyInstance, Const.STATUS_CHECK_DEP_FINISH);
 
                     }catch (Exception e){
                         logger.error("label server check error: ", e);
@@ -155,19 +155,20 @@ public class LabelServer {
                         rLock.unlock();
                     }
                     Runnable runnable=null;
-                    if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.LABEL.getCode())){
+                    String instanceType = m.get("instance_type").toString();
+                    if(instanceType.equalsIgnoreCase(InstanceType.LABEL.getCode())){
                         runnable=new LabelCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.CROWD_OPERATE.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.CROWD_OPERATE.getCode())){
                         runnable=new CrowdOperateCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.CROWD_FILE.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.CROWD_FILE.getCode())){
                         runnable=new CrowdFileCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.CROWD_RULE.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.CROWD_RULE.getCode())){
                         runnable=new CrowdRuleCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.CUSTOM_LIST.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.CUSTOM_LIST.getCode())){
                         runnable=new CustomListCalculateImpl(m, atomicInteger, config);
                     }else{
                         //不支持的任务类型
-                        LogUtil.error(m.get("strategy_id").toString(), m.get("id").toString(), "不支持的任务类型, "+m.get("instance_type").toString());
+                        LogUtil.error(m.get("strategy_id").toString(), m.get("id").toString(), "不支持的任务类型, "+instanceType);
                         setStatus(m.get("id").toString(), Const.STATUS_ERROR);
                         continue;
                     }
@@ -276,7 +277,7 @@ public class LabelServer {
                                         logger.info("reset_task: {} ,try lock error: ", strategyInstance.getId());
                                         continue;
                                     }
-                                    strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
+                                    strategyInstanceService.updateStatusAndUpdateTimeByIdAndOldStatus(strategyInstance, Const.STATUS_ETL);
                                 }catch (Exception e){
 
                                 }finally {

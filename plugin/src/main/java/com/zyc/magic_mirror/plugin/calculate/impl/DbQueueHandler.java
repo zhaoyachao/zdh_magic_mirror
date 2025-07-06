@@ -29,7 +29,7 @@ public class DbQueueHandler implements QueueHandler {
             InstanceType.FILTER.getCode(),InstanceType.SHUNT.getCode(),InstanceType.TOUCH.getCode(),InstanceType.PLUGIN.getCode(),
             InstanceType.ID_MAPPING.getCode(),InstanceType.MANUAL_CONFIRM.getCode(),InstanceType.RIGHTS.getCode(),InstanceType.CODE_BLOCK.getCode(),
             InstanceType.TN.getCode(), InstanceType.FUNCTION.getCode(), InstanceType.VARPOOL.getCode(), InstanceType.VARIABLE.getCode()};
-    private String[] status = new String[]{"check_dep_finish"};
+    private String[] status = new String[]{Const.STATUS_CHECK_DEP_FINISH};
 
     @Override
     public Map<String,Object> handler() {

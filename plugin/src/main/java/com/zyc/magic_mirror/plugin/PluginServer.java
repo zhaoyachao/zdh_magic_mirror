@@ -143,7 +143,7 @@ public class PluginServer {
                         strategyInstance.setId(m.get("id").toString());
                         strategyInstance.setStatus(Const.STATUS_ETL);
                         strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
-                        strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
+                        strategyInstanceService.updateStatusAndUpdateTimeByIdAndOldStatus(strategyInstance, Const.STATUS_CHECK_DEP_FINISH);
 
                     }catch (Exception e){
                         logger.error("plugin server check error: ", e);
@@ -152,33 +152,34 @@ public class PluginServer {
                     }
 
                     Runnable runnable=null;
-                    if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.FILTER.getCode())){
+                    String instanceType = m.get("instance_type").toString();
+                    if(instanceType.equalsIgnoreCase(InstanceType.FILTER.getCode())){
                         runnable=new FilterCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.SHUNT.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.SHUNT.getCode())){
                         runnable=new ShuntCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.TOUCH.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.TOUCH.getCode())){
                         runnable=new TouchCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.PLUGIN.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.PLUGIN.getCode())){
                         runnable=new PluginCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.ID_MAPPING.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.ID_MAPPING.getCode())){
                         runnable=new IdMappingCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.MANUAL_CONFIRM.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.MANUAL_CONFIRM.getCode())){
                         runnable=new ManualConfirmCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.RIGHTS.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.RIGHTS.getCode())){
                         runnable=new RightsCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.CODE_BLOCK.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.CODE_BLOCK.getCode())){
                         runnable=new CodeBlockCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.TN.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.TN.getCode())){
                         runnable=new TnCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.FUNCTION.getCode())){
                         runnable=new FunctionCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.VARPOOL.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.VARPOOL.getCode())){
                         runnable=new VarPoolCalculateImpl(m, atomicInteger, config);
-                    }else if(m.get("instance_type").toString().equalsIgnoreCase(InstanceType.VARIABLE.getCode())){
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.VARIABLE.getCode())){
                         runnable=new VariableCalculateImpl(m, atomicInteger, config);
                     }else{
                         //不支持的任务类型
-                        LogUtil.error(m.get("strategy_id").toString(), m.get("id").toString(), "不支持的任务类型, "+m.get("instance_type").toString());
+                        LogUtil.error(m.get("strategy_id").toString(), m.get("id").toString(), "不支持的任务类型, "+instanceType);
                         setStatus(m.get("id").toString(), Const.STATUS_ERROR);
                         continue;
                     }
@@ -347,7 +348,7 @@ public class PluginServer {
                                         logger.info("reset_task: {} ,try lock error: ", strategyInstance.getId());
                                         continue;
                                     }
-                                    strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
+                                    strategyInstanceService.updateStatusAndUpdateTimeByIdAndOldStatus(strategyInstance, Const.STATUS_ETL);
                                 }catch (Exception e){
                                     e.printStackTrace();
                                 }finally {

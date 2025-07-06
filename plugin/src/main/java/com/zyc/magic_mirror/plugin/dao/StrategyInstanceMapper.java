@@ -30,6 +30,29 @@ public interface StrategyInstanceMapper {
     )
     public int updateStatusAndUpdateTimeById(StrategyInstance strategyInstance);
 
+    @Update({
+            "<script>",
+            "update strategy_instance ",
+            "<set>",
+            "<if test = 't.status != null and t.status != \"\"'> ",
+            "status=#{t.status} ,",
+            "</if> ",
+            "<if test = 't.update_time != null'> ",
+            "update_time=#{t.update_time} ,",
+            "</if> ",
+            "<if test = 't.run_jsmind_data != null and t.run_jsmind_data != \"\"'> ",
+            "run_jsmind_data=#{t.run_jsmind_data} ,",
+            "</if> ",
+            "</set>",
+            "where id = #{t.id}",
+            "<if test = 'old_status != null and old_status != \"\"'> ",
+            " and status=#{old_status} ",
+            "</if> ",
+            "</script>"
+    }
+    )
+    public int updateStatusAndUpdateTimeByIdAndOldStatus(@Param("t")StrategyInstance strategyInstance, @Param("old_status") String old_status);
+
     @Select({
             "<script>",
             "select * from strategy_instance where id in ",

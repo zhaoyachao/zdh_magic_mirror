@@ -15,6 +15,7 @@ import java.util.List;
 public class StrategyInstanceServiceImpl {
 
     private static Logger logger= LoggerFactory.getLogger(FunctionServiceImpl.class);
+
     public int updateStatusAndUpdateTimeById(StrategyInstance strategyInstance){
         SqlSession sqlSession = null;
         try {
@@ -37,6 +38,27 @@ public class StrategyInstanceServiceImpl {
         }
     }
 
+    public int updateStatusAndUpdateTimeByIdAndOldStatus(StrategyInstance strategyInstance, String oldStatus){
+        SqlSession sqlSession = null;
+        try {
+            sqlSession=MybatisUtil.getSqlSession();
+            StrategyInstanceMapper strategyInstanceMappler = sqlSession.getMapper(StrategyInstanceMapper.class);
+            int result = strategyInstanceMappler.updateStatusAndUpdateTimeByIdAndOldStatus(strategyInstance, oldStatus);
+            return result;
+        } catch (IOException e) {
+            logger.error("plugin service updateByPrimaryKeySelective error: ", e);
+            return 0;
+        }finally {
+            if(sqlSession != null){
+                try {
+                    sqlSession.getConnection().close();
+                } catch (SQLException e) {
+                    logger.error("plugin service updateByPrimaryKeySelective sqlSession error: ", e);
+                }
+                sqlSession.close();
+            }
+        }
+    }
 
     public List<StrategyInstance> selectByStatus(String[] status, String[] instance_type){
         SqlSession sqlSession = null;
