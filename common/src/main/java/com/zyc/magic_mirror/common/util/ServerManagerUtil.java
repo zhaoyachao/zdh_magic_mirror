@@ -194,6 +194,15 @@ public class ServerManagerUtil {
         return slot.toString();
     }
 
+    public static boolean checkInstanceId(String instaceId){
+        try{
+            return JedisPoolUtil.redisClient().isExists(instaceId);
+        }catch (Exception e){
+            logger.error("检查实例是否存异常: ",e);
+            return true;
+        }
+    }
+
     public static String getReportVersionTag(String instaceId){
         if(StringUtils.isEmpty(instaceId)){
             instaceId = buildServiceInstance();

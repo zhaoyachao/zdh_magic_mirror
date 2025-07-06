@@ -145,10 +145,15 @@ public class LabelServer {
                         //更新状态为执行中
                         StrategyInstance strategyInstance=new StrategyInstance();
                         strategyInstance.setId(m.get("id").toString());
+                        Map<String, Object> run_jsmind_data = JsonUtil.toJavaMap(strategyInstances.get(0).getRun_jsmind_data());
+                        run_jsmind_data.put("instance_id", instanceId);
+                        strategyInstance.setRun_jsmind_data(JsonUtil.formatJsonString(run_jsmind_data));
                         strategyInstance.setStatus(Const.STATUS_ETL);
                         strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
                         strategyInstanceService.updateStatusAndUpdateTimeByIdAndOldStatus(strategyInstance, Const.STATUS_CHECK_DEP_FINISH);
 
+                        //此处不可忽略
+                        m.put("run_jsmind_data", strategyInstance.getRun_jsmind_data());
                     }catch (Exception e){
                         logger.error("label server check error: ", e);
                     }finally {
@@ -263,9 +268,18 @@ public class LabelServer {
                         for (StrategyInstance strategyInstance: strategyInstances){
                             Map run_jsmind_data = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
                             if(run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_IS_ASYNC) && run_jsmind_data.getOrDefault(Const.STRATEGY_INSTANCE_IS_ASYNC, "false").toString().equalsIgnoreCase("true")
-                             && !run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID)){
+                             && run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID)){
                                 continue;
                             }
+                            if(run_jsmind_data.containsKey("instance_id")){
+                                //当前实例还存在,则跳过
+                                if(ServerManagerUtil.checkInstanceId(run_jsmind_data.get("instance_id").toString())){
+                                    continue;
+                                }
+                            }else{
+                                continue;
+                            }
+
                             if(Long.valueOf(strategyInstance.getStrategy_id())% slot_num + 1 >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1 <= end_slot){
                                 run_jsmind_data.remove("instance_id");
                                 strategyInstance.setRun_jsmind_data(JsonUtil.formatJsonString(run_jsmind_data));
