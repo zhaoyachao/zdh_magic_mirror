@@ -3,6 +3,9 @@ package com.zyc.magic_mirror.ship.engine.impl;
 import com.zyc.magic_mirror.ship.disruptor.ShipResult;
 import com.zyc.magic_mirror.ship.entity.StrategyEventResult;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class RiskShipResultImpl implements ShipResult {
 
     private String startTime;
@@ -11,7 +14,7 @@ public class RiskShipResultImpl implements ShipResult {
 
     private int sequence=0;
 
-    private String strategy_instance_id;
+    private String strategyInstanceId;
 
     private String status;
 
@@ -20,6 +23,8 @@ public class RiskShipResultImpl implements ShipResult {
     private String strategyName;
 
     private StrategyEventResult riskStrategyEventResult;
+
+    private Map<String, Object> objMap = new HashMap<>();
 
     @Override
     public String getStartTime() {
@@ -53,12 +58,12 @@ public class RiskShipResultImpl implements ShipResult {
 
     @Override
     public String getStrategyInstanceId() {
-        return strategy_instance_id;
+        return strategyInstanceId;
     }
 
     @Override
     public void setStrategyInstanceId(String straategyInstanceId) {
-        this.strategy_instance_id = straategyInstanceId;
+        this.strategyInstanceId = straategyInstanceId;
     }
 
     @Override
@@ -101,5 +106,19 @@ public class RiskShipResultImpl implements ShipResult {
         this.message = message;
     }
 
+    @Override
+    public Map<String, Object> getObjMap() {
+        return objMap;
+    }
+
+    @Override
+    public void setObjMap(Map<String, Object> objMap) {
+        this.objMap = objMap;
+    }
+
+    @Override
+    public void addObj2Map(String key, Object value) {
+        this.objMap.put(key, value);
+    }
 
 }

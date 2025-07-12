@@ -76,6 +76,7 @@ public class FunctionExecutor extends BaseExecutor{
 
             Object res = functionExcute(functionInfo, objectMap);
 
+            shipResult.addObj2Map("ret", res);
             //在线模块尽量直接使用返回结果, 需要设置 开启对比：关闭,取值表达式：为空或者ret
             if(return_diff_enable.equalsIgnoreCase("false") && (StringUtils.isEmpty(return_value_express) || return_value_express.equalsIgnoreCase("ret"))){
                 if(res == null){
@@ -97,6 +98,7 @@ public class FunctionExecutor extends BaseExecutor{
                 }else{
                     tmp = ShipResultStatusEnum.SUCCESS.code;
                 }
+                shipResult.addObj2Map("ret_express_value", ret_express_value);
                 shipResult.setStatus(tmp);
                 return shipResult;
             }
@@ -110,6 +112,7 @@ public class FunctionExecutor extends BaseExecutor{
                 }else{
                     tmp = ShipResultStatusEnum.ERROR.code;
                 }
+                shipResult.addObj2Map("ret_diff_value", ret_express_value);
                 shipResult.setStatus(tmp);
                 return shipResult;
             }

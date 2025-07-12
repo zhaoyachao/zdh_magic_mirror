@@ -2,6 +2,8 @@ package com.zyc.magic_mirror.ship.disruptor;
 
 import com.zyc.magic_mirror.ship.entity.StrategyEventResult;
 
+import java.util.Map;
+
 public interface ShipResult {
 
     public String getStartTime();
@@ -40,5 +42,11 @@ public interface ShipResult {
     public String getMessage();
 
     public void setMessage(String message);
+
+    public Map<String, Object> getObjMap();
+
+    public void setObjMap(Map<String, Object> objMap);
+
+    public void addObj2Map(String key, Object value);
 
 }

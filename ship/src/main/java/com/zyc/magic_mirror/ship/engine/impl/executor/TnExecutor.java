@@ -21,6 +21,10 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 实时场景-tn无具体使用方式-当前仅做一个触发数据使用
+ * 如果需要再实时过程中-使用tn需要再次开发
+ */
 public class TnExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(TnExecutor.class);
 
