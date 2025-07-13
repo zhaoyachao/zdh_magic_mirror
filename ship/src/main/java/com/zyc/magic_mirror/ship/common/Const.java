@@ -18,4 +18,7 @@ public class Const {
     public static String SHIP_ONLINE_RISK_LOG_QUEUE = "SHIP_ONLINE_RISK_LOG_QUEUE";
 
     public static String SHIP_ONLINE_MANAGER_LOG_QUEUE = "SHIP_ONLINE_MANAGER_LOG_QUEUE";
+
+    public static String STATUS_SUCCESS = "success";
+    public static String STATUS_ERROR = "error";
 }

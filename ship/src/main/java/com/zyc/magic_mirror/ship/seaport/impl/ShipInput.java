@@ -7,7 +7,9 @@ import com.zyc.magic_mirror.ship.engine.impl.ShipOnLineManagerEngine;
 import com.zyc.magic_mirror.ship.engine.impl.ShipOnLineRiskEngine;
 import com.zyc.magic_mirror.ship.entity.InputParam;
 import com.zyc.magic_mirror.ship.entity.OutputParam;
+import com.zyc.magic_mirror.ship.entity.ShipBaseOutputParam;
 import com.zyc.magic_mirror.ship.entity.ShipCommonInputParam;
+import com.zyc.magic_mirror.ship.exception.ErrorCode;
 import com.zyc.magic_mirror.ship.log.ShipOnlineRiskLog;
 import com.zyc.magic_mirror.ship.seaport.Input;
 import com.zyc.magic_mirror.ship.service.impl.CacheStrategyServiceImpl;
@@ -38,8 +40,8 @@ public class ShipInput implements Input {
             return outputParam;
         }catch (Exception e){
             logger.error(e.getMessage());
+            return new ShipBaseOutputParam(ErrorCode.PARAM_CHECK_ERROR_CODE, e.getMessage());
         }
-        return null;
     }
 
     public Engine getEngine(String scene, InputParam inputParam){

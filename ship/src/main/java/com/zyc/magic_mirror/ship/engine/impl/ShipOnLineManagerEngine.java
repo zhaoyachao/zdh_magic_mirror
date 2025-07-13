@@ -10,6 +10,7 @@ import com.zyc.magic_mirror.ship.common.Const;
 import com.zyc.magic_mirror.ship.disruptor.ShipEvent;
 import com.zyc.magic_mirror.ship.disruptor.ShipResult;
 import com.zyc.magic_mirror.ship.entity.*;
+import com.zyc.magic_mirror.ship.exception.ErrorCode;
 import com.zyc.magic_mirror.ship.service.StrategyService;
 import com.zyc.rqueue.RQueueManager;
 import org.apache.commons.lang3.StringUtils;
@@ -43,12 +44,15 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
      */
     @Override
     public OutputParam execute() {
-        ShipManagerOutputParam shipManagerOutputParam = new ShipManagerOutputParam();
-        shipManagerOutputParam.setStatus("error");
+        ShipBaseOutputParam shipBaseOutputParam = new ShipBaseOutputParam();
+        shipBaseOutputParam.setStatus(Const.STATUS_SUCCESS);
+        shipBaseOutputParam.setCode(ErrorCode.SUCCESS_CODE);
+
+        long start_time = System.currentTimeMillis();
+        long request_id= SnowflakeIdWorker.getInstance().nextId();
+        String request_id_str = DateUtil.format(new Date(), "yyyyMMddHH") + request_id;
+        shipBaseOutputParam.setRequestId(request_id_str);
         try{
-            //String uuid = UUID.randomUUID().toString();
-            long request_id= SnowflakeIdWorker.getInstance().nextId();
-            String request_id_str = DateUtil.format(new Date(), "yyyyMMddHH") + request_id;
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -118,14 +122,16 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
                 }
             });
 
-            shipManagerOutputParam.setStatus("success");
-            shipManagerOutputParam.setRequestId(request_id_str);
-            //shipRiskOutputParam.setStrategyGroupResults(futures);
-            logger.info("request_id: {}, end", request_id);
         }catch (Exception e){
             logger.error("ship online manager server error: ", e);
+            shipBaseOutputParam.setCode(ErrorCode.EXECUTE_ERROR_CODE);
+            shipBaseOutputParam.setStatus(Const.STATUS_ERROR);
+            shipBaseOutputParam.setMessage(e.getMessage());
+        }finally {
+            long end_time = System.currentTimeMillis();
+            logger.info("request_id: {}, cost_time: {}ms, end", request_id_str, end_time-start_time);
         }
 
-        return shipManagerOutputParam;
+        return shipBaseOutputParam;
     }
 }

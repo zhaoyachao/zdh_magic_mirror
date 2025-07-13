@@ -10,6 +10,7 @@ import com.zyc.magic_mirror.ship.common.Const;
 import com.zyc.magic_mirror.ship.disruptor.ShipEvent;
 import com.zyc.magic_mirror.ship.disruptor.ShipResult;
 import com.zyc.magic_mirror.ship.entity.*;
+import com.zyc.magic_mirror.ship.exception.ErrorCode;
 import com.zyc.magic_mirror.ship.service.StrategyService;
 import com.zyc.rqueue.RQueueManager;
 import org.apache.commons.lang3.StringUtils;
@@ -39,7 +40,16 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
 
     @Override
     public OutputParam execute() {
-        ShipRiskOutputParam shipRiskOutputParam=new ShipRiskOutputParam();
+        ShipBaseOutputParam shipBaseOutputParam=new ShipBaseOutputParam();
+        shipBaseOutputParam.setStatus(Const.STATUS_SUCCESS);
+        shipBaseOutputParam.setCode(ErrorCode.SUCCESS_CODE);
+
+        long start_time = System.currentTimeMillis();
+        long request_id= SnowflakeIdWorker.getInstance().nextId();
+        String request_id_str = DateUtil.format(new Date(), "yyyyMMddHH") + request_id;
+
+        shipBaseOutputParam.setRequestId(request_id_str);
+
         try{
             //解析参数
             ShipCommonInputParam shipCommonInputParam = (ShipCommonInputParam) this.inputParam;
@@ -50,16 +60,13 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
             //data_node可以理解为节点分类
             String data_node = shipCommonInputParam.getData_node();
 
-            long request_id= SnowflakeIdWorker.getInstance().nextId();
-
-            String request_id_str = DateUtil.format(new Date(), "yyyyMMddHH") + request_id;
             int flow = shipCommonInputParam.getFlow();
             //检测是否存在小流量区间,不存在则创建默认小流量区间 todo 默认根据uid hash
 
             //校验是否跳过,防止出现问题导致重大损失使用
             Object risk_is_stop= JedisPoolUtil.redisClient().get(Const.ONLINE_RISK_IS_STOP_KEY);
             if(risk_is_stop != null && risk_is_stop.toString().equalsIgnoreCase("true")){
-                return shipRiskOutputParam;
+                return shipBaseOutputParam;
             }
 
             //获取需要校验的策略信息
@@ -79,8 +86,8 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
             logger.info("request_id: {}, data_node: {}, hit strategy_groups: {}",request_id_str, data_node, JsonUtil.formatJsonString(hit_strategy_groups));
 
             if(hit_strategy_groups == null || hit_strategy_groups.size() <= 0){
-
-                return shipRiskOutputParam;
+                shipBaseOutputParam.setCode(ErrorCode.NOT_HIG_STRATEGY_ERROR_CODE);
+                return shipBaseOutputParam;
             }
 
             Map<String, Object> labels = new HashMap<>();
@@ -105,14 +112,19 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
                }
             }
             RQueueManager.getRQueueClient(Const.SHIP_ONLINE_RISK_LOG_QUEUE).add(JsonUtil.formatJsonString(shipEventMap.values()));
-            shipRiskOutputParam.setStrategyGroupResults(result);
-            shipRiskOutputParam.setRequestId(request_id_str);
-            logger.info("request_id: {}, end", request_id_str);
-            return shipRiskOutputParam;
+            shipBaseOutputParam.setStrategyGroupResults(result);
+
+            return shipBaseOutputParam;
         }catch (Exception e){
             logger.error("ship online risk execute error: ", e);
+            shipBaseOutputParam.setCode(ErrorCode.EXECUTE_ERROR_CODE);
+            shipBaseOutputParam.setMessage(e.getMessage());
+            shipBaseOutputParam.setStatus(Const.STATUS_ERROR);
+        }finally {
+            long end_time = System.currentTimeMillis();
+            logger.info("request_id: {}, cost_time: {}ms, end", request_id_str, end_time-start_time);
         }
 
-        return shipRiskOutputParam;
+        return shipBaseOutputParam;
     }
 }
