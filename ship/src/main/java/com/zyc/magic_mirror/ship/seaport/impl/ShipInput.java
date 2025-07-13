@@ -40,7 +40,7 @@ public class ShipInput implements Input {
             return outputParam;
         }catch (Exception e){
             logger.error(e.getMessage());
-            return new ShipBaseOutputParam(ErrorCode.PARAM_CHECK_ERROR_CODE, e.getMessage());
+            return new ShipBaseOutputParam(ErrorCode.PARAM_CHECK_ERROR_CODE, e.getMessage(), Const.STATUS_ERROR);
         }
     }
 

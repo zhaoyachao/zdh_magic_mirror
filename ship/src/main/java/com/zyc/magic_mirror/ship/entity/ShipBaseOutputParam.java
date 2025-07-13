@@ -26,6 +26,12 @@ public class ShipBaseOutputParam implements OutputParam{
         this.message = message;
     }
 
+    public ShipBaseOutputParam(String code, String message, String status) {
+        this.code = code;
+        this.message = message;
+        this.status = status;
+    }
+
     public String getCode() {
         return code;
     }
