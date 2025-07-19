@@ -43,6 +43,7 @@
         <minio.version>8.5.10</minio.version>
         <fastexcel.version>1.0.0</fastexcel.version>
         <netty-all.version>4.1.75.Final</netty-all.version>
+        <micrometer.version>1.10.6</micrometer.version>
     </properties>
 
     <name>zdh magic mirror Tapestry 5 Application</name>
@@ -198,6 +199,20 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>${netty-all.version}</version>
+            </dependency>
+
+            <!-- Micrometer核心库 -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+
+            <!-- Micrometer Prometheus支持 -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${micrometer.version}</version>
             </dependency>
             
         </dependencies>

@@ -9,6 +9,7 @@ import com.zyc.magic_mirror.ship.disruptor.ShipEvent;
 import com.zyc.magic_mirror.ship.disruptor.ShipResult;
 import com.zyc.magic_mirror.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.magic_mirror.ship.engine.impl.RiskShipResultImpl;
+import com.zyc.magic_mirror.ship.entity.ShipCommonInputParam;
 import com.zyc.rqueue.RQueueClient;
 import com.zyc.rqueue.RQueueManager;
 import com.zyc.rqueue.RQueueMode;
@@ -22,8 +23,9 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 实时场景-tn无具体使用方式-当前仅做一个触发数据使用
- * 如果需要再实时过程中-使用tn需要再次开发
+ * 实时场景-tn, 不满足返回error
+ * 当第一次来时,计算tn时间,并写入未来执行时间,同时投递的延迟队列
+ * 延迟队列触发后,会再次走ship决策
  */
 public class TnExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(TnExecutor.class);
@@ -32,6 +34,22 @@ public class TnExecutor extends BaseExecutor{
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
+
+            //获取是否有可执行时间,无则进行本次判断,有则判断时间是否可执行
+
+            String param = ((ShipCommonInputParam)shipEvent.getInputParam()).getParam();
+            Map<String, Object> params = JsonUtil.toJavaMap(param);
+            if(params.containsKey(com.zyc.magic_mirror.common.util.Const.STRATEGY_INSTANCE_DOUBLECHECK_TIME)){
+                // 满足则执行
+                if(Long.valueOf(params.get(com.zyc.magic_mirror.common.util.Const.STRATEGY_INSTANCE_DOUBLECHECK_TIME).toString()) < System.currentTimeMillis()){
+
+                }else{
+                    tmp = ShipResultStatusEnum.ERROR.code;
+                }
+                shipResult.setStatus(tmp);
+                return shipResult;
+            }
+
             //1 获取对比时间类型,相对或者绝对
             String tn_type = run_jsmind_data.getOrDefault("tn_type", "").toString();
             String tn_unit = run_jsmind_data.getOrDefault("tn_unit", "").toString();
@@ -74,14 +92,17 @@ public class TnExecutor extends BaseExecutor{
 
             String queueName = "ship_tn_queue"+"_"+ DateUtil.format(executeTime, "yyyyMMddHH");
 
+            //参数增加未来之星时间
+            params.put(com.zyc.magic_mirror.common.util.Const.STRATEGY_INSTANCE_DOUBLECHECK_TIME, executeTime.getTime());
             //获取当前执行中间结果,生成延迟队列数据
             Map<String, Object> jsonObject = JsonUtil.toJavaMap(JsonUtil.formatJsonString(strategyInstance));
             jsonObject.put("request_id", shipEvent.getRequestId());
-            jsonObject.put("input", shipEvent.getInputParam());
+            jsonObject.put("input", JsonUtil.formatJsonString(params));
 
             //获取当前request_id
             RQueueClient<String> rQueueClient = RQueueManager.getRQueueClient(queueName, RQueueMode.DELAYEDQUEUE);
             rQueueClient.offer(JsonUtil.formatJsonString(jsonObject), delay_senond, TimeUnit.SECONDS);
+            tmp = ShipResultStatusEnum.ERROR.code;
         }catch (Exception e){
             logger.error("ship excutor tn error: ", e);
             tmp = ShipResultStatusEnum.ERROR.code;

@@ -17,7 +17,9 @@ public class CustomListExecutor extends BaseExecutor{
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{
             String name_list_str = run_jsmind_data.getOrDefault("name_list","").toString();
-            tmp = String.valueOf(Sets.newHashSet(name_list_str.split(",")).contains(uid));
+            if(Sets.newHashSet(name_list_str.split(",")).contains(uid)){
+                tmp = ShipResultStatusEnum.SUCCESS.code;
+            }
         }catch (Exception e){
             logger.error("ship excutor customlist error: ", e);
             tmp = ShipResultStatusEnum.ERROR.code;
