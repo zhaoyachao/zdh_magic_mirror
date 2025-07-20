@@ -252,7 +252,6 @@ public class ShipCommonEngine implements Engine {
      * @param data_node
      * @param groupCountDownLatch
      * @param shipEventMap
-     * @param result
      * @throws InvocationTargetException
      * @throws NoSuchMethodException
      * @throws InstantiationException
@@ -260,7 +259,7 @@ public class ShipCommonEngine implements Engine {
      */
     public void executeStrategyGroups(List<StrategyGroupInstance> strategy_groups, Map<String, Object> labels, Map<String, Object> filters,
                                       ShipCommonInputParam shipCommonInputParam, String data_node, CountDownLatch groupCountDownLatch,
-                                      Map<String, ShipEvent> shipEventMap, Map<String, Map<String, ShipResult>> result, String request_id) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+                                      Map<String, ShipEvent> shipEventMap, String request_id) throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
         for (StrategyGroupInstance strategy_group: strategy_groups) {
 
@@ -323,9 +322,25 @@ public class ShipCommonEngine implements Engine {
             EventTranslator<ShipEvent> eventEventTranslator = DisruptorManager.buildByShipEvent(shipEvent);
 
             master.publishEvent(eventEventTranslator);
-            result.put(strategy_group.getId(), shipResultMap);
             shipEventMap.put(strategy_group.getId(), shipEvent);
         }
     }
 
+    /**
+     * 等待结果
+     * @param groupCountDownLatch
+     * @param shipEventMap
+     * @param timeOut 超时时间,单位毫秒
+     * @throws InterruptedException
+     */
+    public void awaitResult(CountDownLatch groupCountDownLatch, Map<String, ShipEvent> shipEventMap, long timeOut) throws InterruptedException {
+        //10秒超时,关闭线程
+        if(!groupCountDownLatch.await(timeOut, TimeUnit.MILLISECONDS)){
+            for (String group_instance_id: shipEventMap.keySet()){
+                if(shipEventMap.get(group_instance_id).getCdl().getCount() != 0){
+                    shipEventMap.get(group_instance_id).getStopFlag().setFlag(true);
+                }
+            }
+        }
+    }
 }

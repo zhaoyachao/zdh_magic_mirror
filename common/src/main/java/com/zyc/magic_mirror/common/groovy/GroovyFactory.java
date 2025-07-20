@@ -16,6 +16,10 @@ import java.util.Map;
  */
 public class GroovyFactory {
 
+    public static final GroovyScriptEngineFactory scriptEngineFactory = new GroovyScriptEngineFactory();
+
+    public static  final ScriptEngine scriptEngine = scriptEngineFactory.getScriptEngine();
+
     /**
      * 执行java code, 使用java语法
      * @param javaCode
@@ -52,15 +56,13 @@ public class GroovyFactory {
      * @throws ScriptException
      */
     public static Object execExpress(String script, Map<String,Object> params) throws ScriptException {
-        GroovyScriptEngineFactory scriptEngineFactory = new GroovyScriptEngineFactory();
-        ScriptEngine scriptEngine = scriptEngineFactory.getScriptEngine();
-        Bindings bindings = scriptEngine.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
+        Bindings bindings = new SimpleBindings();
         if(params != null && params.size()>0){
             for (String key: params.keySet()){
                 bindings.put(key, params.get(key));
             }
         }
-        return scriptEngine.eval(script);
+        return scriptEngine.eval(script, bindings);
     }
 
     /**
@@ -73,18 +75,15 @@ public class GroovyFactory {
      * @throws NoSuchMethodException
      */
     public static Object execExpress(String script, String function_name, Map<String,Object> params) throws ScriptException, NoSuchMethodException {
-        GroovyScriptEngineFactory scriptEngineFactory = new GroovyScriptEngineFactory();
-        ScriptEngine scriptEngine = scriptEngineFactory.getScriptEngine();
-        Bindings bindings = scriptEngine.getContext().getBindings(ScriptContext.ENGINE_SCOPE);
         List<String> list = new ArrayList<>();
-
+        Bindings bindings = new SimpleBindings();
         if(params != null && params.size()>0){
             for (String key: params.keySet()){
                 bindings.put(key, params.get(key));
                 list.add(params.get(key).toString());
             }
         }
-        scriptEngine.eval(script);
+        scriptEngine.eval(script, bindings);
         return ((Invocable)scriptEngine).invokeFunction(function_name, list.toArray());
     }
 

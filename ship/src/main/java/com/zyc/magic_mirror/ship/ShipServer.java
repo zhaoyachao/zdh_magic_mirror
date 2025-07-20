@@ -1,6 +1,7 @@
 package com.zyc.magic_mirror.ship;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.zyc.magic_mirror.common.groovy.GroovyFactory;
 import com.zyc.magic_mirror.common.http.HttpServer;
 import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
 import com.zyc.magic_mirror.common.util.JsonUtil;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -102,11 +104,12 @@ public class ShipServer {
             //初始化disruptor
             int masterHandlerNum = Integer.valueOf(properties.getProperty("ship.disruptr.master.handler.num", "1"));
             int workerHandlerNum = Integer.valueOf(properties.getProperty("ship.disruptr.worker.handler.num", "1"));
-            int masterRingBufferSize = Integer.valueOf(properties.getProperty("ship.disruptr.master.ring.num", "1024*1024"));
-            int workerRingBufferSize = Integer.valueOf(properties.getProperty("ship.disruptr.worker.ring.num", "1024*1024"));
+            int masterRingBufferSize = Integer.valueOf(properties.getProperty("ship.disruptr.master.ring.num", "1024"));
+            int workerRingBufferSize = Integer.valueOf(properties.getProperty("ship.disruptr.worker.ring.num", "1024"));
             DisruptorManager.getDisruptor("ship_master", masterHandlerNum, new ShipMasterEventWorkHandler(), masterRingBufferSize);
             DisruptorManager.getDisruptor("ship_worker", workerHandlerNum, new ShipWorkerEventWorkHandler(), workerRingBufferSize);
 
+            optimize();
 
             HttpServer httpServer = new HttpServer();
             ShipAction shipAction = new ShipAction();
@@ -118,6 +121,16 @@ public class ShipServer {
         }catch (Exception e){
             logger.error("ship server error: ", e);
             System.exit(-1);
+        }
+
+    }
+
+    public static void optimize(){
+        try{
+            GroovyFactory.execExpress("return 1+1", new HashMap<>());
+
+        }catch (Exception e){
+
         }
 
     }

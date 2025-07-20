@@ -99,20 +99,25 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
 
             //遍历策略信息,对每一个策略解析,拉取标签结果,后期确定是否采用disruptor
             Map<String, Map<String, ShipResult>> result = new ConcurrentHashMap<>();
+
             CountDownLatch groupCountDownLatch = new CountDownLatch(hit_strategy_groups.size());
             Map<String, ShipEvent> shipEventMap = new ConcurrentHashMap<>();
-            executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch, shipEventMap, result, request_id_str);
+            executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch, shipEventMap, request_id_str);
 
             //10秒超时,关闭线程
-            if(!groupCountDownLatch.await(1000*10, TimeUnit.MILLISECONDS)){
-               for (String group_instance_id: shipEventMap.keySet()){
-                   if(shipEventMap.get(group_instance_id).getCdl().getCount() != 0){
-                       shipEventMap.get(group_instance_id).getStopFlag().setFlag(true);
-                   }
-               }
+            awaitResult(groupCountDownLatch, shipEventMap, 1000*10);
+
+            //重构返回结果
+            Map<String, Map<String, Object>> runParam = new HashMap<>();
+            for(String sgi_id: shipEventMap.keySet()){
+                result.put(sgi_id, shipEventMap.get(sgi_id).getShipResultMap());
+                runParam.put(sgi_id, shipEventMap.get(sgi_id).getRunParam());
             }
-            RQueueManager.getRQueueClient(Const.SHIP_ONLINE_RISK_LOG_QUEUE).add(JsonUtil.formatJsonString(shipEventMap.values()));
+
             shipBaseOutputParam.setStrategyGroupResults(result);
+            shipBaseOutputParam.setDecisionResult(runParam);
+
+            RQueueManager.getRQueueClient(Const.SHIP_ONLINE_RISK_LOG_QUEUE).add(JsonUtil.formatJsonString(shipEventMap.values()));
 
             return shipBaseOutputParam;
         }catch (Exception e){

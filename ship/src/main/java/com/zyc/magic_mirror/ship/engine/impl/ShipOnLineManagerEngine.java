@@ -8,7 +8,6 @@ import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.SnowflakeIdWorker;
 import com.zyc.magic_mirror.ship.common.Const;
 import com.zyc.magic_mirror.ship.disruptor.ShipEvent;
-import com.zyc.magic_mirror.ship.disruptor.ShipResult;
 import com.zyc.magic_mirror.ship.entity.*;
 import com.zyc.magic_mirror.ship.exception.ErrorCode;
 import com.zyc.magic_mirror.ship.service.StrategyService;
@@ -98,23 +97,17 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
 
                         logger.info("request_id: {}, label_values: {}", request_id_str, JsonUtil.formatJsonString(labels));
 
-                        //遍历策略信息,对每一个策略解析,拉取标签结果,后期确定是否采用disruptor
-                        Map<String, Map<String, ShipResult>> result = new ConcurrentHashMap<>();
                         CountDownLatch groupCountDownLatch = new CountDownLatch(hit_strategy_groups.size());
                         Map<String, ShipEvent> shipEventMap = new ConcurrentHashMap<>();
 
                         executeStrategyGroups(hit_strategy_groups, labels, filters, shipCommonInputParam, data_node, groupCountDownLatch,
-                                shipEventMap, result, request_id_str);
+                                shipEventMap, request_id_str);
 
-                        //10秒超时,关闭线程
-                        if(!groupCountDownLatch.await(1000*10, TimeUnit.MILLISECONDS)){
-                            for (String group_instance_id: shipEventMap.keySet()){
-                                if(shipEventMap.get(group_instance_id).getCdl().getCount() != 0){
-                                    shipEventMap.get(group_instance_id).getStopFlag().setFlag(true);
-                                }
-                            }
-                        }
+                        //60秒超时,关闭线程
+                        awaitResult(groupCountDownLatch, shipEventMap, 1000*60);
 
+                        //输出真正经营结果
+                        logger.info("onlie_manager_result: {}", JsonUtil.formatJsonString(shipEventMap.values()));
                         RQueueManager.getRQueueClient(Const.SHIP_ONLINE_MANAGER_LOG_QUEUE).add(JsonUtil.formatJsonString(shipEventMap.values()));
                     }catch (Exception e){
                         logger.error("ship online manager thread error: ", e);

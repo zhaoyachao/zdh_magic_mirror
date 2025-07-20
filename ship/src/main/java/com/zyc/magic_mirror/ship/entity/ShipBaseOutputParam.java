@@ -17,6 +17,8 @@ public class ShipBaseOutputParam implements OutputParam{
 
     private Map<String,Map<String, ShipResult>> strategyGroupResults = new HashMap<>();
 
+    private Map<String, Map<String, Object>> decisionResult = new HashMap<>();
+
     public ShipBaseOutputParam() {
 
     }
@@ -70,5 +72,13 @@ public class ShipBaseOutputParam implements OutputParam{
 
     public void setStrategyGroupResults(Map<String, Map<String, ShipResult>> strategyGroupResults) {
         this.strategyGroupResults = strategyGroupResults;
+    }
+
+    public Map<String, Map<String, Object>> getDecisionResult() {
+        return decisionResult;
+    }
+
+    public void setDecisionResult(Map<String, Map<String, Object>> decisionResult) {
+        this.decisionResult = decisionResult;
     }
 }

@@ -13,6 +13,11 @@ import java.util.*;
 public class DAGTest {
 
     @Test
+    public void testInt(){
+        System.out.println(Integer.valueOf("1024*2"));
+    }
+
+    @Test
     public void addEdge() {
         DAG dag=new DAG();
         dag.addEdge("A","A1");

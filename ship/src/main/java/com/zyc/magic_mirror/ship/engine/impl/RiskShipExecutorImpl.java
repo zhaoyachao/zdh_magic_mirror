@@ -117,18 +117,20 @@ public class RiskShipExecutorImpl implements ShipExecutor {
                 tmp = ShipResultStatusEnum.ERROR.code;
                 shipResult1.setStatus(tmp);
             }
-            String endTime = String.valueOf(DateUtil.current());
-            shipResult1.setStartTime(startTime);
-            shipResult1.setEndTime(endTime);
             shipResult1.setStrategyInstanceId(strategyInstance.getId());
             shipResult1.setStrategyName(strategyInstance.getStrategy_context());
-            return shipResult1;
         }catch (Exception e){
             logger.error("ship exector execute error: ", e);
+        }
+
+        if(shipResult1.getObjMap()!= null && shipResult1.getObjMap().size()>0){
+            shipEvent.getRunParam().putAll(shipResult1.getObjMap());
         }
         String endTime = String.valueOf(DateUtil.current());
         shipResult1.setStartTime(startTime);
         shipResult1.setEndTime(endTime);
+        shipResult1.setCostTime(String.valueOf(Long.valueOf(endTime)-Long.valueOf(startTime)));
+
         return shipResult1;
     }
 

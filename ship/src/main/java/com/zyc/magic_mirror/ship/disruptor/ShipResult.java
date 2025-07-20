@@ -14,6 +14,10 @@ public interface ShipResult {
 
     public void setEndTime(String endTime);
 
+    public String getCostTime();
+
+    public void setCostTime(String costTime) ;
+
     public int getSequence();
 
     public void setSequence(int sequence);

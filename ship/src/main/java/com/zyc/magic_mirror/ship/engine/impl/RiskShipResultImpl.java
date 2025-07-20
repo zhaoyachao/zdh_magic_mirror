@@ -12,6 +12,8 @@ public class RiskShipResultImpl implements ShipResult {
 
     private String endTime;
 
+    private String costTime;
+
     private int sequence=0;
 
     private String strategyInstanceId;
@@ -44,6 +46,16 @@ public class RiskShipResultImpl implements ShipResult {
     @Override
     public void setEndTime(String endTime) {
         this.endTime = endTime;
+    }
+
+    @Override
+    public String getCostTime() {
+        return costTime;
+    }
+
+    @Override
+    public void setCostTime(String costTime) {
+        this.costTime = costTime;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.zyc.magic_mirror.ship.engine.impl.executor.plugin;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.hubspot.jinjava.Jinjava;
@@ -25,6 +27,16 @@ import java.util.concurrent.TimeUnit;
 public class RedisPlugin implements Plugin{
 
     private static Logger logger= LoggerFactory.getLogger(RedisPlugin.class);
+
+    private static Cache<String, RedisUtil> cache = CacheBuilder.newBuilder()
+            // 键使用弱引用（GC 时可能被回收）
+            .weakKeys()
+            // 值使用软引用（内存不足时可能被回收）
+            .softValues()
+            .expireAfterAccess(60, TimeUnit.MINUTES) // 最后一次访问后 60 分钟过期
+            .expireAfterWrite(120, TimeUnit.MINUTES) // 最后一次写入后 120 分钟过期（取较早）
+            .build();
+
     private String rule_id;
     private Map<String, Object> run_jsmind_data;
     private StrategyInstance strategyInstance;
@@ -93,7 +105,16 @@ public class RedisPlugin implements Plugin{
             key = jinjava.render(key, this.user_param);
             value = jinjava.render(value, this.user_param);
 
-            redisUtil = new RedisUtil(url, password);
+            redisUtil = cache.getIfPresent(url);
+            if(redisUtil == null){
+                redisUtil = new RedisUtil(url, password);
+                cache.put(url, redisUtil);
+            }else{
+                if(redisUtil.redissonClient.isShutdown()){
+                    redisUtil = new RedisUtil(url, password);
+                    cache.put(url, redisUtil);
+                }
+            }
 
             RetParam obj = execute(redisUtil, command, key, value, expire, mode);
 
