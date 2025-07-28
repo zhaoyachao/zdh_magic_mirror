@@ -37,24 +37,19 @@ public class PluginServer {
 
     public static void main(String[] args) {
         logger.info("初始化项目");
-        Map<String,String> params=new HashMap<>();
-        if(args!=null && args.length>0){
-           for (int i=0;i<args.length;i+=2){
-               if(args.length>(i+1)) {
-                   params.put(args[i], args[i + 1]);
-               }
-           }
-        }
 
         try {
-            String dir="./conf";
             Properties config = new Properties();
-            if(params.containsKey("-conf")){
-                dir = params.getOrDefault("-conf", dir);
-                config = loadConfig(dir+"/application.properties");
-            }else{
-                config.load(PluginServer.class.getClassLoader().getResourceAsStream("application.properties"));
+            String conf_path = PluginServer.class.getClassLoader().getResource("application.properties").getPath();
+
+            config.load(PluginServer.class.getClassLoader().getResourceAsStream("application.properties"));
+
+            File confFile = new File("conf/application.properties");
+            if(confFile.exists()){
+                conf_path = confFile.getPath();
+                config.load(new FileInputStream(confFile));
             }
+            logger.info("加载配置文件路径:{}", conf_path);
 
             if(config==null){
                 throw new Exception("配置信息为空异常");
@@ -209,17 +204,6 @@ public class PluginServer {
         }
     }
 
-
-    public static Properties loadConfig(String path) throws Exception {
-        Properties prop =new Properties();
-        try{
-            File file=new File(path);
-            prop.load(new FileInputStream(file));
-        }catch (Exception e){
-            throw new Exception("加载配置文件异常,",e.getCause());
-        }
-        return prop;
-    }
 
     public static void checkConfig(Properties config) throws Exception {
 

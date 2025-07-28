@@ -29,10 +29,6 @@ public class RedisPlugin implements Plugin{
     private static Logger logger= LoggerFactory.getLogger(RedisPlugin.class);
 
     private static Cache<String, RedisUtil> cache = CacheBuilder.newBuilder()
-            // 键使用弱引用（GC 时可能被回收）
-            .weakKeys()
-            // 值使用软引用（内存不足时可能被回收）
-            .softValues()
             .expireAfterAccess(60, TimeUnit.MINUTES) // 最后一次访问后 60 分钟过期
             .expireAfterWrite(120, TimeUnit.MINUTES) // 最后一次写入后 120 分钟过期（取较早）
             .build();
@@ -294,7 +290,7 @@ public class RedisPlugin implements Plugin{
             e.printStackTrace();
             retParam.setCode(-1);
         } finally {
-            redisUtil.close();
+            //redisUtil.close();
         }
         return retParam;
     }

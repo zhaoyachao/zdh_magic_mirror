@@ -1,4 +1,4 @@
 set "binDir=%~dp0"
 set "baseDir=%binDir:~0,-1%"
 pushd "%baseDir%" && cd ..
-java -Xss512M -jar zdh_ship.jar
+java -Xss512M -jar zdh_plugin.jar

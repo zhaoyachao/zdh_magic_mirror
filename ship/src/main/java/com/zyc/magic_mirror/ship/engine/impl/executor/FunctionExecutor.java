@@ -150,12 +150,12 @@ public class FunctionExecutor extends BaseExecutor{
                     if(!StringUtils.isEmpty(function_load_path)){
                         objectMap.put(clsInstanceName, clsInstance);
                         function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(params, ",")+")";
-                        Object ret = GroovyFactory.execExpress(function_script, objectMap);
+                        Object ret = GroovyFactory.execExpress(function_script, objectMap, true);
                         return ret;
                     }else{
                         objectMap.put(clsInstanceName, clsInstance);
                         function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(params, ",")+")";
-                        Object ret = GroovyFactory.execExpress(function_script, objectMap);
+                        Object ret = GroovyFactory.execExpress(function_script, objectMap, true);
                         return ret;
                     }
                 }

@@ -30,3 +30,4 @@
     v5.6.4 删除fastjson 
     
     v5.6.6 删除netty使用common包中的httpserver
+    v5.6.16 删除启动脚本无用命令
