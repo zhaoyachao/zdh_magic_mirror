@@ -406,7 +406,8 @@ public class RedisPluginServiceImpl implements PluginService {
             int poolTimeOut = 0;
             Config config = new Config();
             config.setThreads(1);
-            config.useSingleServer().
+            config.useSingleServer().setRetryAttempts(10).
+                    setRetryInterval(500).
                     setAddress("redis://"+host+":"+port).
                     setPassword(password);
 
@@ -418,7 +419,8 @@ public class RedisPluginServiceImpl implements PluginService {
             String[] nodes = address.split(",");
             Config config = new Config();
             config.setThreads(1);
-            ClusterServersConfig clusterServersConfig = config.useClusterServers();
+            ClusterServersConfig clusterServersConfig = config.useClusterServers().setRetryAttempts(10).
+                    setRetryInterval(500);
             for (String node : nodes) {
                 String[] parts = node.split(":");
                 String host = parts[0];

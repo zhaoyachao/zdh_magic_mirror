@@ -37,8 +37,8 @@ public class JedisPoolUtil {
         int poolTimeOut = 0;
         Config config = new Config();
         config.useSingleServer().
-                setRetryAttempts(100000).
-                setRetryInterval(5000).
+                setRetryAttempts(10).
+                setRetryInterval(500).
                 setAddress("redis://"+host+":"+port).
                 setPassword(auth);
 
@@ -62,8 +62,8 @@ public class JedisPoolUtil {
         }
         clusterServersConfig.setPassword(auth);
         clusterServersConfig.setScanInterval(5000);
-        clusterServersConfig.setRetryInterval(5000);
-        clusterServersConfig.setRetryAttempts(100000);
+        clusterServersConfig.setRetryInterval(500);
+        clusterServersConfig.setRetryAttempts(10);
         config.setCodec(new StringCodec());
         RedissonClient redissonClient = Redisson.create(config);
         redisClient = new RedisClientImpl(redissonClient);

@@ -58,8 +58,14 @@ public class FileIdMappingEngineImpl implements IdMappingEngine {
         for (DataPipe r: rs){
             if(id_map.containsKey(r.getUdata())){
                 Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(r.getExt());
-                stringObjectMap.put("mapping_data", r.getUdata()+","+id_map.get(r.getUdata()));
+                if(stringObjectMap.containsKey("mapping_data_"+id_mapping_code)){
+                    String old = stringObjectMap.get("mapping_data_"+id_mapping_code).toString();
+                    stringObjectMap.put("mapping_data_"+id_mapping_code, old+";"+r.getUdata()+","+id_map.get(r.getUdata()));
+                }else{
+                    stringObjectMap.put("mapping_data_"+id_mapping_code, r.getUdata()+","+id_map.get(r.getUdata()));
+                }
                 r.setUdata(id_map.get(r.getUdata()));
+                r.setExt(JsonUtil.formatJsonString(stringObjectMap));
                 id_map_rs.add(r);
             }else{
                 r.setStatus(Const.FILE_STATUS_FAIL);

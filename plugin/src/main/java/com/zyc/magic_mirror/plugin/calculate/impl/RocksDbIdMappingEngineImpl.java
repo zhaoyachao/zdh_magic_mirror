@@ -54,8 +54,14 @@ public class RocksDbIdMappingEngineImpl implements IdMappingEngine {
             byte[] value = rocksDB.get(r.getUdata().getBytes());
             if(value != null && value.length>0){
                 Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(r.getExt());
-                stringObjectMap.put("mapping_data", r.getUdata()+","+new String(value));
+                if(stringObjectMap.containsKey("mapping_data_"+id_mapping_code)){
+                    String old = stringObjectMap.get("mapping_data_"+id_mapping_code).toString();
+                    stringObjectMap.put("mapping_data_"+id_mapping_code, old+";"+r.getUdata()+","+new String(value));
+                }else{
+                    stringObjectMap.put("mapping_data_"+id_mapping_code, r.getUdata()+","+new String(value));
+                }
                 r.setUdata(new String(value));
+                r.setExt(JsonUtil.formatJsonString(stringObjectMap));
                 id_map_rs.add(r);
             } else{
                 r.setStatus(Const.FILE_STATUS_FAIL);

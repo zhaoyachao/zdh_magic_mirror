@@ -74,8 +74,15 @@ public class RedisIdMappingEngineImpl implements IdMappingEngine {
 
                 if(value != null && !StringUtils.isEmpty(value.toString())){
                     Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(r.getExt());
-                    stringObjectMap.put("mapping_data", r.getUdata()+","+value.toString());
+
+                    if(stringObjectMap.containsKey("mapping_data_"+id_mapping_code)){
+                        String old = stringObjectMap.get("mapping_data_"+id_mapping_code).toString();
+                        stringObjectMap.put("mapping_data_"+id_mapping_code, old+";"+r.getUdata()+","+value.toString());
+                    }else{
+                        stringObjectMap.put("mapping_data_"+id_mapping_code, r.getUdata()+","+value.toString());
+                    }
                     r.setUdata(value.toString());
+                    r.setExt(JsonUtil.formatJsonString(stringObjectMap));
                     id_map_rs.add(r);
                 } else{
                     r.setStatus(Const.FILE_STATUS_FAIL);
@@ -134,9 +141,11 @@ public class RedisIdMappingEngineImpl implements IdMappingEngine {
 
             Config config = new Config();
             if (mode.contains("cluster")) {
-                config.useClusterServers().addNodeAddress(new String[]{"redis://" +url}).setPassword(passwd);
+                config.useClusterServers().setRetryAttempts(10).
+                        setRetryInterval(500).addNodeAddress(new String[]{"redis://" +url}).setPassword(passwd);
             } else {
-                config.useSingleServer().setAddress("redis://" + url).setPassword(passwd);
+                config.useSingleServer().setRetryAttempts(10).
+                        setRetryInterval(500).setAddress("redis://" + url).setPassword(passwd);
             }
 
             config.setCodec(StringCodec.INSTANCE);

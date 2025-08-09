@@ -138,9 +138,11 @@ public class RedisFilterEngineImpl implements FilterEngine {
 
             Config config = new Config();
             if (mode.contains("cluster")) {
-                config.useClusterServers().addNodeAddress(new String[]{"redis://" +url}).setPassword(passwd);
+                config.useClusterServers().setRetryAttempts(10).
+                        setRetryInterval(500).addNodeAddress(new String[]{"redis://" +url}).setPassword(passwd);
             } else {
-                config.useSingleServer().setAddress("redis://" + url).setPassword(passwd);
+                config.useSingleServer().setRetryAttempts(10).
+                        setRetryInterval(500).setAddress("redis://" + url).setPassword(passwd);
             }
 
             config.setCodec(StringCodec.INSTANCE);
