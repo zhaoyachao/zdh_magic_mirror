@@ -38,4 +38,7 @@ public class Const {
     public static String ASYNC_TASK_STATUS_FINISH = "finish";
     public static String ASYNC_TASK_STATUS_FAIL = "fail";
 
+    public static String LOG_TYPE_MYSQL = "mysql";
+    public static String LOG_TYPE_MONGODB = "mongodb";
+
 }

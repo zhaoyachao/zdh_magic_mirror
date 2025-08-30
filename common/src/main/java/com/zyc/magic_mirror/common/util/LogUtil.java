@@ -1,5 +1,6 @@
 package com.zyc.magic_mirror.common.util;
 
+import com.mongodb.client.MongoCollection;
 import com.zyc.magic_mirror.common.dao.ZdhLogsMapper;
 import com.zyc.magic_mirror.common.entity.ZdhLogs;
 import org.apache.ibatis.session.SqlSession;
@@ -11,9 +12,11 @@ import java.sql.Timestamp;
 
 public class LogUtil {
 
-    public static SqlSession sqlSession;
-
     public static String logLock="LOG_LOCK";
+
+    public static String logType = "mysql";//mysql,mongodb
+
+    public static MongoDBUtil mongoDBUtil;
 
     // 当前日志类名
     private final static String logClassName = LogUtil.class.getName();
@@ -74,15 +77,14 @@ public class LogUtil {
 
     public static void send(ZdhLogs zdhLogs){
         try {
-            if(sqlSession == null){
-                synchronized (logLock.intern()){
-                    if(sqlSession == null){
-                        sqlSession = MybatisUtil.getSqlSession();
-                    }
-                }
+            if(logType.equalsIgnoreCase(Const.LOG_TYPE_MONGODB)){
+                MongoCollection<ZdhLogs> zdh_log = mongoDBUtil.getCollection("zdh_log", ZdhLogs.class);
+                zdh_log.insertOne(zdhLogs);
+            }else{
+                SqlSession sqlSession = MybatisUtil.getSqlSession();
+                ZdhLogsMapper zdhLogsMapper = sqlSession.getMapper(ZdhLogsMapper.class);
+                zdhLogsMapper.insert(zdhLogs);
             }
-            ZdhLogsMapper zdhLogsMapper = sqlSession.getMapper(ZdhLogsMapper.class);
-            zdhLogsMapper.insert(zdhLogs);
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
@@ -127,5 +129,18 @@ public class LogUtil {
         zdhLogs.setMsg(msg);
         zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
         return zdhLogs;
+    }
+
+    /**
+     * 使用mogodb存储时需要初始化mogodb
+     * @param mongodbUrl
+     * @param mongodbDb
+     * @param maxPoolSize
+     * @param minPoolSize
+     * @param maxWaitTime
+     */
+    public static void initMongoDb(String mongodbUrl,String mongodbDb,
+                                   int maxPoolSize, int minPoolSize, int maxWaitTime){
+        mongoDBUtil = MongoDBUtil.getInstance(mongodbUrl, mongodbDb, maxPoolSize, minPoolSize, maxWaitTime);
     }
 }

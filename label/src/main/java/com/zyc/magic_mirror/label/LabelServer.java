@@ -6,10 +6,7 @@ import com.zyc.magic_mirror.common.entity.InstanceType;
 import com.zyc.magic_mirror.common.entity.StrategyInstance;
 import com.zyc.magic_mirror.common.queue.QueueHandler;
 import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
-import com.zyc.magic_mirror.common.util.Const;
-import com.zyc.magic_mirror.common.util.JsonUtil;
-import com.zyc.magic_mirror.common.util.LogUtil;
-import com.zyc.magic_mirror.common.util.ServerManagerUtil;
+import com.zyc.magic_mirror.common.util.*;
 import com.zyc.magic_mirror.label.calculate.impl.*;
 import com.zyc.magic_mirror.label.service.impl.StrategyInstanceServiceImpl;
 import com.zyc.rqueue.RQueueClient;
@@ -60,6 +57,8 @@ public class LabelServer {
             }
 
             logger.info(config.toString());
+
+            initLogType(config);
 
             checkConfig(config);
 
@@ -185,6 +184,20 @@ public class LabelServer {
             JedisPoolUtil.close();
         }catch (Exception e){
             logger.error("label server error: ", e);
+        }
+    }
+
+    public static void initLogType(Properties config){
+        String logType = config.getProperty("log.type", Const.LOG_TYPE_MYSQL);
+        LogUtil.logType = logType;
+
+        if(logType.equalsIgnoreCase(Const.LOG_TYPE_MONGODB)){
+            String mongodbUrl = config.getProperty("log.mongodb.url", "mongodb://localhost:27017");
+            String mongodbDb = config.getProperty("log.mongodb.db", "zdh");
+            Integer maxPoolSize = Integer.valueOf(config.getProperty("log.mongodb.maxPoolSize", "1"));
+            Integer minPoolSize = Integer.valueOf(config.getProperty("log.mongodb.minPoolSize", "1"));
+            Integer maxWaitTime = Integer.valueOf(config.getProperty("log.mongodb.maxWaitTime", "5"));
+            LogUtil.initMongoDb(mongodbUrl, mongodbDb, maxPoolSize, minPoolSize, maxWaitTime);
         }
     }
 

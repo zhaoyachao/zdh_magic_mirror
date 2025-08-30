@@ -45,6 +45,7 @@
         <fastexcel.version>1.0.0</fastexcel.version>
         <netty-all.version>4.1.75.Final</netty-all.version>
         <micrometer.version>1.10.6</micrometer.version>
+        <mongodb.driver.version>3.11.3</mongodb.driver.version>
     </properties>
 
     <name>zdh magic mirror Tapestry 5 Application</name>
@@ -220,6 +221,12 @@
                 <groupId>io.micrometer</groupId>
                 <artifactId>micrometer-registry-prometheus</artifactId>
                 <version>${micrometer.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongodb-driver-sync</artifactId>
+                <version>${mongodb.driver.version}</version>
             </dependency>
             
         </dependencies>

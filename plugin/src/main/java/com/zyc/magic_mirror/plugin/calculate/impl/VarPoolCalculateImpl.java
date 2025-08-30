@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 变量池实现
+ * 用来增加变量的过程
  */
 public class VarPoolCalculateImpl extends BaseCalculate implements Runnable {
     private static Logger logger= LoggerFactory.getLogger(VarPoolCalculateImpl.class);

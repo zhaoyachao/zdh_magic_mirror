@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
- * 变量池实现
+ * 变量计算实现
  */
 public class VariableCalculateImpl extends BaseCalculate implements Runnable {
     private static Logger logger= LoggerFactory.getLogger(VariableCalculateImpl.class);

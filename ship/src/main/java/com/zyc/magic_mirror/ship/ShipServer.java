@@ -61,6 +61,8 @@ public class ShipServer {
             }
             logger.info("加载配置文件路径:{}", conf_path);
 
+            initLogType(properties);
+
             ShipConf.setConf(properties);
             SnowflakeIdWorker.init(Integer.valueOf(properties.getProperty("work.id", "1")),
                     Integer.valueOf(properties.getProperty("data.center.id", "1"))
@@ -222,5 +224,19 @@ public class ShipServer {
 
 
         consumerLogThreadPoolExecutor.submit(task);
+    }
+
+    public static void initLogType(Properties config){
+        String logType = config.getProperty("log.type", com.zyc.magic_mirror.common.util.Const.LOG_TYPE_MYSQL);
+        LogUtil.logType = logType;
+
+        if(logType.equalsIgnoreCase(com.zyc.magic_mirror.common.util.Const.LOG_TYPE_MONGODB)){
+            String mongodbUrl = config.getProperty("log.mongodb.url", "mongodb://localhost:27017");
+            String mongodbDb = config.getProperty("log.mongodb.db", "zdh");
+            Integer maxPoolSize = Integer.valueOf(config.getProperty("log.mongodb.maxPoolSize", "1"));
+            Integer minPoolSize = Integer.valueOf(config.getProperty("log.mongodb.minPoolSize", "1"));
+            Integer maxWaitTime = Integer.valueOf(config.getProperty("log.mongodb.maxWaitTime", "5"));
+            LogUtil.initMongoDb(mongodbUrl, mongodbDb, maxPoolSize, minPoolSize, maxWaitTime);
+        }
     }
 }
