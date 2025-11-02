@@ -163,7 +163,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate {
                 logStr = StrUtil.format("task: {}, update status finish", strategyLogInfo.getStrategy_instance_id());
                 LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
             }else{
-                run_jsmind_data.put(Const.STRATEGY_INSTANCE_DOUBLECHECK_TIME, System.currentTimeMillis() + 1000 * 60 * 5);
+                run_jsmind_data.put(Const.STRATEGY_INSTANCE_DOUBLECHECK_TIME, System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 365 );
                 setStatusAndRunJsmindData(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_CHECK_DEP, JsonUtil.formatJsonString(run_jsmind_data));
             }
         }catch (Exception e){

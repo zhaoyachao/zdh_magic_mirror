@@ -133,14 +133,14 @@ public class VariableCalculateImpl extends BaseCalculate implements Runnable {
                         ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
                     }else if(varpool_type.equalsIgnoreCase("int") ){
                         ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
+                    }else if(varpool_type.equalsIgnoreCase("long") ){
+                        ret = diffLongValue(Long.valueOf(value.toString()),varpool_value,varpool_operate);
                     }else if(varpool_type.equalsIgnoreCase("list")){
                         //获取变量表达式
                         if(!StringUtils.isEmpty(varpool_expre)){
                             Map<String, Object> parmas = new HashMap<>();
-                            parmas.put("varpool_ret",  JsonUtil.toJavaBean(value.toString(), List.class));
+                            parmas.put("varpool_ret",  value);
                             value = GroovyFactory.execExpress(varpool_expre, parmas);
-                        }else{
-                            value = JsonUtil.toJavaBean(value.toString(), List.class);
                         }
 
                         if(value instanceof String){
@@ -157,10 +157,8 @@ public class VariableCalculateImpl extends BaseCalculate implements Runnable {
                         //获取变量表达式
                         if(!StringUtils.isEmpty(varpool_expre)){
                             Map<String, Object> parmas = new HashMap<>();
-                            parmas.put("varpool_ret",  JsonUtil.toJavaBean(value.toString(), Map.class));
+                            parmas.put("varpool_ret",  value);
                             value = GroovyFactory.execExpress(varpool_expre, parmas);
-                        }else{
-                            value = JsonUtil.toJavaBean(value.toString(), Map.class);
                         }
 
                         if(value instanceof String){
@@ -174,7 +172,7 @@ public class VariableCalculateImpl extends BaseCalculate implements Runnable {
                         }
                     }
 
-                    LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "变量对比结果:"+ret+", 实际值:"+value.toString()+" ,期望值:"+varpool_value);
+                    LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "变量对比结果:"+ret+", 实际值:"+value.toString()+" , 期望值:"+varpool_value+", 操作:"+varpool_operate);
 
                     if(ret == false){
                         dataPipe.setStatus(Const.FILE_STATUS_FAIL);
@@ -301,27 +299,27 @@ public class VariableCalculateImpl extends BaseCalculate implements Runnable {
      */
     public boolean diffLongValue(Long lValue, String uValue, String operate){
         try{
-            if(operate.equalsIgnoreCase(">")){
+            if(operate.equalsIgnoreCase("gt")){
                 if(lValue>Long.valueOf(uValue)) {
                     return true;
                 }
-            }else if(operate.equalsIgnoreCase("<")){
+            }else if(operate.equalsIgnoreCase("lt")){
                 if(lValue<Long.valueOf(uValue)) {
                     return true;
                 }
-            }else if(operate.equalsIgnoreCase(">=")){
+            }else if(operate.equalsIgnoreCase("gte")){
                 if(lValue>=Long.valueOf(uValue)) {
                     return true;
                 }
-            }else if(operate.equalsIgnoreCase("<=")){
+            }else if(operate.equalsIgnoreCase("lte")){
                 if(lValue<=Long.valueOf(uValue)) {
                     return true;
                 }
-            }else if(operate.equalsIgnoreCase("=")){
+            }else if(operate.equalsIgnoreCase("eq")){
                 if(lValue.longValue() == Long.valueOf(uValue)) {
                     return true;
                 }
-            }else if(operate.equalsIgnoreCase("!=")){
+            }else if(operate.equalsIgnoreCase("neq")){
                 if(lValue.longValue() != Long.valueOf(uValue)) {
                     return true;
                 }
@@ -341,19 +339,19 @@ public class VariableCalculateImpl extends BaseCalculate implements Runnable {
         try{
             int r = lValue.compareTo(uValue);
             if(operate.equalsIgnoreCase("gt")){
-                if(r<0) {
-                    return true;
-                }
-            }else if(operate.equalsIgnoreCase("lt")){
                 if(r>0) {
                     return true;
                 }
+            }else if(operate.equalsIgnoreCase("lt")){
+                if(r<0) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase("gte")){
-                if(r<=0) {
+                if(r>=0) {
                     return true;
                 }
             }else if(operate.equalsIgnoreCase("lte")){
-                if(r>=0) {
+                if(r<=0) {
                     return true;
                 }
             }else if(operate.equalsIgnoreCase("eq")){
@@ -366,6 +364,9 @@ public class VariableCalculateImpl extends BaseCalculate implements Runnable {
                 }
             }else if(operate.equalsIgnoreCase("in")){
                 boolean in = Sets.newHashSet(uValue.split(";|,")).contains(lValue);
+                return in;
+            }else if(operate.equalsIgnoreCase("like")){
+                boolean in = uValue.contains(lValue);
                 return in;
             }
             return false;

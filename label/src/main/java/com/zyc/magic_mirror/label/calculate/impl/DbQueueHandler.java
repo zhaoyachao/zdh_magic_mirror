@@ -27,7 +27,7 @@ public class DbQueueHandler implements QueueHandler {
     private StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
 
     public static String[] instanceTypes = new String[]{InstanceType.LABEL.getCode(),InstanceType.CROWD_OPERATE.getCode(),InstanceType.CROWD_FILE.getCode(),
-            InstanceType.CROWD_RULE.getCode(),InstanceType.CUSTOM_LIST.getCode()};
+            InstanceType.CROWD_RULE.getCode(),InstanceType.CUSTOM_LIST.getCode(),InstanceType.USER_POOL.getCode()};
     private String[] status = new String[]{Const.STATUS_CHECK_DEP_FINISH};
 
     @Override

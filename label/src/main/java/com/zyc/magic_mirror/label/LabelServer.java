@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.sql.Timestamp;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -164,6 +163,8 @@ public class LabelServer {
                         runnable=new CrowdRuleCalculateImpl(m, atomicInteger, config);
                     }else if(instanceType.equalsIgnoreCase(InstanceType.CUSTOM_LIST.getCode())){
                         runnable=new CustomListCalculateImpl(m, atomicInteger, config);
+                    }else if(instanceType.equalsIgnoreCase(InstanceType.USER_POOL.getCode())){
+                        runnable=new UserPoolCalculateImpl(m, atomicInteger, config);
                     }else{
                         //不支持的任务类型
                         LogUtil.error(m.get("strategy_id").toString(), m.get("id").toString(), "不支持的任务类型, "+instanceType);

@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,24 +47,26 @@ public class VariableExecutor extends BaseExecutor{
             }
 
             boolean ret = false;
-            if(varpool_type.equalsIgnoreCase("string")){
+            if(varpool_type.equalsIgnoreCase("string")||varpool_type.equalsIgnoreCase("decimal")){
                 ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
             }else if(varpool_type.equalsIgnoreCase("int")){
                 ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
+            }else if(varpool_type.equalsIgnoreCase("long")){
+                ret = diffLongValue(Long.valueOf(value.toString()),varpool_value,varpool_operate);
             }else if(varpool_type.equalsIgnoreCase("list")){
                 //获取变量表达式
                 if(!StringUtils.isEmpty(varpool_expre)){
                     Map<String, Object> parmas = new HashMap<>();
-                    parmas.put("varpool_ret",  JsonUtil.toJavaList(value.toString()));
+                    parmas.put("varpool_ret",  value);
                     value = GroovyFactory.execExpress(varpool_expre, parmas);
-                }else{
-                    value = JsonUtil.toJavaList(value.toString());
                 }
 
-                if(value instanceof String){
+                if(value instanceof String || value instanceof BigDecimal){
                     ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
                 }else if(value instanceof Integer){
                     ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
+                }else if(value instanceof Long){
+                    ret = diffLongValue(Long.valueOf(value.toString()),varpool_value,varpool_operate);
                 }else if(value instanceof List){
                     ret = diffListValue((List)value,varpool_value, varpool_operate);
                 }else{
@@ -74,16 +77,18 @@ public class VariableExecutor extends BaseExecutor{
                 //获取变量表达式
                 if(!StringUtils.isEmpty(varpool_expre)){
                     Map<String, Object> parmas = new HashMap<>();
-                    parmas.put("varpool_ret",  JsonUtil.toJavaMap(value.toString()));
+                    parmas.put("varpool_ret",  value);
                     value = GroovyFactory.execExpress(varpool_expre, parmas);
                 }else{
                     value = JsonUtil.toJavaMap(value.toString());
                 }
 
-                if(value instanceof String){
+                if(value instanceof String || value instanceof BigDecimal){
                     ret = diffStringValue(value.toString(),varpool_value,varpool_operate);
                 }else if(value instanceof Integer){
                     ret = diffIntValue(Integer.valueOf(value.toString()),varpool_value,varpool_operate);
+                }else if(value instanceof Long){
+                    ret = diffLongValue(Long.valueOf(value.toString()),varpool_value,varpool_operate);
                 }else if(value instanceof Map){
                     ret = diffMapValue((Map)value,varpool_value, varpool_operate);
                 }else{

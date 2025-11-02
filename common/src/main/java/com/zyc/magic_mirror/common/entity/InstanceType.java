@@ -10,6 +10,7 @@ public enum InstanceType {
     CROWD_OPERATE("crowd_operate","crowd_operate","运算符","true"),
     CROWD_FILE("crowd_file","crowd_file","人群文件任务","true"),
     CUSTOM_LIST("custom_list","custom_list","自定义名单任务","true"),
+    USER_POOL("user_pool","user_pool","用户池","true"),
     FILTER("filter","filter","过滤任务","true"),
     SHUNT("shunt","shunt","分流任务","true"),
     TOUCH("touch","touch","触达任务","true"),

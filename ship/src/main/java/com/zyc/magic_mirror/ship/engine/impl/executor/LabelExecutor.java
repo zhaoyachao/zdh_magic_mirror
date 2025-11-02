@@ -389,19 +389,19 @@ public class LabelExecutor extends BaseExecutor{
         try{
             int r = lValue.compareTo(uValue);
             if(operate.equalsIgnoreCase(">")){
-                if(r<0) {
-                    return true;
-                }
-            }else if(operate.equalsIgnoreCase("<")){
                 if(r>0) {
                     return true;
                 }
+            }else if(operate.equalsIgnoreCase("<")){
+                if(r<0) {
+                    return true;
+                }
             }else if(operate.equalsIgnoreCase(">=")){
-                if(r<=0) {
+                if(r>=0) {
                     return true;
                 }
             }else if(operate.equalsIgnoreCase("<=")){
-                if(r>=0) {
+                if(r<=0) {
                     return true;
                 }
             }else if(operate.equalsIgnoreCase("=")){
