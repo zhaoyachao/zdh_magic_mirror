@@ -122,7 +122,7 @@ public class UserPoolCalculateImpl extends BaseCalculate implements Runnable {
                 Jinjava jinjava = new Jinjava();
                 param_value_str = jinjava.render(param_value_str, commonParam);
 
-                logStr = StrUtil.format("task: {}, param: {}", strategyLogInfo.getStrategy_instance_id(), param_value_str);
+                logStr = StrUtil.format("task: {}, param_code: {}, param_operate: {}, param_value: {}", strategyLogInfo.getStrategy_instance_id(), param_code, param_operate, param_value_str);
                 LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
 
                 UserPoolServiceImpl userPoolService = new UserPoolServiceImpl();

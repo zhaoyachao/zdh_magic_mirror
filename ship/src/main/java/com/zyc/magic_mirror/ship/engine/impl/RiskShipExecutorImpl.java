@@ -112,6 +112,9 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             }else if(instance_type.equalsIgnoreCase(InstanceType.VARIABLE.getCode())){
                 VariableExecutor variableExecutor = new VariableExecutor();
                 shipResult1 = variableExecutor.execute(strategyInstance, shipEvent, jsonObjectParam);
+            }else if(instance_type.equalsIgnoreCase(InstanceType.USER_POOL.getCode())){
+                UserPoolExecutor userPoolExecutor = new UserPoolExecutor();
+                shipResult1 = userPoolExecutor.execute(run_jsmind_data, uid, strategyInstance, shipEvent);
             }else{
                 logger.error("暂不支持的经营类型: {}", instance_type);
                 tmp = ShipResultStatusEnum.ERROR.code;
@@ -123,9 +126,9 @@ public class RiskShipExecutorImpl implements ShipExecutor {
             logger.error("ship exector execute error: ", e);
         }
 
-        if(shipResult1.getObjMap()!= null && shipResult1.getObjMap().size()>0){
-            shipEvent.getRunParam().putAll(shipResult1.getObjMap());
-        }
+//        if(shipResult1.getObjMap()!= null && shipResult1.getObjMap().size()>0){
+//            shipEvent.getRunParam().putAll(shipResult1.getObjMap());
+//        }
         String endTime = String.valueOf(DateUtil.current());
         shipResult1.setStartTime(startTime);
         shipResult1.setEndTime(endTime);
