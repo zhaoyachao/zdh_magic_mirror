@@ -1,8 +1,12 @@
 package com.zyc.magic_mirror.common.entity;
 
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
 
+@Table(name = "touch_config_info")
 public class TouchConfigInfo {
+    @Id
     private String id;
 
     private String touch_context;

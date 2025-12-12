@@ -3,11 +3,15 @@ package com.zyc.magic_mirror.common.entity;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
 import java.util.List;
 
+@Table(name = "label_info")
 public class LabelInfo {
 
+    @Id
     private String id;
 
     /**

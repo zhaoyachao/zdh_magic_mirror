@@ -1,8 +1,11 @@
 package com.zyc.magic_mirror.common.entity;
 
 
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.io.Serializable;
 
+@Table(name = "permission_user_info")
 public class PermissionUserInfo implements Serializable {
 
 	/**
@@ -12,6 +15,7 @@ public class PermissionUserInfo implements Serializable {
 	/**
 	 * ID
 	 */
+	@Id
 	private String id;
 	/**
 	 * 用户账号

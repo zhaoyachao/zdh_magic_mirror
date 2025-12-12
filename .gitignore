@@ -9,3 +9,4 @@ ship/target
 */target
 *-SNAPSHOT
 *.log
+.comate

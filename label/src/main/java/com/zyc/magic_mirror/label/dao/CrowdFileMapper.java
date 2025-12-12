@@ -1,14 +1,9 @@
 package com.zyc.magic_mirror.label.dao;
 
 import com.zyc.magic_mirror.common.entity.CrowdFileInfo;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import tk.mybatis.mapper.common.BaseMapper;
 
 
-public interface CrowdFileMapper {
+public interface CrowdFileMapper extends BaseMapper<CrowdFileInfo> {
 
-    @Select({
-            "select * from crowd_file_info where id = #{id} "
-    })
-    public CrowdFileInfo selectOne(@Param("id") String id);
 }

@@ -1,8 +1,10 @@
 package com.zyc.magic_mirror.common.entity;
 
+import javax.persistence.Table;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
+@Table(name = "zdh_logs")
 public class ZdhLogs implements Serializable {
 
     private String task_logs_id;

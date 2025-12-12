@@ -34,29 +34,7 @@
                 JNDI – 这个数据源的配置是为了准备与像Spring 或应用服务器能够在外部或者内部配置数据
                 源的容器一起使用，然后在JNDI 上下文中引用它。
              -->
-            <dataSource type="POOLED">
-                <property name="driver" value="${driver}" />
-                <property name="url" value="${url}" />
-                <property name="username" value="${username}" />
-                <property name="password" value="${password}" />
-                <!-- 在任意时间可以存在的活动（也就是正在使用）连接数量，默认值：10 -->
-                <property name="poolMaximumActiveConnections" value="100" />
-                <!-- 任意时间可能存在的空闲连接数 默认是5,最好设置为0,否则可能会崩溃掉 -->
-                <property name="poolMaximumIdleConnections" value="0" />
-                <!-- 在被强制返回之前，池中连接被检出（checked out）时间，默认值：20000 毫秒（即 20 秒） -->
-                <property name="poolMaximumCheckoutTime" value="20000" />
-                <!-- 这是一个底层设置，如果获取连接花费的相当长的时间，它会给连接池打印状态日志并重新尝试获取一个连接（避免在误配置的情况下一直安静的失败），默认值：20000
-                    毫秒（即 20 秒）。 -->
-                <property name="poolTimeToWait" value="20000" />
-
-                <!-- 是否启用侦测查询。若开启，也必须使用一个可执行的 SQL 语句设置 poolPingQuery 属性（最好是一个非常快的 SQL），默认值：false。 -->
-                <property name="poolPingEnabled" value="true" />
-                <!-- 配置 poolPingQuery 的使用频度。这可以被设置成匹配具体的数据库连接超时时间，来避免不必要的侦测，默认值：0（即所有连接每一时刻都被侦测
-                    — 当然仅当 poolPingEnabled 为 true 时适用） -->
-                <property name="poolPingConnectionsNotUsedFor" value="3600000" />
-                <!-- 发送到数据库的侦测查询，用来检验连接是否处在正常工作秩序中并准备接受请求。默认是“NO PING QUERY SET”，这会导致多数数据库驱动失败时带有一个恰当的错误消息。 -->
-                <property name="poolPingQuery" value="select 1" />
-            </dataSource>
+            <dataSource type="POOLED"/>
         </environment>
     </environments>
 

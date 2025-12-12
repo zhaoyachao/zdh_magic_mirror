@@ -6,12 +6,13 @@ import com.zyc.magic_mirror.common.entity.ZdhLogs;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Timestamp;
 
 public class LogUtil {
-
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(LogUtil.class);
     public static String logLock="LOG_LOCK";
 
     public static String logType = "mysql";//mysql,mongodb
@@ -82,11 +83,18 @@ public class LogUtil {
                 zdh_log.insertOne(zdhLogs);
             }else{
                 SqlSession sqlSession = MybatisUtil.getSqlSession();
-                ZdhLogsMapper zdhLogsMapper = sqlSession.getMapper(ZdhLogsMapper.class);
-                zdhLogsMapper.insert(zdhLogs);
+                try{
+                    ZdhLogsMapper zdhLogsMapper = sqlSession.getMapper(ZdhLogsMapper.class);
+                    zdhLogsMapper.insert(zdhLogs);
+                }catch (Exception e){
+                    throw e;
+                }finally{
+                    sqlSession.close();
+                }
+
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IO error in LogUtil: {}", e.getMessage(), e);
         }finally {
 
         }

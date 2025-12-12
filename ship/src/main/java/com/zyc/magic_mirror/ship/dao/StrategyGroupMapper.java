@@ -13,7 +13,7 @@ public interface StrategyGroupMapper {
     @Select({
             "select * from strategy_group_instance where group_type='online' and status='sub_task_dispatch'"
     })
-    public List<Map<String,Object>> select();
+    public List<Map<String,Object>> selectByOnlineAndStatusDispatch();
 
     @Select({
             "select * from strategy_instance where group_instance_id=#{group_instance_id}"

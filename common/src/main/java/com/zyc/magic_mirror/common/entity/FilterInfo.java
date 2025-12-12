@@ -1,8 +1,12 @@
 package com.zyc.magic_mirror.common.entity;
 
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
 
+@Table(name = "filter_info")
 public class FilterInfo {
+    @Id
     private String id;
 
     /**

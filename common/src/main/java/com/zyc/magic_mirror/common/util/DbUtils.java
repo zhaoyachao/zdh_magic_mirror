@@ -1,13 +1,14 @@
 package com.zyc.magic_mirror.common.util;
 
 import com.alibaba.druid.pool.DruidDataSourceFactory;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 
 public class DbUtils {
-
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(DbUtils.class);
     public static DataSource dataSource = null;
 
     static {
@@ -17,7 +18,7 @@ public class DbUtils {
 
             dataSource = DruidDataSourceFactory.createDataSource(properties);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Database connection error: {}", e.getMessage(), e);
         }
     }
 
@@ -67,7 +68,7 @@ public class DbUtils {
                 try {
                     connection.close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("SQL error in closing connection: {}", e.getMessage(), e);
                 }
             }
         }
@@ -105,7 +106,7 @@ public class DbUtils {
                 try {
                     connection.close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.error("SQL error in closing statement: {}", e.getMessage(), e);
                 }
             }
         }

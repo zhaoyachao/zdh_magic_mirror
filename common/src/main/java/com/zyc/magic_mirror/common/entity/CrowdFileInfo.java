@@ -1,10 +1,13 @@
 package com.zyc.magic_mirror.common.entity;
 
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
 
-
+@Table(name = "crowd_file_info")
 public class CrowdFileInfo {
 
+    @Id
     private String id;
 
     /**

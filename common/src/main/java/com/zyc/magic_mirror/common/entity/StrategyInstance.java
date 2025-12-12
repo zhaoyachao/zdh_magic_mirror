@@ -1,9 +1,13 @@
 package com.zyc.magic_mirror.common.entity;
 
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
 
+@Table(name = "strategy_instance")
 public class StrategyInstance {
 
+    @Id
     private String id;
 
     /**

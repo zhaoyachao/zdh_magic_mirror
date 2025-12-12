@@ -1,14 +1,8 @@
 package com.zyc.magic_mirror.label.dao;
 
 import com.zyc.magic_mirror.common.entity.DataSourcesInfo;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import tk.mybatis.mapper.common.BaseMapper;
 
 
-public interface DataSourcesMapper {
-
-    @Select({
-            "select * from data_sources_info where id = #{id} "
-    })
-    public DataSourcesInfo selectOne(@Param("id") String id);
+public interface DataSourcesMapper extends BaseMapper<DataSourcesInfo> {
 }

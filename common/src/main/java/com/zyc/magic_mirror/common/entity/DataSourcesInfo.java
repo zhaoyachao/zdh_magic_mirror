@@ -1,10 +1,14 @@
 package com.zyc.magic_mirror.common.entity;
 
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.util.Date;
 
 
+@Table(name = "data_sources_info")
 public class DataSourcesInfo{
 
+    @Id
     private String id;
 
     /**

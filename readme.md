@@ -44,4 +44,6 @@
 
 ![功能预览](img/index.jpg)
 
-![风控引擎配置界面](img/risk_engine.jpg)    
+![风控引擎配置界面](img/risk_engine.jpg)
+
+![风控流程](img/ship.png)

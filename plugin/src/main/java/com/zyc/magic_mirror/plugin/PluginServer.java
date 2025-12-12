@@ -362,7 +362,7 @@ public class PluginServer {
                                     }
                                     strategyInstanceService.updateStatusAndUpdateTimeByIdAndOldStatus(strategyInstance, Const.STATUS_ETL);
                                 }catch (Exception e){
-                                    e.printStackTrace();
+                                    logger.error("Plugin execution error: {}", e.getMessage(), e);
                                 }finally {
                                     rLock.unlock();
                                 }
@@ -371,7 +371,7 @@ public class PluginServer {
                         }
                         Thread.sleep(1000*60);
                     }catch (Exception e){
-                        e.printStackTrace();
+                        logger.error("Plugin task error: {}", e.getMessage(), e);
                     }
 
                 }

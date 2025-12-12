@@ -4,12 +4,16 @@ package com.zyc.magic_mirror.common.entity;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 
+@Table(name = "customer_manager_info")
 public class CustomerManagerInfo{
 
+    @Id
     private String id;
 
     /**

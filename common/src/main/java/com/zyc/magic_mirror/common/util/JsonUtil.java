@@ -7,6 +7,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -69,6 +71,8 @@ class DateJsonSerializer extends JsonSerializer<Date> {
 }
 
 public class JsonUtil {
+    // 替换为SLF4J日志
+    private static final Logger logger = LoggerFactory.getLogger(JsonUtil.class);
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -94,9 +98,9 @@ public class JsonUtil {
         try {
             t = OBJECT_MAPPER.readValue(jsonArray, type);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("JSON processing error: {}", e.getMessage(), e);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IO error while parsing JSON: {}", e.getMessage(), e);
         }
         return t;
     }
@@ -114,9 +118,9 @@ public class JsonUtil {
         try {
             t = OBJECT_MAPPER.readValue(jsonArray, List.class);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("JSON processing error: {}", e.getMessage(), e);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IO error while parsing JSON: {}", e.getMessage(), e);
         }
         return t;
     }
@@ -134,9 +138,9 @@ public class JsonUtil {
         try {
             t = OBJECT_MAPPER.readValue(jsonArray, List.class);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("JSON processing error: {}", e.getMessage(), e);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IO error while parsing JSON: {}", e.getMessage(), e);
         }
         return t;
     }
@@ -154,9 +158,9 @@ public class JsonUtil {
         try {
             t = OBJECT_MAPPER.readValue(json, tClass);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("JSON processing error: {}", e.getMessage(), e);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IO error while parsing JSON: {}", e.getMessage(), e);
         }
         return t;
     }
@@ -175,9 +179,9 @@ public class JsonUtil {
         try {
             t = OBJECT_MAPPER.readValue(json, LinkedHashMap.class);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("JSON processing error: {}", e.getMessage(), e);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("IO error while parsing JSON: {}", e.getMessage(), e);
         }
         return t;
     }
@@ -192,7 +196,7 @@ public class JsonUtil {
         try {
             return OBJECT_MAPPER.writeValueAsString(o);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("JSON processing error: {}", e.getMessage(), e);
         }
         return null;
     }

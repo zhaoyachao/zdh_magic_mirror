@@ -1,17 +1,21 @@
 package com.zyc.magic_mirror.common.entity;
 
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.sql.Timestamp;
 
 
+@Table(name = "notice_info")
 public class NoticeInfo {
-
-
+    @Id
     private String id;
     //消息类型
     private String msg_type;
     //消息标题
     private String msg_title;
 
+    @Transient
     private String msg_num;
 
     private String msg_url;

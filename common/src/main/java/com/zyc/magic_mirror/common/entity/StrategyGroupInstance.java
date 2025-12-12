@@ -1,10 +1,15 @@
 package com.zyc.magic_mirror.common.entity;
 
 
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.sql.Timestamp;
 
+@Table(name = "strategy_group_instance")
 public class StrategyGroupInstance {
 
+    @Id
     private String id;
 
     /**
@@ -139,6 +144,7 @@ public class StrategyGroupInstance {
     /**
      * 小流量状态
      */
+    @Transient
     private String small_flow_status;
 
     /**

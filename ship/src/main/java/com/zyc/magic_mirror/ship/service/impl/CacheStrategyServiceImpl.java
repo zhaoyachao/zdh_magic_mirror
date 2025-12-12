@@ -5,22 +5,19 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.entity.StrategyInstance;
 import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
+import com.zyc.magic_mirror.common.service.impl.BaseServiceImpl;
 import com.zyc.magic_mirror.common.util.DAG;
 import com.zyc.magic_mirror.common.util.JsonUtil;
-import com.zyc.magic_mirror.common.util.MybatisUtil;
 import com.zyc.magic_mirror.ship.dao.StrategyGroupMapper;
 import com.zyc.magic_mirror.ship.entity.StrategyGroupInstance;
 import com.zyc.magic_mirror.ship.service.StrategyService;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.*;
 
-public class CacheStrategyServiceImpl implements StrategyService {
+public class CacheStrategyServiceImpl extends BaseServiceImpl implements StrategyService {
 
     private static Logger logger= LoggerFactory.getLogger(CacheStrategyServiceImpl.class);
 
@@ -75,11 +72,16 @@ public class CacheStrategyServiceImpl implements StrategyService {
      */
     public void schedule(){
         //定时加载策略信息
-        SqlSession sqlSession = null;
+
         try {
-            sqlSession= MybatisUtil.getSqlSession();
-            StrategyGroupMapper strategyInstanceMappler = sqlSession.getMapper(StrategyGroupMapper.class);
-            List<Map<String,Object>> rows = strategyInstanceMappler.select();
+            List<Map<String,Object>> rows = executeReadOnly((sqlSession) -> {
+                StrategyGroupMapper strategyInstanceMappler = sqlSession.getMapper(StrategyGroupMapper.class);
+                return strategyInstanceMappler.selectByOnlineAndStatusDispatch();
+            });
+
+//            sqlSession= MybatisUtil.getSqlSession();
+//            StrategyGroupMapper strategyInstanceMappler = sqlSession.getMapper(StrategyGroupMapper.class);
+//            List<Map<String,Object>> rows = strategyInstanceMappler.selectByOnlineAndStatusDispatch();
             Map<String,List<StrategyGroupInstance>> maps = Maps.newHashMap();
             for(Map<String,Object> row : rows){
                 DAG dag=new DAG();
@@ -107,7 +109,11 @@ public class CacheStrategyServiceImpl implements StrategyService {
                 Set<String> data_nodes = Sets.newHashSet();
                 Set<String> label_codes = Sets.newHashSet();
                 strategyGroupInstance.setRoot_strategys(Sets.newHashSet(roots));
-                List<Map<String,Object>> strategys = strategyInstanceMappler.selectStrategys(group_instance_id);
+                List<Map<String,Object>> strategys = executeReadOnly((sqlSession) -> {
+                    StrategyGroupMapper strategyInstanceMappler = sqlSession.getMapper(StrategyGroupMapper.class);
+                    return strategyInstanceMappler.selectStrategys(group_instance_id);
+                });
+
                 Map<String,StrategyInstance> stringStrategyMap=new HashMap<>();
                 for (Map<String,Object> stringObjectMap: strategys){
                     StrategyInstance strategyInstance=new StrategyInstance();
@@ -153,18 +159,14 @@ public class CacheStrategyServiceImpl implements StrategyService {
             }
 
             cache = maps;
-            strategyInstanceMappler.update2Killed();
-        } catch (IOException e) {
+            executeTransaction((sqlSession) -> {
+                StrategyGroupMapper strategyInstanceMappler = sqlSession.getMapper(StrategyGroupMapper.class);
+                return strategyInstanceMappler.update2Killed();
+            });
+
+        } catch (Exception e) {
             logger.error("ship service schedule error: ", e);
         }finally {
-            if(sqlSession != null){
-                try {
-                    sqlSession.getConnection().close();
-                } catch (SQLException e) {
-                    logger.error("ship service schedule sqlSession error: ", e);
-                }
-                sqlSession.close();
-            }
 
         }
     }

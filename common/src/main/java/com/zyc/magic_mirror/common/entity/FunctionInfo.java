@@ -3,12 +3,16 @@ package com.zyc.magic_mirror.common.entity;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+@Table(name = "function_info")
 public class FunctionInfo {
 
+    @Id
     private String id;
 
     /**

@@ -9,6 +9,7 @@ import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.common.util.MybatisUtil;
 import com.zyc.magic_mirror.label.dao.StrategyInstanceMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,25 +143,35 @@ public class CrowdOperateCalculateImpl extends BaseCalculate{
         List<String> other = new ArrayList<>(Arrays.asList(pre_tasks.split(",")));
         if(operate.equalsIgnoreCase("not")){
             //必须计算出主标签,且只能有一个主标签
-            StrategyInstanceMapper strategyInstanceMappler = MybatisUtil.getSqlSession().getMapper(StrategyInstanceMapper.class);
+            SqlSession sqlSession = MybatisUtil.getSqlSession();
+            try{
+                StrategyInstanceMapper strategyInstanceMappler = sqlSession.getMapper(StrategyInstanceMapper.class);
 
-            String base_id = "";
-            List<StrategyInstance> list = strategyInstanceMappler.selectByIds(pre_tasks.split(","));
-            for (StrategyInstance strategyInstance:list){
-                String rjd = strategyInstance.getRun_jsmind_data();
-                Map parseObject = JsonUtil.toJavaMap(rjd);
-                if(parseObject.getOrDefault("is_base","false").toString().equalsIgnoreCase("true")){
-                    base_id = strategyInstance.getId();
-                    break;
+                String base_id = "";
+                List<StrategyInstance> list = strategyInstanceMappler.selectByIds(pre_tasks.split(","));
+                for (StrategyInstance strategyInstance:list){
+                    String rjd = strategyInstance.getRun_jsmind_data();
+                    Map parseObject = JsonUtil.toJavaMap(rjd);
+                    if(parseObject.getOrDefault("is_base","false").toString().equalsIgnoreCase("true")){
+                        base_id = strategyInstance.getId();
+                        break;
+                    }
+                }
+
+                if(StringUtils.isEmpty(base_id)){
+                    throw  new Exception("无法找到base数据");
+                }
+                other.remove(base_id);
+                logger.info("task: {}, base: {}, other: {}", task_id, base_id, String.join(",", other));
+                other.add(0, base_id);
+            }catch (Exception e){
+                throw e;
+            }finally{
+                if(sqlSession != null){
+                    sqlSession.close();
                 }
             }
 
-            if(StringUtils.isEmpty(base_id)){
-                throw  new Exception("无法找到base数据");
-            }
-            other.remove(base_id);
-            logger.info("task: {}, base: {}, other: {}", task_id, base_id, String.join(",", other));
-            other.add(0, base_id);
         }
 
         return other;

@@ -2,6 +2,8 @@ package com.zyc.magic_mirror.common.http;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.MessageDigest;
 import java.util.Comparator;
@@ -10,6 +12,8 @@ import java.util.Map;
 import java.util.Objects;
 
 public abstract class HttpAction {
+
+    private final static Logger logger = LoggerFactory.getLogger(HttpAction.class);
 
     /**
      * 默认开启签名验证
@@ -116,7 +120,7 @@ public abstract class HttpAction {
             }
             return hexString.toString();
         }catch (Exception e){
-           e.printStackTrace();
+           logger.error("HTTP action error: {}", e.getMessage(), e);
         }
         return null;
     }

@@ -1,7 +1,6 @@
 package com.zyc.magic_mirror.label.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hubspot.jinjava.Jinjava;
 import com.zyc.magic_mirror.common.entity.CustomerManagerInfo;

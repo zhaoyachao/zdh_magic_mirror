@@ -145,7 +145,7 @@ public class ServerManagerUtil {
 
                         logger.info("服务暂停中...");
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        logger.error("Thread interrupted error: {}", e.getMessage(), e);
                     }
                 }
                 return checkServiceRunningMode(serviceInstanceConf);
