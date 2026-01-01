@@ -1,8 +1,11 @@
 package com.zyc.magic_mirror.ship;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.zyc.magic_mirror.common.groovy.GroovyFactory;
+import com.zyc.magic_mirror.common.http.HttpAction;
 import com.zyc.magic_mirror.common.http.HttpServer;
+import com.zyc.magic_mirror.common.http.PackageScanner;
 import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
@@ -39,6 +42,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ShipServer {
     public static Logger logger= LoggerFactory.getLogger(ShipServer.class);
+
+    private static List<String> ACTION_PACKAGES = Lists.newArrayList("com.zyc.magic_mirror.ship.action");
 
     public static ThreadPoolExecutor consumerLogThreadPoolExecutor = new ThreadPoolExecutor(1,
             1, 1000*60*60,
@@ -113,10 +118,15 @@ public class ShipServer {
 
             optimize();
 
-            HttpServer httpServer = new HttpServer();
-            ShipAction shipAction = new ShipAction();
+            // 如果只想初始化实现特定接口的类
+            for(String targetPackage : ACTION_PACKAGES){
+                PackageScanner.autoInit(targetPackage, HttpAction.class);
+            }
 
-            httpServer.registerAction(shipAction.getUri(), shipAction);
+            HttpServer httpServer = new HttpServer();
+            //ShipAction shipAction = new ShipAction();
+
+            //httpServer.registerAction(shipAction.getUri(), shipAction);
 
             httpServer.start(properties);
 

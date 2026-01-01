@@ -74,10 +74,10 @@ public class HttpPlugin implements Plugin{
                 if(!data_type.equalsIgnoreCase("json")){
                     throw new Exception("当请求类型为post时数据类型仅支持json");
                 }
-                res = HttpUtil.postJSON(url, request_params, proxy);
+                res = HttpUtil.builder().retryCount(0).proxy(proxy).postJSON(url, request_params);
             }else if(method.equalsIgnoreCase("get")){
                 List<NameValuePair> npl=new ArrayList<>();
-                res = HttpUtil.getRequest(url+"?"+request_params, npl, proxy);
+                res = HttpUtil.builder().retryCount(0).proxy(proxy).getRequest(url+"?"+request_params, npl);
             }else{
                 throw new Exception("仅支持get,post请求");
             }

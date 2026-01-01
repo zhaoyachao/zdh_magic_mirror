@@ -15,6 +15,16 @@ public abstract class HttpAction {
 
     private final static Logger logger = LoggerFactory.getLogger(HttpAction.class);
 
+
+    public HttpAction(){
+        register();
+    }
+
+    private void register(){
+        logger.info("HttpServer注册路由,uri: {},action: {}", this.getUri(), this.getClass().getName());
+        HttpServer.actions.put(getUri(), this);
+    }
+
     /**
      * 默认开启签名验证
      * @return

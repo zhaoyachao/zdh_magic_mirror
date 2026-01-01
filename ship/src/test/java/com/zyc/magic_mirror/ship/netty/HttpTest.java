@@ -17,7 +17,7 @@ public class HttpTest {
         jsonObject.put("source", "test");
         jsonObject.put("scene", Const.ONLINE_MANAGER);
         jsonObject.put("data_node", "xxx");
-        HttpUtil.postJSON("http://127.0.0.1:9002/api/v1/ship/accept", JsonUtil.formatJsonString(jsonObject));
+        HttpUtil.builder().postJSON("http://127.0.0.1:9002/api/v1/ship/accept", JsonUtil.formatJsonString(jsonObject));
 
     }
 }
