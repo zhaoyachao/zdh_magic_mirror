@@ -11,9 +11,13 @@ import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
 import com.zyc.magic_mirror.plugin.impl.TouchServiceImpl;
 import com.zyc.magic_mirror.plugin.touch.EmailTouch;
+import com.zyc.magic_mirror.plugin.touch.PushxService;
 import com.zyc.magic_mirror.plugin.touch.SmsResponse;
 import com.zyc.magic_mirror.plugin.touch.SmsTouch;
+import com.zyc.magic_mirror.plugin.touch.entity.BasePushTask;
+import com.zyc.magic_mirror.plugin.touch.entity.PushxBaseResponse;
 import com.zyc.magic_mirror.plugin.touch.impl.AliSmsTouch;
+import com.zyc.magic_mirror.plugin.touch.impl.PushxServiceImpl;
 import com.zyc.magic_mirror.plugin.touch.impl.QQEmailTouch;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -30,6 +34,7 @@ import java.util.stream.Collectors;
 public class TouchCalculateImpl extends BaseCalculate implements Runnable {
     private static Logger logger= LoggerFactory.getLogger(TouchCalculateImpl.class);
 
+    private PushxService pushxService;
     /**
      {
      "strategy_instance": [
@@ -70,6 +75,7 @@ public class TouchCalculateImpl extends BaseCalculate implements Runnable {
 
     public TouchCalculateImpl(Map<String, Object> param, AtomicInteger atomicInteger, Properties dbConfig){
         super(param, atomicInteger, dbConfig);
+        pushxService = new PushxServiceImpl();
     }
 
     @Override
@@ -105,6 +111,7 @@ public class TouchCalculateImpl extends BaseCalculate implements Runnable {
 
             //获取标签code
             String touch_task=run_jsmind_data.get("touch_task").toString();
+            String touch_template_id=run_jsmind_data.get("touch_template_id").toString();
             String touch_id=run_jsmind_data.get("rule_id").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
 
@@ -114,18 +121,32 @@ public class TouchCalculateImpl extends BaseCalculate implements Runnable {
             Set<DataPipe> rs = calculateResult.getRs();
             String file_dir = calculateResult.getFile_dir();
 
-
-
             if(is_disenable.equalsIgnoreCase("true")){
                 //禁用,不做操作
             }else{
+                String product_code = strategyLogInfo.getStrategyGroupInstance().getProduct_code();
+                //根据产品和模板id 获取模板信息 todo 此处待优化,当前采用暴力模式,所有的参数信息都传递
                 TouchConfigInfo touchConfigInfo = touchService.selectById(touch_id);
                 logStr = StrUtil.format("task: {}, touch_type: {}", strategyLogInfo.getStrategy_instance_id(), touch_task);
                 LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
+                List<String> pushServers = Lists.newArrayList();
+                String account_type = "";
                 if(touch_task.equalsIgnoreCase("email")){
-                    rs = emailTouch(touchConfigInfo,rs, file_dir,strategyLogInfo.getStrategy_instance_id());
+                    pushServers.add("email");
+                    account_type = "email";
                 }else if(touch_task.equalsIgnoreCase("sms")){
-                    rs = smsTouch(touchConfigInfo,rs, file_dir,strategyLogInfo.getStrategy_instance_id());
+                    pushServers.add("sms");
+                    account_type = "phone";
+                }
+
+                for(DataPipe dataPipe: rs){
+                    PushxBaseResponse pushxBaseResponse = pushxService.send(pushServers, touch_template_id, dataPipe.getUdata(), account_type, JsonUtil.toJavaMap(dataPipe.getExt()));
+                    if(pushxBaseResponse != null && pushxBaseResponse.isSuccess()){
+                        dataPipe.setStatus(Const.FILE_STATUS_SUCCESS);
+                    }else{
+                        dataPipe.setStatus(Const.FILE_STATUS_FAIL);
+                        dataPipe.setStatus_desc(pushxBaseResponse.getMsg());
+                    }
                 }
             }
 
@@ -153,112 +174,112 @@ public class TouchCalculateImpl extends BaseCalculate implements Runnable {
      * @param id
      * @throws IOException
      */
-    public Set<DataPipe> emailTouch(TouchConfigInfo touchConfigInfo,Set<DataPipe> rs,String file_dir, String id) throws Exception {
-        EmailTouch emailTouch=new QQEmailTouch();
-        emailTouch.init(new HashMap<String,Object>(this.dbConfig), touchConfigInfo);
-
-        Set<DataPipe> tmp = Sets.newHashSet();
-
-        Set<DataPipe> rs_tmp = Sets.newHashSet();
-        List<String> ccs=new ArrayList<>();
-        for (DataPipe email:rs){
-            if(email.getUdata().contains("@")){
-                rs_tmp.add(email);
-                //writeFile(file_dir+"/email_"+id, Sets.newHashSet(email+",format error,"+System.currentTimeMillis()));
-            }else{
-                email.setStatus(Const.FILE_STATUS_FAIL);
-                tmp.add(email);
-            }
-        }
-
-        List<DataPipe> his = readHisotryFile(file_dir, "email_"+id, Const.FILE_STATUS_ALL);
-        Set<String> hisSet = Sets.newHashSet(his.stream().map(s->s.getUdata()).collect(Collectors.toSet()));
-        Set<DataPipe> diff = rs_tmp.parallelStream().filter(s->!hisSet.contains(s.getUdata())).collect(Collectors.toSet());
-
-        for(DataPipe account: diff){
-            String result = emailTouch.send(account.getUdata());
-            if(result.equalsIgnoreCase("fail")){
-                account.setStatus(Const.FILE_STATUS_FAIL);
-            }
-
-            tmp.add(account);
-        }
-
-        tmp.addAll(his);
-        writeFile(file_dir+"/email_"+id, tmp);
-
-        return tmp;
-    }
-
-    public Set<DataPipe> smsTouch(TouchConfigInfo touchConfigInfo,Set<DataPipe> rs,String file_dir, String id) throws Exception {
-        List<List<DataPipe>> partitions = Lists.partition(Lists.newArrayList(rs) , 1000);
-        //读取已经推送的信息
-        List<DataPipe> his = readHisotryFile(file_dir, "sms_"+id, Const.FILE_STATUS_ALL);
-
-        Set<String> hisSet = Sets.newHashSet(his.parallelStream().map(s->s.getUdata()).collect(Collectors.toSet()));
-
-        Set<DataPipe> tmp = Sets.newHashSet();
-
-        for (List<DataPipe> partition: partitions){
-            Set<DataPipe> now = Sets.newHashSet(partition);
-
-            Set<DataPipe> diff = now.parallelStream().filter(s->!hisSet.contains(s.getUdata())).collect(Collectors.toSet());
-            Map<String, Object> jsonObject=JsonUtil.toJavaMap(touchConfigInfo.getTouch_config());
-            String sign = touchConfigInfo.getSign();
-            String template = touchConfigInfo.getTemplate_code();
-
-            String platform = touchConfigInfo.getPlatform();
-            SmsTouch smsTouch=getSmsTouchByPlatform(platform);
-            String phones = StringUtils.join(diff,",");
-            Properties properties = getSmsConfigByPlatform(platform);
-            SmsResponse response = smsTouch.sendSms(properties, phones, sign, template,"","");
-
-            for (DataPipe s: diff){
-                if(!response.getCode().equalsIgnoreCase("ok")){
-                    s.setStatus(Const.FILE_STATUS_FAIL);
-                }
-                Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(s.getExt());
-                stringObjectMap.put("touch_result", response.getObject());
-                s.setExt(JsonUtil.formatJsonString(stringObjectMap));
-                tmp.add(s);
-            }
-        }
-
-        writeFile(file_dir+"/sms_"+id, tmp);
-
-        return tmp;
-    }
-
-    public SmsTouch getSmsTouchByPlatform(String platform) throws Exception {
-        if(platform.equalsIgnoreCase("ali")){
-            return new AliSmsTouch();
-        }
-        try {
-            return (SmsTouch) Class.forName(platform).newInstance();
-        } catch (InstantiationException e) {
-            logger.error("plugin touch load platform error: ", e);
-        } catch (IllegalAccessException e) {
-            logger.error("plugin touch load platform error: ", e);
-        } catch (ClassNotFoundException e) {
-            logger.error("plugin touch load platform error: ", e);
-        }
-
-        throw new Exception("无法找到适配的短信服务,请检查短信平台参数配置是否正常");
-    }
-
-    public Properties getSmsConfigByPlatform(String platform) throws Exception {
-        if(platform.equalsIgnoreCase("ali")){
-            Properties properties = new Properties();
-            properties.putAll(this.dbConfig);
-            return properties;
-        }
-        try {
-            return  new Properties();
-        } catch (Exception e) {
-            logger.error("plugin touch run error: ", e);
-        }
-
-        throw new Exception("无法找到适配的短信服务,请检查短信平台参数配置是否正常");
-    }
+//    public Set<DataPipe> emailTouch(TouchConfigInfo touchConfigInfo,Set<DataPipe> rs,String file_dir, String id) throws Exception {
+//        EmailTouch emailTouch=new QQEmailTouch();
+//        emailTouch.init(new HashMap<String,Object>(this.dbConfig), touchConfigInfo);
+//
+//        Set<DataPipe> tmp = Sets.newHashSet();
+//
+//        Set<DataPipe> rs_tmp = Sets.newHashSet();
+//        List<String> ccs=new ArrayList<>();
+//        for (DataPipe email:rs){
+//            if(email.getUdata().contains("@")){
+//                rs_tmp.add(email);
+//                //writeFile(file_dir+"/email_"+id, Sets.newHashSet(email+",format error,"+System.currentTimeMillis()));
+//            }else{
+//                email.setStatus(Const.FILE_STATUS_FAIL);
+//                tmp.add(email);
+//            }
+//        }
+//
+//        List<DataPipe> his = readHisotryFile(file_dir, "email_"+id, Const.FILE_STATUS_ALL);
+//        Set<String> hisSet = Sets.newHashSet(his.stream().map(s->s.getUdata()).collect(Collectors.toSet()));
+//        Set<DataPipe> diff = rs_tmp.parallelStream().filter(s->!hisSet.contains(s.getUdata())).collect(Collectors.toSet());
+//
+//        for(DataPipe account: diff){
+//            PushxBaseResponse pushxBaseResponse = pushxService.send(account.getUdata());
+//            if(pushxBaseResponse==null || !pushxBaseResponse.isSuccess()){
+//                account.setStatus(Const.FILE_STATUS_FAIL);
+//            }
+//
+//            tmp.add(account);
+//        }
+//
+//        tmp.addAll(his);
+//        writeFile(file_dir+"/email_"+id, tmp);
+//
+//        return tmp;
+//    }
+//
+//    public Set<DataPipe> smsTouch(TouchConfigInfo touchConfigInfo,Set<DataPipe> rs,String file_dir, String id) throws Exception {
+//        List<List<DataPipe>> partitions = Lists.partition(Lists.newArrayList(rs) , 1000);
+//        //读取已经推送的信息
+//        List<DataPipe> his = readHisotryFile(file_dir, "sms_"+id, Const.FILE_STATUS_ALL);
+//
+//        Set<String> hisSet = Sets.newHashSet(his.parallelStream().map(s->s.getUdata()).collect(Collectors.toSet()));
+//
+//        Set<DataPipe> tmp = Sets.newHashSet();
+//
+//        for (List<DataPipe> partition: partitions){
+//            Set<DataPipe> now = Sets.newHashSet(partition);
+//
+//            Set<DataPipe> diff = now.parallelStream().filter(s->!hisSet.contains(s.getUdata())).collect(Collectors.toSet());
+//            Map<String, Object> jsonObject=JsonUtil.toJavaMap(touchConfigInfo.getTouch_config());
+//            String sign = touchConfigInfo.getSign();
+//            String template = touchConfigInfo.getTemplate_code();
+//
+//            String platform = touchConfigInfo.getPlatform();
+//            SmsTouch smsTouch=getSmsTouchByPlatform(platform);
+//            String phones = StringUtils.join(diff,",");
+//            Properties properties = getSmsConfigByPlatform(platform);
+//            SmsResponse response = smsTouch.sendSms(properties, phones, sign, template,"","");
+//
+//            for (DataPipe s: diff){
+//                if(!response.getCode().equalsIgnoreCase("ok")){
+//                    s.setStatus(Const.FILE_STATUS_FAIL);
+//                }
+//                Map<String, Object> stringObjectMap = JsonUtil.toJavaMap(s.getExt());
+//                stringObjectMap.put("touch_result", response.getObject());
+//                s.setExt(JsonUtil.formatJsonString(stringObjectMap));
+//                tmp.add(s);
+//            }
+//        }
+//
+//        writeFile(file_dir+"/sms_"+id, tmp);
+//
+//        return tmp;
+//    }
+//
+//    public SmsTouch getSmsTouchByPlatform(String platform) throws Exception {
+//        if(platform.equalsIgnoreCase("ali")){
+//            return new AliSmsTouch();
+//        }
+//        try {
+//            return (SmsTouch) Class.forName(platform).newInstance();
+//        } catch (InstantiationException e) {
+//            logger.error("plugin touch load platform error: ", e);
+//        } catch (IllegalAccessException e) {
+//            logger.error("plugin touch load platform error: ", e);
+//        } catch (ClassNotFoundException e) {
+//            logger.error("plugin touch load platform error: ", e);
+//        }
+//
+//        throw new Exception("无法找到适配的短信服务,请检查短信平台参数配置是否正常");
+//    }
+//
+//    public Properties getSmsConfigByPlatform(String platform) throws Exception {
+//        if(platform.equalsIgnoreCase("ali")){
+//            Properties properties = new Properties();
+//            properties.putAll(this.dbConfig);
+//            return properties;
+//        }
+//        try {
+//            return  new Properties();
+//        } catch (Exception e) {
+//            logger.error("plugin touch run error: ", e);
+//        }
+//
+//        throw new Exception("无法找到适配的短信服务,请检查短信平台参数配置是否正常");
+//    }
 
 }

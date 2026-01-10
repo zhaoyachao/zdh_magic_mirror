@@ -131,7 +131,9 @@ public class HttpUtil {
      */
     public String postJSON(String path, String json) throws Exception {
         StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
-        return postRequest(path, entity, null, null);
+        Map<String, String> header = new HashMap<>();
+        header.put("Content-Type", "application/json");
+        return postRequest(path, entity, header, null);
     }
 
     public String postJSON(String path, String json, Map<String, String> header,

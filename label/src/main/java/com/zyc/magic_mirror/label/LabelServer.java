@@ -6,10 +6,7 @@ import com.zyc.magic_mirror.common.entity.InstanceType;
 import com.zyc.magic_mirror.common.entity.StrategyInstance;
 import com.zyc.magic_mirror.common.queue.QueueHandler;
 import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
-import com.zyc.magic_mirror.common.util.Const;
-import com.zyc.magic_mirror.common.util.JsonUtil;
-import com.zyc.magic_mirror.common.util.LogUtil;
-import com.zyc.magic_mirror.common.util.ServerManagerUtil;
+import com.zyc.magic_mirror.common.util.*;
 import com.zyc.magic_mirror.label.calculate.impl.*;
 import com.zyc.magic_mirror.label.service.impl.StrategyInstanceServiceImpl;
 import com.zyc.rqueue.RQueueClient;
@@ -59,6 +56,8 @@ public class LabelServer {
             }
 
             logger.info(config.toString());
+
+            ConfigUtil.init(config);
 
             initLogType(config);
 
