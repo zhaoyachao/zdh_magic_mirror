@@ -124,11 +124,10 @@ public class FilterCalculateImpl extends BaseCalculate{
                     filterInfo.getFilter_name();
                     FilterEngine filterEngine = getFilterEngine(filterInfo, strategyLogInfo.getBase_path());
                     FilterEngine.FilterResult filterResult = filterEngine.getMap(rs);
-                    rs = Sets.newHashSet(filterResult.getRs());
+                    rs = filterResult.getRs();
                     rs_error = Sets.union(rs_error, filterResult.getRs_error().parallelStream().map(s->s.getUdata()).collect(Collectors.toSet()));
                 }
             }
-
 
             Set<DataPipe> rowsErrorObj= Sets.newHashSet(rs_error.stream().map(s -> new DataPipe.Builder().udata(s).status(Const.FILE_STATUS_FAIL)
                     .udata_type("").

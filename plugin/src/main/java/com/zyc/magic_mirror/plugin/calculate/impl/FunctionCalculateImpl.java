@@ -237,10 +237,26 @@ public class FunctionCalculateImpl extends BaseCalculate {
         String function_load_path = functionInfo.getFunction_load_path();
         String function_script = functionInfo.getFunction_script();
 
+        // 验证函数名和类名
+        if (!function_name.matches("[a-zA-Z0-9_]+")) {
+            throw new IllegalArgumentException("Invalid function name: " + function_name);
+        }
+
+        // 验证参数名
+        for (String paramCode : param_codes) {
+            if (!paramCode.matches("[a-zA-Z0-9_]+")) {
+                throw new IllegalArgumentException("Invalid parameter name: " + paramCode);
+            }
+        }
+
         if(!StringUtils.isEmpty(function_class)){
             String[] function_packages = function_class.split("\\.");
             String clsName = ArrayUtil.get(function_packages, function_packages.length-1);
             String clsInstanceName = StringUtils.uncapitalize(clsName);
+
+            if (!clsName.matches("[a-zA-Z0-9_]+")) {
+                throw new IllegalArgumentException("Invalid class name: " + clsName);
+            }
 
             //加载三方工具类
             if(!StringUtils.isEmpty(function_load_path)){
@@ -248,14 +264,18 @@ public class FunctionCalculateImpl extends BaseCalculate {
                 Class cls = jarClassLoader.loadClass(function_class);
                 Object clsInstance = cls.newInstance();
                 objectMap.put(clsInstanceName, clsInstance);
-                function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
+                //function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
+                function_script = String.format("%s.%s(%s)", clsInstanceName, function_name,
+                        StringUtils.join(Collections.nCopies(param_codes.size(), "?"), ","));
                 LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JsonUtil.formatJsonString(objectMap));
                 Object ret = GroovyFactory.execExpress(function_script, objectMap);
                 return ret;
             }else{
                 Object clsInstance = ClassLoaderUtil.loadClass(function_class).newInstance();
                 objectMap.put(clsInstanceName, clsInstance);
-                function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
+                //function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
+                function_script = String.format("%s.%s(%s)", clsInstanceName, function_name,
+                        StringUtils.join(Collections.nCopies(param_codes.size(), "?"), ","));
                 LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JsonUtil.formatJsonString(objectMap));
                 Object ret = GroovyFactory.execExpress(function_script, objectMap);
                 return ret;

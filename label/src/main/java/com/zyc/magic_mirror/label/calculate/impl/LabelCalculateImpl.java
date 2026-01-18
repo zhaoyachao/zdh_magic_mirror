@@ -248,7 +248,8 @@ public class LabelCalculateImpl extends BaseCalculate{
             }
 
             if(rows==null || rows.size()==0){
-                System.err.println("数据执行为空");
+                logStr = StrUtil.format("task: {}, result: {}", strategyLogInfo.getStrategy_instance_id(), "数据执行为空");
+                LogUtil.info(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), logStr);
             }
         }
         for(Map<String,Object> r: rows){

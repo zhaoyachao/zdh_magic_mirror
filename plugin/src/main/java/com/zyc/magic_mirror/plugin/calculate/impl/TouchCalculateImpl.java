@@ -2,7 +2,6 @@ package com.zyc.magic_mirror.plugin.calculate.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.entity.DataPipe;
 import com.zyc.magic_mirror.common.entity.TouchConfigInfo;
 import com.zyc.magic_mirror.common.util.Const;
@@ -10,21 +9,17 @@ import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.plugin.calculate.CalculateResult;
 import com.zyc.magic_mirror.plugin.impl.TouchServiceImpl;
-import com.zyc.magic_mirror.plugin.touch.EmailTouch;
 import com.zyc.magic_mirror.plugin.touch.PushxService;
-import com.zyc.magic_mirror.plugin.touch.SmsResponse;
-import com.zyc.magic_mirror.plugin.touch.SmsTouch;
-import com.zyc.magic_mirror.plugin.touch.entity.BasePushTask;
 import com.zyc.magic_mirror.plugin.touch.entity.PushxBaseResponse;
-import com.zyc.magic_mirror.plugin.touch.impl.AliSmsTouch;
 import com.zyc.magic_mirror.plugin.touch.impl.PushxServiceImpl;
-import com.zyc.magic_mirror.plugin.touch.impl.QQEmailTouch;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -114,7 +109,6 @@ public class TouchCalculateImpl extends BaseCalculate implements Runnable {
             String touch_template_id=run_jsmind_data.get("touch_template_id").toString();
             String touch_id=run_jsmind_data.get("rule_id").toString();
             String is_disenable=run_jsmind_data.getOrDefault("is_disenable","false").toString();//true:禁用,false:未禁用
-
 
             //生成参数
             CalculateResult calculateResult = calculateResult(strategyLogInfo, strategyLogInfo.getBase_path(), run_jsmind_data, param, strategyInstanceService);

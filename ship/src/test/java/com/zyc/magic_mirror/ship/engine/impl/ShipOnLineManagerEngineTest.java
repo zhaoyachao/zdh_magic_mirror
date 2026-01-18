@@ -1,5 +1,6 @@
 package com.zyc.magic_mirror.ship.engine.impl;
 
+import com.zyc.magic_mirror.common.util.ConfigUtil;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.ship.conf.ShipConf;
 import com.zyc.magic_mirror.ship.entity.OutputParam;
@@ -21,9 +22,10 @@ public class ShipOnLineManagerEngineTest {
             properties.setProperty("label.http.url", "http://127.0.0.1:9003/api/v1/all");
             properties.setProperty("filter.http.url", "http://127.0.0.1:9003/api/v1/filter");
             properties.setProperty(ShipConf.ON_LINE_MANAGER_SYNC,"true");
+            ConfigUtil.loadByProperties(properties);
             LabelHttpUtil.init(properties);
             FilterHttpUtil.init(properties);
-            new ShipConf(properties);
+            new ShipConf();
             ShipCommonInputParam inputParam=new ShipCommonInputParam();
             inputParam.setUid("zyc");
             inputParam.setData_node("node_a");

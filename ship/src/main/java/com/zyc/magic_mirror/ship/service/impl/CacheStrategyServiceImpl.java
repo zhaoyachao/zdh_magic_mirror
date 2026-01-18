@@ -159,6 +159,7 @@ public class CacheStrategyServiceImpl extends BaseServiceImpl implements Strateg
             }
 
             cache = maps;
+            logger.info("ship service schedule strategy: {}", JsonUtil.formatJsonString(maps));
             executeTransaction((sqlSession) -> {
                 StrategyGroupMapper strategyInstanceMappler = sqlSession.getMapper(StrategyGroupMapper.class);
                 return strategyInstanceMappler.update2Killed();

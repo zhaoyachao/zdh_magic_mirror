@@ -25,6 +25,8 @@ public class Const {
 
     public static String LABEL_DOUBLE_CHECK_DEPENDS_QUEUE_NAME="zdh_label_double_check_depends_queue";
 
+    public static String STRATEGY_INSTANCE_INSTANCE_ID = "instance_id";
+
     public static String STRATEGY_INSTANCE_RETRY_COUNT = "retry_count";
     public static String STRATEGY_INSTANCE_DOUBLECHECK_TIME = "doublecheck_time";
     public static String STRATEGY_INSTANCE_SUCCESS_NUM = "success_num";
@@ -40,5 +42,6 @@ public class Const {
 
     public static String LOG_TYPE_MYSQL = "mysql";
     public static String LOG_TYPE_MONGODB = "mongodb";
+
 
 }

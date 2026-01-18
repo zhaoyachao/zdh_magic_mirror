@@ -1,6 +1,5 @@
 package com.zyc.magic_mirror.plugin.touch.impl;
 
-import com.google.common.collect.Lists;
 import com.zyc.magic_mirror.common.util.ConfigUtil;
 import com.zyc.magic_mirror.common.util.HttpUtil;
 import com.zyc.magic_mirror.common.util.JsonUtil;

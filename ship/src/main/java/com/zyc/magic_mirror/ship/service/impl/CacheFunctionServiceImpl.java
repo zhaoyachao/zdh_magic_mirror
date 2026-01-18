@@ -6,6 +6,7 @@ import cn.hutool.core.util.ClassLoaderUtil;
 import com.google.common.collect.Maps;
 import com.zyc.magic_mirror.common.entity.FunctionInfo;
 import com.zyc.magic_mirror.common.service.impl.BaseServiceImpl;
+import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.ship.dao.FunctionMapper;
 import com.zyc.magic_mirror.ship.service.FunctionService;
 import org.apache.commons.lang3.StringUtils;
@@ -90,6 +91,7 @@ public class CacheFunctionServiceImpl extends BaseServiceImpl implements Functio
                 }
             }
             cache = maps;
+            logger.info("ship service schedule function: {}", JsonUtil.formatJsonString(maps));
         } catch (Exception e) {
             logger.error("ship service schedule error: ", e);
         }finally {

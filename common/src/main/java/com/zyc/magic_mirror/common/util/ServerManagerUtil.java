@@ -24,8 +24,12 @@ public class ServerManagerUtil {
     public static String SERVICE_MODE_STOP = "stop";
     public static String SERVICE_MODE_SUSPEND = "suspend";
     public static String SERVICE_MODE_RUN = "run";
-
-
+    public static String SERVICE_SECOND_KEY_SERVICE = "service";
+    public static String SERVICE_SECOND_KEY_MODE = "mode";
+    public static String SERVICE_SECOND_KEY_TASK_NUM = "task_num";
+    public static String SERVICE_SECOND_KEY_SLOT_NUM = "slot_num";
+    public static String SERVICE_SECOND_KEY_SLOT = "slot";
+    public static String SERVICE_SECOND_KEY_VERSION_TAG = "version_tag";
     /**
      * 注册服务名称
      * @param serviceName
@@ -76,7 +80,7 @@ public class ServerManagerUtil {
         String instance = getServiceInstanceKey(serviceInstanceConf);
         serviceInstanceConf.setLast_time(System.currentTimeMillis()+"");
         String value = JsonUtil.formatJsonString(serviceInstanceConf);
-        JedisPoolUtil.redisClient().hSet(instance, "service", value);
+        JedisPoolUtil.redisClient().hSet(instance, SERVICE_SECOND_KEY_SERVICE, value);
         JedisPoolUtil.redisClient().expire(instance, 60*1L);
 
         //检查其他实例是否可用
@@ -109,18 +113,18 @@ public class ServerManagerUtil {
         String instance = getServiceInstanceKey(serviceInstanceConf);
 
         //获取可执行模式
-        Object mode = JedisPoolUtil.redisClient().hGet(instance, "mode");
+        Object mode = JedisPoolUtil.redisClient().hGet(instance, SERVICE_SECOND_KEY_MODE);
         if(mode!=null){
             if(mode.toString().equalsIgnoreCase(SERVICE_MODE_STOP)){
                 //停止
                 while (true){
-                    mode = JedisPoolUtil.redisClient().hGet(instance, "mode");
+                    mode = JedisPoolUtil.redisClient().hGet(instance, SERVICE_SECOND_KEY_MODE);
                     if(!mode.toString().equalsIgnoreCase(SERVICE_MODE_STOP)){
                         break;
                     }
-                    Object taskNum = JedisPoolUtil.redisClient().hGet(instance, "task_num");
+                    Object taskNum = JedisPoolUtil.redisClient().hGet(instance, SERVICE_SECOND_KEY_TASK_NUM);
                     if(taskNum == null || (taskNum != null && Integer.valueOf(taskNum.toString())==0) ){
-                        JedisPoolUtil.redisClient().hDel(instance, "mode");
+                        JedisPoolUtil.redisClient().hDel(instance, SERVICE_SECOND_KEY_MODE);
                         logger.info("服务停止...");
                         System.exit(0);
                     }
@@ -132,18 +136,22 @@ public class ServerManagerUtil {
 
                 }
             }else if(mode.toString().equalsIgnoreCase(SERVICE_MODE_SUSPEND)){
+                long suspendCount = 0;
                 while (true){
                     try {
                         Thread.sleep(1000*10L);
                         heartbeatReport(serviceInstanceConf);
                         reportTaskNum(serviceInstanceConf);
-                        Object value1 = JedisPoolUtil.redisClient().hGet(instance, "mode");
-                        if(value1 == null || !value1.toString().equalsIgnoreCase("suspend")){
+                        Object value1 = JedisPoolUtil.redisClient().hGet(instance, SERVICE_SECOND_KEY_MODE);
+                        if(value1 == null || !value1.toString().equalsIgnoreCase(SERVICE_MODE_SUSPEND)){
+                            suspendCount = 0;
                             logger.info("服务暂停恢复...");
                             break;
                         }
-
-                        logger.info("服务暂停中...");
+                        suspendCount++;
+                        if (suspendCount == 1){
+                            logger.info("服务暂停中...");
+                        }
                     } catch (InterruptedException e) {
                         logger.error("Thread interrupted error: {}", e.getMessage(), e);
                     }
@@ -151,7 +159,7 @@ public class ServerManagerUtil {
                 return checkServiceRunningMode(serviceInstanceConf);
             }
         }else{
-            JedisPoolUtil.redisClient().hSet(instance, "mode", SERVICE_MODE_RUN);
+            JedisPoolUtil.redisClient().hSet(instance, SERVICE_SECOND_KEY_MODE, SERVICE_MODE_RUN);
             JedisPoolUtil.redisClient().expire(instance, 60*1L);
         }
 
@@ -165,20 +173,20 @@ public class ServerManagerUtil {
      */
     public static void checkServiceSlot(ServiceInstanceConf serviceInstanceConf){
         String instance = getServiceInstanceKey(serviceInstanceConf);
-        Object slot = JedisPoolUtil.redisClient().hGet(instance, "slot");
+        Object slot = JedisPoolUtil.redisClient().hGet(instance, SERVICE_SECOND_KEY_SLOT);
         if(slot == null){
             reportSlot(instance, "0", "-1,-1");
         }
     }
 
     public static void reportSlot(String instaceId, String slot_num, String slot){
-        JedisPoolUtil.redisClient().hSet(instaceId, "slot", slot);
+        JedisPoolUtil.redisClient().hSet(instaceId, SERVICE_SECOND_KEY_SLOT, slot);
         JedisPoolUtil.redisClient().expire(instaceId, 60*1L);
     }
 
     public static void reportTaskNum(ServiceInstanceConf serviceInstanceConf){
         String instance = getServiceInstanceKey(serviceInstanceConf);
-        JedisPoolUtil.redisClient().hSet(instance, "task_num", serviceInstanceConf.atomicInteger.toString());
+        JedisPoolUtil.redisClient().hSet(instance, SERVICE_SECOND_KEY_TASK_NUM, serviceInstanceConf.atomicInteger.toString());
         JedisPoolUtil.redisClient().expire(instance, 60*1L);
     }
 
@@ -187,7 +195,7 @@ public class ServerManagerUtil {
         if(StringUtils.isEmpty(instaceId)){
             instaceId = buildServiceInstance();
         }
-        Object slot = JedisPoolUtil.redisClient().hGet(instaceId, "slot");
+        Object slot = JedisPoolUtil.redisClient().hGet(instaceId, SERVICE_SECOND_KEY_SLOT);
         if(slot == null){
             return "-1,-1";
         }
@@ -207,7 +215,7 @@ public class ServerManagerUtil {
         if(StringUtils.isEmpty(instaceId)){
             instaceId = buildServiceInstance();
         }
-        Object versionTag = JedisPoolUtil.redisClient().hGet(instaceId, "version_tag");
+        Object versionTag = JedisPoolUtil.redisClient().hGet(instaceId, SERVICE_SECOND_KEY_VERSION_TAG);
         if(versionTag == null){
             return "";
         }

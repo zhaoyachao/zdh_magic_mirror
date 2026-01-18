@@ -17,8 +17,6 @@ import org.redisson.api.RLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
@@ -31,312 +29,479 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class LabelServer {
 
-    private static Logger logger= LoggerFactory.getLogger(LabelServer.class);
+    private static final Logger logger = LoggerFactory.getLogger(LabelServer.class);
+    private static final int DEFAULT_TASK_MAX_NUM = 50;
+    private static final int DEFAULT_SLOT_NUM = 100;
 
     public static Map<String, Future> tasks = new ConcurrentHashMap<>();
+    public static ExecutorService fixedExecutorService = Executors.newSingleThreadExecutor();
 
-    public static ExecutorService fixedExecutorService = Executors.newFixedThreadPool(1);
     public static void main(String[] args) {
-        logger.info("初始化项目");
+        logger.info("标签处理服务启动...");
         try {
-            Properties config = new Properties();
-            String conf_path = LabelServer.class.getClassLoader().getResource("application.properties").getPath();
+            // 加载配置
+            ConfigUtil.load();
 
-            config.load(LabelServer.class.getClassLoader().getResourceAsStream("application.properties"));
+            // 初始化系统
+            initSystem();
 
-            File confFile = new File("conf/application.properties");
-            if(confFile.exists()){
-                conf_path = confFile.getPath();
-                config.load(new FileInputStream(confFile));
-            }
-            logger.info("加载配置文件路径:{}", conf_path);
+            // 注册服务
+            String serviceName = ConfigUtil.get(ConfigUtil.SERVICE_NAME);
+            AtomicInteger taskCount = new AtomicInteger(0);
+            String instanceId = registerService(serviceName, ConfigUtil.getConfig(), taskCount);
 
-            if(config==null){
-                throw new Exception("找不到配置文件");
-            }
+            // 初始化任务队列和线程池
+            int taskLimit = Integer.parseInt(ConfigUtil.get(ConfigUtil.TASK_MAX_NUM, String.valueOf(DEFAULT_TASK_MAX_NUM)));
+            QueueHandler queueHandler = initQueueHandler(ConfigUtil.getConfig());
+            ThreadPoolExecutor threadPoolExecutor = initThreadPool();
 
-            logger.info(config.toString());
+            // 提交监控任务
+            submitMonitorTasks(threadPoolExecutor, ConfigUtil.getConfig(), taskCount);
 
-            ConfigUtil.init(config);
+            // 启动任务消费循环
+            startTaskConsumptionLoop(threadPoolExecutor, queueHandler, ConfigUtil.getConfig(), taskCount, taskLimit, instanceId);
 
-            initLogType(config);
-
-            checkConfig(config);
-
-            JedisPoolUtil.connect(config);
-
-            initRQueue(config);
-
-            AtomicInteger atomicInteger=new AtomicInteger(0);
-
-            String serviceName = config.getProperty("service.name");
-            ServerManagerUtil.registerServiceName(serviceName);
-            ServerManagerUtil.ServiceInstanceConf serviceInstanceConf = ServerManagerUtil.registerServiceInstance(serviceName);
-            serviceInstanceConf.setAtomicInteger(atomicInteger);
-
-            String slot_num = config.getProperty("task.slot.total.num", "0");
-            String slot = config.getProperty("task.slot", "-1,-1");
-            String instanceId = ServerManagerUtil.buildServiceInstance();
-            ServerManagerUtil.reportSlot(instanceId, slot_num, slot);
-
-            consumerLabelDoubleCheck();
-
-            int limit = Integer.valueOf(config.getProperty("task.max.num", "50"));
-
-            QueueHandler queueHandler=new DbQueueHandler();
-            queueHandler.setProperties(config);
-
-            ThreadPoolExecutor threadPoolExecutor=new ThreadPoolExecutor(10, 1024, 20, TimeUnit.MINUTES, new LinkedBlockingDeque<Runnable>(),
-                    new ThreadFactoryBuilder().setNameFormat("label_%d").build());
-            //提交一个监控杀死任务线程
-            threadPoolExecutor.execute(new KillCalculateImpl(null, config));
-
-            resetStatus(threadPoolExecutor);
-
-            while (true){
-                ServerManagerUtil.registerServiceInstance(serviceName);
-                ServerManagerUtil.heartbeatReport(serviceInstanceConf);
-                ServerManagerUtil.reportTaskNum(serviceInstanceConf);
-                ServerManagerUtil.checkServiceRunningMode(serviceInstanceConf);
-                ServerManagerUtil.checkServiceSlot(serviceInstanceConf);
-
-                if(atomicInteger.get()>limit){
-                    Thread.sleep(1000);
-                    continue;
-                }
-
-                Object flag_stop = JedisPoolUtil.redisClient().get(Const.ZDH_LABEL_STOP_FLAG_KEY);
-                if(flag_stop != null && flag_stop.toString().equalsIgnoreCase("true")){
-                    if(atomicInteger.get()==0){
-                        break;
-                    }
-                    continue;
-                }
-
-
-                Map m = queueHandler.handler();
-                if(m != null){
-                    logger.info("task_name: "+m.getOrDefault("strategy_context", "空")+", group_id: "+m.getOrDefault("group_id","空")+", task : "+ JsonUtil.formatJsonString(m));
-                    StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-                    //加锁防重执行
-                    RLock rLock = JedisPoolUtil.redisClient().rLock(m.get("id").toString());
-
-                    if(!rLock.tryLock()){
-                        logger.info("task: {} ,try lock error: ", m.getOrDefault("id", ""));
-                        continue;
-                    }
-
-                    try{
-                        List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(new String[]{m.get("id").toString()});
-                        if(strategyInstances==null || strategyInstances.size()<1){
-                            continue;
-                        }
-
-                        //检查状态
-                        if(!strategyInstances.get(0).getStatus().equalsIgnoreCase(Const.STATUS_CHECK_DEP_FINISH)){
-                            continue;
-                        }
-                        //更新状态为执行中
-                        StrategyInstance strategyInstance=new StrategyInstance();
-                        strategyInstance.setId(m.get("id").toString());
-                        Map<String, Object> run_jsmind_data = JsonUtil.toJavaMap(strategyInstances.get(0).getRun_jsmind_data());
-                        run_jsmind_data.put("instance_id", instanceId);
-                        strategyInstance.setRun_jsmind_data(JsonUtil.formatJsonString(run_jsmind_data));
-                        strategyInstance.setStatus(Const.STATUS_ETL);
-                        strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
-                        strategyInstanceService.updateStatusAndUpdateTimeByIdAndOldStatus(strategyInstance, Const.STATUS_CHECK_DEP_FINISH);
-
-                        //此处不可忽略
-                        m.put("run_jsmind_data", strategyInstance.getRun_jsmind_data());
-                    }catch (Exception e){
-                        logger.error("label server check error: ", e);
-                    }finally {
-                        rLock.unlock();
-                    }
-                    Runnable runnable=null;
-                    String instanceType = m.get("instance_type").toString();
-                    if(instanceType.equalsIgnoreCase(InstanceType.LABEL.getCode())){
-                        runnable=new LabelCalculateImpl(m, atomicInteger, config);
-                    }else if(instanceType.equalsIgnoreCase(InstanceType.CROWD_OPERATE.getCode())){
-                        runnable=new CrowdOperateCalculateImpl(m, atomicInteger, config);
-                    }else if(instanceType.equalsIgnoreCase(InstanceType.CROWD_FILE.getCode())){
-                        runnable=new CrowdFileCalculateImpl(m, atomicInteger, config);
-                    }else if(instanceType.equalsIgnoreCase(InstanceType.CROWD_RULE.getCode())){
-                        runnable=new CrowdRuleCalculateImpl(m, atomicInteger, config);
-                    }else if(instanceType.equalsIgnoreCase(InstanceType.CUSTOM_LIST.getCode())){
-                        runnable=new CustomListCalculateImpl(m, atomicInteger, config);
-                    }else if(instanceType.equalsIgnoreCase(InstanceType.USER_POOL.getCode())){
-                        runnable=new UserPoolCalculateImpl(m, atomicInteger, config);
-                    }else{
-                        //不支持的任务类型
-                        LogUtil.error(m.get("strategy_id").toString(), m.get("id").toString(), "不支持的任务类型, "+instanceType);
-                        setStatus(m.get("id").toString(), Const.STATUS_ERROR);
-                        continue;
-                    }
-                    Future future = threadPoolExecutor.submit(runnable);
-                    tasks.put(m.get("id").toString(), future);
-                }else{
-                    logger.debug("not found label task");
-                }
-
-                Thread.sleep(1000);
-            }
-
-            threadPoolExecutor.shutdownNow();
-
-            JedisPoolUtil.close();
-        }catch (Exception e){
-            logger.error("label server error: ", e);
+        } catch (Exception e) {
+            logger.error("标签处理服务启动失败: ", e);
+            System.exit(1);
         }
     }
 
-    public static void initLogType(Properties config){
-        String logType = config.getProperty("log.type", Const.LOG_TYPE_MYSQL);
+    /**
+     * 初始化系统组件
+     */
+    private static void initSystem() throws Exception {
+        initLogType(ConfigUtil.getConfig());
+        checkConfig(ConfigUtil.getConfig());
+        JedisPoolUtil.connect(ConfigUtil.getConfig());
+        initRQueue(ConfigUtil.getConfig());
+    }
+
+    /**
+     * 注册服务实例
+     */
+    private static String registerService(String serviceName, Properties config, AtomicInteger taskCount) {
+        ServerManagerUtil.registerServiceName(serviceName);
+        ServerManagerUtil.ServiceInstanceConf serviceInstanceConf = ServerManagerUtil.registerServiceInstance(serviceName);
+        serviceInstanceConf.setAtomicInteger(taskCount);
+
+        String slotNum = config.getProperty(ConfigUtil.TASK_SLOT_TOTAL_NUM, "0");
+        String slot = config.getProperty(ConfigUtil.TASK_SLOT, "-1,-1");
+        String instanceId = ServerManagerUtil.buildServiceInstance();
+        ServerManagerUtil.reportSlot(instanceId, slotNum, slot);
+
+        logger.info("服务注册成功，实例ID: {}", instanceId);
+        return instanceId;
+    }
+
+    /**
+     * 初始化任务队列处理器
+     */
+    private static QueueHandler initQueueHandler(Properties config) {
+        QueueHandler queueHandler = new DbQueueHandler();
+        queueHandler.setProperties(config);
+        return queueHandler;
+    }
+
+    /**
+     * 初始化线程池
+     */
+    private static ThreadPoolExecutor initThreadPool() {
+        // 合理配置线程池参数：核心线程数=CPU核心数*2，最大线程数=CPU核心数*4，队列大小=1000
+        int corePoolSize = Runtime.getRuntime().availableProcessors() * 2;
+        int maxPoolSize = Runtime.getRuntime().availableProcessors() * 4;
+        int queueCapacity = 1000;
+
+        return new ThreadPoolExecutor(
+                corePoolSize,
+                maxPoolSize,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingDeque<>(queueCapacity),
+                new ThreadFactoryBuilder().setNameFormat("label_task_%d").build(),
+                new ThreadPoolExecutor.CallerRunsPolicy() // 队列满时的拒绝策略
+        );
+    }
+
+    /**
+     * 提交监控任务
+     */
+    private static void submitMonitorTasks(ThreadPoolExecutor threadPoolExecutor, Properties config, AtomicInteger taskCount) {
+        // 提交杀死任务监控线程
+        threadPoolExecutor.execute(new KillCalculateImpl(null, config));
+
+        // 提交状态重置任务
+        resetStatus(threadPoolExecutor);
+
+        // 提交标签任务依赖检查重置任务
+        consumerLabelDoubleCheck();
+    }
+
+    /**
+     * 启动任务消费循环
+     */
+    private static void startTaskConsumptionLoop(ThreadPoolExecutor threadPoolExecutor,
+                                                 QueueHandler queueHandler,
+                                                 Properties config,
+                                                 AtomicInteger taskCount,
+                                                 int taskLimit,
+                                                 String instanceId) throws InterruptedException {
+        String serviceName = config.getProperty(ConfigUtil.SERVICE_NAME);
+        ServerManagerUtil.ServiceInstanceConf serviceInstanceConf = ServerManagerUtil.registerServiceInstance(serviceName);
+        serviceInstanceConf.setAtomicInteger(taskCount);
+
+        while (true) {
+            // 服务注册和心跳报告
+            ServerManagerUtil.heartbeatReport(serviceInstanceConf);
+            ServerManagerUtil.reportTaskNum(serviceInstanceConf);
+            ServerManagerUtil.checkServiceRunningMode(serviceInstanceConf);
+            ServerManagerUtil.checkServiceSlot(serviceInstanceConf);
+
+            // 检查任务数量限制
+            if (taskCount.get() > taskLimit) {
+                Thread.sleep(1000);
+                continue;
+            }
+
+            // 检查服务停止标志
+            Object stopFlag = JedisPoolUtil.redisClient().get(Const.ZDH_LABEL_STOP_FLAG_KEY);
+            if (stopFlag != null && Boolean.parseBoolean(stopFlag.toString())) {
+                if (taskCount.get() == 0) {
+                    logger.info("服务停止标志已设置，且无运行中任务，准备关闭服务...");
+                    break;
+                }
+                Thread.sleep(1000);
+                continue;
+            }
+
+            // 处理任务
+            handleTask(queueHandler, threadPoolExecutor, taskCount, instanceId);
+
+            Thread.sleep(1000);
+        }
+
+        // 关闭资源
+        shutdownResources(threadPoolExecutor);
+    }
+
+    /**
+     * 处理单个任务
+     */
+    private static void handleTask(QueueHandler queueHandler,
+                                   ThreadPoolExecutor threadPoolExecutor,
+                                   AtomicInteger taskCount,
+                                   String instanceId) {
+        Map<String, Object> taskData = queueHandler.handler();
+        if (taskData == null) {
+            logger.debug("没有新任务");
+            return;
+        }
+
+        logger.info("收到新任务: task_name={}, group_id={}, task={}",
+                taskData.getOrDefault("strategy_context", "空"),
+                taskData.getOrDefault("group_id", "空"),
+                JsonUtil.formatJsonString(taskData));
+
+        // 任务预处理和状态检查
+        if (!preprocessTask(taskData, instanceId)) {
+            return;
+        }
+
+        // 创建任务并提交到线程池
+        Runnable taskRunnable = createTaskRunnable(taskData, taskCount);
+        if (taskRunnable != null) {
+            Future<?> future = threadPoolExecutor.submit(taskRunnable);
+            tasks.put(taskData.get("id").toString(), future);
+        }
+    }
+
+    /**
+     * 任务预处理和状态检查
+     */
+    private static boolean preprocessTask(Map<String, Object> taskData, String instanceId) {
+        StrategyInstanceServiceImpl strategyInstanceService = new StrategyInstanceServiceImpl();
+        String taskId = taskData.get("id").toString();
+
+        // 使用锁防止重复执行
+        RLock lock = JedisPoolUtil.redisClient().rLock(taskId);
+        if (!lock.tryLock()) {
+            logger.info("任务 {} 获取锁失败，跳过执行", taskId);
+            return false;
+        }
+
+        try {
+            // 查询任务实例
+            List<StrategyInstance> strategyInstances = strategyInstanceService.selectByIds(new String[]{taskId});
+            if (strategyInstances == null || strategyInstances.isEmpty()) {
+                logger.warn("任务 {} 不存在", taskId);
+                return false;
+            }
+
+            StrategyInstance strategyInstance = strategyInstances.get(0);
+
+            // 检查任务状态
+            if (!strategyInstance.getStatus().equalsIgnoreCase(Const.STATUS_CHECK_DEP_FINISH)) {
+                logger.debug("任务 {} 状态不是 {}，跳过执行", taskId, Const.STATUS_CHECK_DEP_FINISH);
+                return false;
+            }
+
+            // 更新任务状态为执行中
+            StrategyInstance updateInstance = new StrategyInstance();
+            updateInstance.setId(taskId);
+            Map<String, Object> runJsMindData = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
+            runJsMindData.put("instance_id", instanceId);
+            updateInstance.setRun_jsmind_data(JsonUtil.formatJsonString(runJsMindData));
+            updateInstance.setStatus(Const.STATUS_ETL);
+            updateInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
+
+            int updateResult = strategyInstanceService.updateStatusAndUpdateTimeByIdAndOldStatus(
+                    updateInstance, Const.STATUS_CHECK_DEP_FINISH);
+
+            if (updateResult == 0) {
+                logger.info("任务 {} 状态已被其他实例更新，跳过执行", taskId);
+                return false;
+            }
+
+            // 更新任务数据
+            taskData.put("run_jsmind_data", updateInstance.getRun_jsmind_data());
+            return true;
+
+        } catch (Exception e) {
+            logger.error("任务 {} 预处理失败: ", taskId, e);
+            return false;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 创建任务执行线程
+     */
+    private static Runnable createTaskRunnable(Map<String, Object> taskData, AtomicInteger taskCount) {
+        String instanceType = taskData.get("instance_type").toString();
+        Runnable runnable = null;
+
+        try {
+            switch (InstanceType.valueOf(instanceType.toUpperCase())) {
+                case LABEL:
+                    runnable = new LabelCalculateImpl(taskData, taskCount, ConfigUtil.getConfig());
+                    break;
+                case CROWD_OPERATE:
+                    runnable = new CrowdOperateCalculateImpl(taskData, taskCount, ConfigUtil.getConfig());
+                    break;
+                case CROWD_FILE:
+                    runnable = new CrowdFileCalculateImpl(taskData, taskCount, ConfigUtil.getConfig());
+                    break;
+                case CROWD_RULE:
+                    runnable = new CrowdRuleCalculateImpl(taskData, taskCount, ConfigUtil.getConfig());
+                    break;
+                case CUSTOM_LIST:
+                    runnable = new CustomListCalculateImpl(taskData, taskCount, ConfigUtil.getConfig());
+                    break;
+                case USER_POOL:
+                    runnable = new UserPoolCalculateImpl(taskData, taskCount, ConfigUtil.getConfig());
+                    break;
+                default:
+                    LogUtil.error(taskData.get("strategy_id").toString(), taskData.get("id").toString(),
+                            "不支持的任务类型: " + instanceType);
+                    setStatus(taskData.get("id").toString(), Const.STATUS_ERROR);
+            }
+        } catch (IllegalArgumentException e) {
+            LogUtil.error(taskData.get("strategy_id").toString(), taskData.get("id").toString(),
+                    "无效的任务类型: " + instanceType);
+            setStatus(taskData.get("id").toString(), Const.STATUS_ERROR);
+        }
+
+        return runnable;
+    }
+
+    /**
+     * 关闭资源
+     */
+    private static void shutdownResources(ThreadPoolExecutor threadPoolExecutor) {
+        logger.info("开始关闭资源...");
+
+        // 关闭线程池
+        threadPoolExecutor.shutdown();
+        try {
+            if (!threadPoolExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
+                threadPoolExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            threadPoolExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+
+        // 关闭Redis连接
+        JedisPoolUtil.close();
+
+        logger.info("资源关闭完成");
+    }
+
+    // 以下为原有方法，仅做了少量优化
+
+    public static void initLogType(Properties config) {
+        String logType = config.getProperty(ConfigUtil.LOG_TYPE, Const.LOG_TYPE_MYSQL);
         LogUtil.logType = logType;
 
-        if(logType.equalsIgnoreCase(Const.LOG_TYPE_MONGODB)){
-            String mongodbUrl = config.getProperty("log.mongodb.url", "mongodb://localhost:27017");
-            String mongodbDb = config.getProperty("log.mongodb.db", "zdh");
-            Integer maxPoolSize = Integer.valueOf(config.getProperty("log.mongodb.maxPoolSize", "1"));
-            Integer minPoolSize = Integer.valueOf(config.getProperty("log.mongodb.minPoolSize", "1"));
-            Integer maxWaitTime = Integer.valueOf(config.getProperty("log.mongodb.maxWaitTime", "5"));
+        if (logType.equalsIgnoreCase(Const.LOG_TYPE_MONGODB)) {
+            String mongodbUrl = config.getProperty(ConfigUtil.LOG_MONGODB_URL, "mongodb://localhost:27017");
+            String mongodbDb = config.getProperty(ConfigUtil.LOG_MONGODB_DB, "zdh");
+            int maxPoolSize = Integer.parseInt(config.getProperty(ConfigUtil.LOG_MONGODB_MAX_POOL_SIZE, "1"));
+            int minPoolSize = Integer.parseInt(config.getProperty(ConfigUtil.LOG_MONGODB_MIN_POOL_SIZE, "1"));
+            int maxWaitTime = Integer.parseInt(config.getProperty(ConfigUtil.LOG_MONGODB_MAX_WAIT_TIME, "5"));
             LogUtil.initMongoDb(mongodbUrl, mongodbDb, maxPoolSize, minPoolSize, maxWaitTime);
         }
     }
 
     public static void checkConfig(Properties config) throws Exception {
-
-        if(config.get("service.name") == null){
+        if (config.getProperty(ConfigUtil.SERVICE_NAME) == null) {
             throw new Exception("配置信息缺失service.name参数");
         }
 
-        if(config.get("file.path") == null || config.get("file.rocksdb.path") == null){
+        if (config.getProperty(ConfigUtil.FILE_PATH) == null || config.getProperty(ConfigUtil.FILE_ROCKSDB_PATH) == null) {
             throw new Exception("配置信息缺失file.path, file.rocksdb.path参数");
         }
 
-        int slot_num = Integer.valueOf(config.getProperty("task.slot.total.num", "0"));
-        String slot = config.getProperty("task.slot", "0");
-        logger.info("服务总槽位: "+slot_num+", 服务分配槽位: "+slot);
+        int slotNum = Integer.parseInt(config.getProperty(ConfigUtil.TASK_SLOT_TOTAL_NUM, "0"));
+        String slot = config.getProperty(ConfigUtil.TASK_SLOT, "0");
+        logger.info("服务总槽位: {}, 服务分配槽位: {}", slotNum, slot);
 
-        if(slot_num==0){
-            throw new Exception("服务总槽位配置异常,example: 100");
+        if (slotNum == 0) {
+            throw new Exception("服务总槽位配置异常, example: 100");
         }
 
-
-        if(!slot.contains(",") || slot.split(",").length != 2){
-            throw new Exception("任务分配槽位信息配置格式异常,example: 0,99");
+        if (!slot.contains(",") || slot.split(",").length != 2) {
+            throw new Exception("任务分配槽位信息配置格式异常, example: 0,99");
         }
 
-        if(!NumberUtil.isInteger(slot.split(",")[0])){
+        if (!NumberUtil.isInteger(slot.split(",")[0]) || !NumberUtil.isInteger(slot.split(",")[1])) {
             throw new Exception("任务分配槽位信息配置只可填写数字");
         }
-        if(!NumberUtil.isInteger(slot.split(",")[1])){
-            throw new Exception("任务分配槽位信息配置只可填写数字");
-        }
-
     }
 
-    public static void initRQueue(Properties config){
-        String host = config.getProperty("redis.host");
-        String port = config.getProperty("redis.port");
-        String auth = config.getProperty("redis.password");
-        if(config.getProperty("redis.mode", "single").equalsIgnoreCase("cluster")){
+    public static void initRQueue(Properties config) {
+        String host = config.getProperty(ConfigUtil.REDIS_HOST);
+        String port = config.getProperty(ConfigUtil.REDIS_PORT);
+        String auth = config.getProperty(ConfigUtil.REDIS_PASSWORD);
+
+        if ("cluster".equalsIgnoreCase(config.getProperty(ConfigUtil.REDIS_MODE, "single"))) {
             RQueueManager.buildDefault(host, auth);
-        }else{
-            RQueueManager.buildDefault(host+":"+port, auth);
+        } else {
+            RQueueManager.buildDefault(host + ":" + port, auth);
         }
     }
 
-    public static void resetStatus(ThreadPoolExecutor threadPoolExecutor){
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        threadPoolExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
+    /**
+     * 服务重启重置任务状态
+     * @param threadPoolExecutor
+     */
+    public static void resetStatus(ThreadPoolExecutor threadPoolExecutor) {
+        StrategyInstanceServiceImpl strategyInstanceService = new StrategyInstanceServiceImpl();
 
-                while (true){
-                    try{
-                        String slotStr = ServerManagerUtil.getReportSlot("");
-                        String[] slots = slotStr.split(",");
-                        int slot_num = 100;
-                        int start_slot =  Integer.valueOf(slots[0]);
-                        int end_slot =  Integer.valueOf(slots[1]);
-                        //查询复合slot的策略
-                        List<StrategyInstance> strategyInstances = strategyInstanceService.selectByStatus(new String[]{Const.STATUS_ETL}, DbQueueHandler.instanceTypes);
+        threadPoolExecutor.submit(() -> {
+            while (true) {
+                try {
+                    String slotStr = ServerManagerUtil.getReportSlot("");
+                    String[] slots = slotStr.split(",");
+                    int startSlot = Integer.parseInt(slots[0]);
+                    int endSlot = Integer.parseInt(slots[1]);
 
-                        for (StrategyInstance strategyInstance: strategyInstances){
-                            Map run_jsmind_data = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
-                            if(run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_IS_ASYNC) && run_jsmind_data.getOrDefault(Const.STRATEGY_INSTANCE_IS_ASYNC, "false").toString().equalsIgnoreCase("true")
-                             && run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID)){
-                                continue;
-                            }
-                            if(run_jsmind_data.containsKey("instance_id")){
-                                //当前实例还存在,则跳过
-                                if(ServerManagerUtil.checkInstanceId(run_jsmind_data.get("instance_id").toString())){
-                                    continue;
-                                }
-                            }else{
-                                continue;
-                            }
+                    List<StrategyInstance> strategyInstances = strategyInstanceService.selectByStatus(
+                            new String[]{Const.STATUS_ETL}, DbQueueHandler.instanceTypes);
 
-                            if(Long.valueOf(strategyInstance.getStrategy_id())% slot_num + 1 >= start_slot && Long.valueOf(strategyInstance.getStrategy_id())%slot_num + 1 <= end_slot){
-                                run_jsmind_data.remove("instance_id");
-                                strategyInstance.setRun_jsmind_data(JsonUtil.formatJsonString(run_jsmind_data));
-                                strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
-                                strategyInstance.setStatus(Const.STATUS_CHECK_DEP_FINISH);
-                                RLock rLock = JedisPoolUtil.redisClient().rLock("reset_task_"+strategyInstance.getId());
-                                try{
-                                    if(!rLock.tryLock()){
-                                        logger.info("reset_task: {} ,try lock error: ", strategyInstance.getId());
-                                        continue;
-                                    }
-                                    strategyInstanceService.updateStatusAndUpdateTimeByIdAndOldStatus(strategyInstance, Const.STATUS_ETL);
-                                }catch (Exception e){
+                    for (StrategyInstance strategyInstance : strategyInstances) {
+                        resetStaleTask(strategyInstance, startSlot, endSlot);
+                    }
 
-                                }finally {
-                                    rLock.unlock();
-                                }
-                            }
-                        }
-                        Thread.sleep(1000*60);
-                    }catch (Exception e){
-                        e.printStackTrace();
+                    Thread.sleep(60000); // 每分钟执行一次
+                } catch (Exception e) {
+                    logger.error("重置任务状态失败: ", e);
+                    try {
+                        Thread.sleep(10000); // 出错后暂停10秒再重试
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
                     }
                 }
-
             }
         });
     }
 
-    public static void setStatus(String task_id,String status){
-        StrategyInstanceServiceImpl strategyInstanceService=new StrategyInstanceServiceImpl();
-        StrategyInstance strategyInstance=new StrategyInstance();
-        strategyInstance.setId(task_id);
+    /**
+     * 重置异步检查任务状态
+     * 根据异步任务
+     */
+    private static void resetStaleTask(StrategyInstance strategyInstance, int startSlot, int endSlot) {
+        Map<String, Object> runJsMindData = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
+
+        // 跳过异步任务
+        if (Boolean.parseBoolean(runJsMindData.getOrDefault(Const.STRATEGY_INSTANCE_IS_ASYNC, "false").toString()) &&
+                runJsMindData.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID)) {
+            return;
+        }
+
+        // 检查实例ID是否存在
+        if (!runJsMindData.containsKey(Const.STRATEGY_INSTANCE_INSTANCE_ID)) {
+            return;
+        }
+        String instanceId = runJsMindData.get(Const.STRATEGY_INSTANCE_INSTANCE_ID).toString();
+        // 如果实例还存在，跳过重置
+        if (ServerManagerUtil.checkInstanceId(instanceId)) {
+            return;
+        }
+
+        // 检查任务是否属于当前槽位
+        long strategyId = Long.parseLong(strategyInstance.getStrategy_id());
+        if (strategyId % DEFAULT_SLOT_NUM + 1 >= startSlot && strategyId % DEFAULT_SLOT_NUM + 1 <= endSlot) {
+            // 重置任务状态
+            RLock resetLock = JedisPoolUtil.redisClient().rLock("reset_task_" + strategyInstance.getId());
+            if (resetLock.tryLock()) {
+                try {
+                    runJsMindData.remove(Const.STRATEGY_INSTANCE_INSTANCE_ID);
+                    StrategyInstance updateInstance = new StrategyInstance();
+                    updateInstance.setId(strategyInstance.getId());
+                    updateInstance.setRun_jsmind_data(JsonUtil.formatJsonString(runJsMindData));
+                    updateInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
+                    updateInstance.setStatus(Const.STATUS_CHECK_DEP_FINISH);
+
+                    StrategyInstanceServiceImpl strategyInstanceService = new StrategyInstanceServiceImpl();
+                    strategyInstanceService.updateStatusAndUpdateTimeByIdAndOldStatus(updateInstance, Const.STATUS_ETL);
+
+                    logger.info("重置过期任务状态: taskId={}, oldInstanceId={}",
+                            strategyInstance.getId(), instanceId);
+                } finally {
+                    resetLock.unlock();
+                }
+            }
+        }
+    }
+
+    public static void setStatus(String taskId, String status) {
+        StrategyInstanceServiceImpl strategyInstanceService = new StrategyInstanceServiceImpl();
+        StrategyInstance strategyInstance = new StrategyInstance();
+        strategyInstance.setId(taskId);
         strategyInstance.setStatus(status);
         strategyInstance.setUpdate_time(new Timestamp(System.currentTimeMillis()));
         strategyInstanceService.updateStatusAndUpdateTimeById(strategyInstance);
     }
 
     /**
-     * 标签任务-依赖检查未完成重置状态
+     * 标签任务依赖检查重置
      */
-    public static void consumerLabelDoubleCheck(){
-        fixedExecutorService.execute(new Runnable() {
-            @Override
-            public void run() {
-
-                try {
-                    while (true){
-                        RQueueClient rQueueClient = RQueueManager.getRQueueClient(Const.LABEL_DOUBLE_CHECK_DEPENDS_QUEUE_NAME, RQueueMode.DELAYEDQUEUE);
-                        Object o = rQueueClient.poll();
-                        if(o != null && !StringUtils.isEmpty(o.toString())){
-                            //重置实例状态为
-                            setStatus(o.toString(), Const.STATUS_CHECK_DEP_FINISH);
-                        }
+    public static void consumerLabelDoubleCheck() {
+        fixedExecutorService.execute(() -> {
+            try {
+                while (true) {
+                    RQueueClient rQueueClient = RQueueManager.getRQueueClient(
+                            Const.LABEL_DOUBLE_CHECK_DEPENDS_QUEUE_NAME, RQueueMode.DELAYEDQUEUE);
+                    Object taskId = rQueueClient.poll();
+                    if (taskId != null && !StringUtils.isEmpty(taskId.toString())) {
+                        setStatus(taskId.toString(), Const.STATUS_CHECK_DEP_FINISH);
+                        logger.info("重置任务状态为检查依赖完成: taskId={}", taskId);
                     }
-                } catch (Exception e) {
-                    logger.error("label server consumerLabelDoubleCheck error: ", e);
                 }
-
+            } catch (Exception e) {
+                logger.error("标签任务依赖检查重置失败: ", e);
             }
         });
     }
