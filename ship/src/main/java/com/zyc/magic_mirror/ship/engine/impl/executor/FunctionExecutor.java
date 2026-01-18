@@ -134,10 +134,10 @@ public class FunctionExecutor extends BaseExecutor{
             String function_script = functionInfo.getFunction_script();
             List<Object> jsonArray = functionInfo.getParam_json_object();
 
-            List<String> params = new ArrayList<>();
+            List<String> param_codes = new ArrayList<>();
             for(int i=0;i<jsonArray.size();i++){
                 String param_code = ((Map<String, Object>)jsonArray.get(i)).get("param_code").toString();
-                params.add(param_code);
+                param_codes.add(param_code);
             }
 
             if(CacheFunctionServiceImpl.cacheFunctionInstance.containsKey(function_name)){
@@ -146,15 +146,36 @@ public class FunctionExecutor extends BaseExecutor{
                     String[] function_packages = function_class.split("\\.");
                     String clsName = ArrayUtil.get(function_packages, function_packages.length-1);
                     String clsInstanceName = StringUtils.uncapitalize(clsName);
+
+                    // 验证函数名和类名
+                    if (!function_name.matches("[a-zA-Z0-9_]+")) {
+                        throw new IllegalArgumentException("Invalid function name: " + function_name);
+                    }
+
+                    // 验证参数名
+                    for (String paramCode : param_codes) {
+                        if (!paramCode.matches("[a-zA-Z0-9_]+")) {
+                            throw new IllegalArgumentException("Invalid parameter name: " + paramCode);
+                        }
+                    }
+
+                    if (!clsName.matches("[a-zA-Z0-9_]+")) {
+                        throw new IllegalArgumentException("Invalid class name: " + clsName);
+                    }
+
                     //加载三方工具类
                     if(!StringUtils.isEmpty(function_load_path)){
                         objectMap.put(clsInstanceName, clsInstance);
-                        function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(params, ",")+")";
+                        //function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
+                        function_script = String.format("%s.%s(%s)", clsInstanceName, function_name,
+                                StringUtils.join(param_codes, ","));
                         Object ret = GroovyFactory.execExpress(function_script, objectMap, true);
                         return ret;
                     }else{
                         objectMap.put(clsInstanceName, clsInstance);
-                        function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(params, ",")+")";
+                        //function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
+                        function_script = String.format("%s.%s(%s)", clsInstanceName, function_name,
+                                StringUtils.join(param_codes, ","));
                         Object ret = GroovyFactory.execExpress(function_script, objectMap, true);
                         return ret;
                     }

@@ -266,7 +266,7 @@ public class FunctionCalculateImpl extends BaseCalculate {
                 objectMap.put(clsInstanceName, clsInstance);
                 //function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
                 function_script = String.format("%s.%s(%s)", clsInstanceName, function_name,
-                        StringUtils.join(Collections.nCopies(param_codes.size(), "?"), ","));
+                        StringUtils.join(param_codes, ","));
                 LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JsonUtil.formatJsonString(objectMap));
                 Object ret = GroovyFactory.execExpress(function_script, objectMap);
                 return ret;
@@ -275,7 +275,7 @@ public class FunctionCalculateImpl extends BaseCalculate {
                 objectMap.put(clsInstanceName, clsInstance);
                 //function_script = clsInstanceName+"."+function_name+"("+StringUtils.join(param_codes, ",")+")";
                 function_script = String.format("%s.%s(%s)", clsInstanceName, function_name,
-                        StringUtils.join(Collections.nCopies(param_codes.size(), "?"), ","));
+                        StringUtils.join(param_codes, ","));
                 LogUtil.console(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), "函数: "+function_script+", 参数: "+JsonUtil.formatJsonString(objectMap));
                 Object ret = GroovyFactory.execExpress(function_script, objectMap);
                 return ret;
