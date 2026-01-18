@@ -1,1 +1,0 @@
-mvn clean package install:install --settings D:\apache-maven-3.5.4\conf\settings.xml -Dmaven.test.skip=true

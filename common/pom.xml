@@ -12,7 +12,6 @@
 
     <groupId>com.zyc.magic_mirror</groupId>
     <artifactId>common</artifactId>
-    <version>${revision}</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>

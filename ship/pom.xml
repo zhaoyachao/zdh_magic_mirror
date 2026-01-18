@@ -6,12 +6,11 @@
         <groupId>com.zyc.magic_mirror</groupId>
         <artifactId>zdh_magic_mirror</artifactId>
         <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>ship</artifactId>
-    <version>${revision}</version>
-
 
     <properties>
         <build.name>zdh_ship-${revision}</build.name>
@@ -184,6 +183,10 @@
                             <classpathPrefix>lib/</classpathPrefix>
                             <mainClass>com.zyc.magic_mirror.ship.ShipServer</mainClass>
                         </manifest>
+                        <manifestEntries>
+                            <!-- Class-Path格式：空格分隔多个依赖，此处填写system依赖的相对路径（与systemPath对应） -->
+                            <Class-Path>lib/zdh_rqueue-1.0-SNAPSHOT.jar</Class-Path>
+                        </manifestEntries>
                     </archive>
                 </configuration>
             </plugin>
