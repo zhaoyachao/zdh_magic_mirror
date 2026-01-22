@@ -292,7 +292,7 @@ public class LabelCalculateImpl extends BaseCalculate{
             jsonObject.put("uid", uid);
             jsonObject.put("product_code", product_code);
             jsonObject.put("variable", variable);
-            result = JsonUtil.toJavaBean(HttpClientUtil.postJson(label_url, JsonUtil.formatJsonString(jsonObject)),Map.class);
+            result = JsonUtil.toJavaBean(HttpUtil.builder().postJSON(label_url, JsonUtil.formatJsonString(jsonObject)),Map.class);
             return result;
         }catch (Exception e){
 
@@ -474,7 +474,7 @@ public class LabelCalculateImpl extends BaseCalculate{
 
         if(!run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID)){
             //提交任务
-            String postJson = HttpClientUtil.postJson(url, param);
+            String postJson = HttpUtil.builder().postJSON(url, JsonUtil.formatJsonString(param));
             asyncResult = JsonUtil.toJavaBean(postJson, AsyncResult.class);
             if(StringUtils.isEmpty(asyncResult.getTask_id())){
                throw new Exception("请求创建任务失败");
@@ -485,7 +485,7 @@ public class LabelCalculateImpl extends BaseCalculate{
                 (!run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS) || run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_STATUS).toString().equalsIgnoreCase(Const.ASYNC_TASK_STATUS_RUNNING))){
             //已经提交过异步任务,检查任务状态
             param.put("task_id", run_jsmind_data.get(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID));
-            String postJson = HttpClientUtil.postJson(url, param);
+            String postJson = HttpUtil.builder().postJSON(url, JsonUtil.formatJsonString(param));
             asyncResult = JsonUtil.toJavaBean(postJson, AsyncResult.class);
         }
         if(run_jsmind_data.containsKey(Const.STRATEGY_INSTANCE_ASYNC_TASK_ID)){

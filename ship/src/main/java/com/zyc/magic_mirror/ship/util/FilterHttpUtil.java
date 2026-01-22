@@ -1,7 +1,7 @@
 package com.zyc.magic_mirror.ship.util;
 
-import cn.hutool.http.HttpUtil;
 import com.zyc.magic_mirror.common.http.HttpAction;
+import com.zyc.magic_mirror.common.util.HttpUtil;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,9 +25,12 @@ public class FilterHttpUtil {
 
     public static Map<String,Object> post(Map<String, Object> body){
         try{
+
             String sign = HttpAction.generatSign(body, signKey);
             body.put("sign", sign);
-            Map<String,Object> result = JsonUtil.toJavaBean(HttpUtil.post(url, JsonUtil.formatJsonString(body)),Map.class);
+
+            String json = HttpUtil.builder().postJSON(url, JsonUtil.formatJsonString(body));
+            Map<String,Object> result = JsonUtil.toJavaBean(json,Map.class);
             return result;
         }catch (Exception e){
             logger.error("ship server filterpost error: ", e);
