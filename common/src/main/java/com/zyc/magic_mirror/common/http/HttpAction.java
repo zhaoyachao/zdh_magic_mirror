@@ -1,6 +1,7 @@
 package com.zyc.magic_mirror.common.http;
 
 import com.google.common.collect.Lists;
+import com.zyc.magic_mirror.common.util.LogIdUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,9 @@ public abstract class HttpAction {
     public abstract Object call(Map<String, Object> param) throws Exception;
 
     public HttpBaseResponse execute(Map<String, Object> param){
+        if (LogIdUtil.get() == null) {
+            LogIdUtil.generateAndSet();
+        }
         HttpBaseResponse httpBaseResponse = new HttpBaseResponse();
         try{
             httpBaseResponse.setCode(0);

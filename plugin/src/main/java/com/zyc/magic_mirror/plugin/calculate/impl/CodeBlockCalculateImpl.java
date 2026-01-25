@@ -153,9 +153,7 @@ public class CodeBlockCalculateImpl extends BaseCalculate{
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo, rs_ret, rowsErrorObj);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs_ret, Const.STATUS_FINISH);
         }catch (Exception e){
-            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
-            //执行失败,更新标签任务失败
-            logger.error("plugin codeblock run error: ", e);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e);
             writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 

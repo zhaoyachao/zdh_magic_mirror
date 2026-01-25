@@ -197,9 +197,7 @@ public class LabelCalculateImpl extends BaseCalculate{
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
 
         }catch (Exception e){
-            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
-            //执行失败,更新标签任务失败
-            logger.error("label label run error: ", e);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e);
             writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
             after();

@@ -3,6 +3,7 @@ package com.zyc.magic_mirror.plugin.calculate.impl;
 import cn.hutool.core.util.NumberUtil;
 import com.zyc.magic_mirror.common.entity.StrategyInstance;
 import com.zyc.magic_mirror.common.util.Const;
+import com.zyc.magic_mirror.common.util.LogIdUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.common.util.ServerManagerUtil;
 import com.zyc.magic_mirror.plugin.PluginServer;
@@ -90,6 +91,7 @@ public class KillCalculateImpl extends BaseCalculate {
         String logStr="";
         while (true){
             try{
+                LogIdUtil.generateAndSet();
                 //获取要杀死的任务
                 List<StrategyInstance> strategyInstanceList = strategyInstanceService.selectByStatus(new String[]{"kill"}, new String[]{"rights","filter","shunt","touch","id_mapping","plugin", "manual_confirm","code_block", "tn", "function"});
 
@@ -133,7 +135,7 @@ public class KillCalculateImpl extends BaseCalculate {
                 //执行失败,更新标签任务失败
                 logger.error("plugin kill run error: ", e);
             }finally {
-
+                LogIdUtil.clear();
             }
         }
 

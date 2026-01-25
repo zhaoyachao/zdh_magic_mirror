@@ -167,9 +167,7 @@ public class ManualConfirmCalculateImpl extends BaseCalculate {
                 setStatusAndRunJsmindData(strategyLogInfo.getStrategy_instance_id(), Const.STATUS_CHECK_DEP, JsonUtil.formatJsonString(run_jsmind_data));
             }
         }catch (Exception e){
-            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
-            //执行失败,更新标签任务失败
-            logger.error("plugin manual confirm run error: ", e);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e);
             writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 

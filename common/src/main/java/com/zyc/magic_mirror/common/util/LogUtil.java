@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.Objects;
 
 public class LogUtil {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(LogUtil.class);
@@ -100,6 +101,86 @@ public class LogUtil {
         }
     }
 
+    /**
+     * 获取异常的「简洁非空信息」（适合日志打印、用户提示）
+     * @param throwable 异常对象
+     * @return 非空的简洁异常信息
+     */
+    public static String getExceptionMessage(Throwable throwable) {
+        // 第一步：判空兜底（防止传入null异常）
+        if (throwable == null) {
+            return "未知异常（Throwable is null）";
+        }
+        // 第二步：提取当前异常的简洁信息
+        String currentMessage = getCurrentExceptionSimpleMessage(throwable);
+
+        // 第三步：提取根源异常的简洁信息（解决包装异常消息为空的问题）
+        Throwable rootCause = getRootCause(throwable);
+        if (rootCause == null || throwable == rootCause) {
+            // 无根源异常，直接返回当前异常信息
+            return currentMessage;
+        }
+
+        String rootMessage = getCurrentExceptionSimpleMessage(rootCause);
+        if (currentMessage.equals(rootMessage)) {
+            // 当前异常和根源异常信息一致，避免重复
+            return currentMessage;
+        }
+
+        // 第四步：拼接当前异常+根源异常信息（更全面）
+        return String.format("%s [根源异常：%s]", currentMessage, rootMessage);
+    }
+
+    /**
+     * 获取异常链的「根源异常」（最底层的真实异常）
+     * @param throwable 异常对象
+     * @return 根源异常，无则返回null
+     */
+    private static Throwable getRootCause(Throwable throwable) {
+        if (throwable == null) {
+            return null;
+        }
+
+        Throwable rootCause = throwable;
+        // 循环获取cause，直到没有下一个异常
+        while (rootCause.getCause() != null && !Objects.equals(rootCause, rootCause.getCause())) {
+            rootCause = rootCause.getCause();
+        }
+
+        return rootCause == throwable ? null : rootCause;
+    }
+
+    /**
+     * 提取单个异常的简洁信息（兜底：getMessage()为空则返回类名）
+     * @param throwable 单个异常对象
+     * @return 非空的单个异常简洁信息
+     */
+    private static String getCurrentExceptionSimpleMessage(Throwable throwable) {
+        if (throwable == null) {
+            return "未知异常";
+        }
+
+        // 优先获取getMessage()
+        String message = throwable.getMessage();
+        if (message != null && !message.trim().isEmpty()) {
+            return message.trim();
+        }
+
+        // getMessage()为空，返回toString()（类名+可能的消息）
+        String toString = throwable.toString();
+        if (toString != null && !toString.trim().isEmpty()) {
+            return toString.trim();
+        }
+
+        // 极端情况：返回异常类名
+        return throwable.getClass().getName();
+    }
+
+    public static void error(String job_id,String task_logs_id, Exception e){
+        log().log(LogUtil.class.getName(), Level.ERROR, e.getMessage(), e);
+        ZdhLogs zdhLogs=getZdhLogs("ERROR", job_id, task_logs_id, getExceptionMessage(e));
+        send(zdhLogs);
+    }
 
     public static void error(String job_id,String task_logs_id, String msg){
         log().log(LogUtil.class.getName(), Level.ERROR, msg, null);

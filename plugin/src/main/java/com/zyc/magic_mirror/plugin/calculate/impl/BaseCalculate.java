@@ -362,6 +362,10 @@ public abstract class BaseCalculate extends BaseProcessCalculate {
         return f.getAbsolutePath();
     }
 
+    /**
+     * 写入空文件并更新状态为失败
+     * @param strategyLogInfo
+     */
     public void writeEmptyFileAndStatus(StrategyLogInfo strategyLogInfo){
         if(checkRetry()){
             return ;

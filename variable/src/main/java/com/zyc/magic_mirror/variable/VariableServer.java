@@ -5,6 +5,7 @@ import com.zyc.magic_mirror.common.http.HttpServer;
 import com.zyc.magic_mirror.common.http.PackageScanner;
 import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
 import com.zyc.magic_mirror.common.util.ConfigUtil;
+import com.zyc.magic_mirror.common.util.LogIdUtil;
 import com.zyc.magic_mirror.variable.service.impl.CacheLabelServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +23,8 @@ public class VariableServer {
     private static final long SCHEDULE_INTERVAL = 60; // 定时任务执行间隔（秒）
 
     public static void main(String[] args) {
+        LogIdUtil.generateAndSet();
         logger.info("变量服务启动...");
-        
         try {
             // 加载配置文件
             ConfigUtil.load();
@@ -42,6 +43,8 @@ public class VariableServer {
         } catch (Exception e) {
             logger.error("变量服务启动失败: ", e);
             System.exit(1);
+        }finally {
+            LogIdUtil.clear();
         }
     }
     
@@ -75,11 +78,14 @@ public class VariableServer {
         // 延迟0秒后开始执行，每SCHEDULE_INTERVAL秒执行一次
         scheduler.scheduleAtFixedRate(() -> {
             try {
+                LogIdUtil.generateAndSet();
                 cacheLabelService.schedule();
                 logger.debug("定时任务执行成功");
             } catch (Exception e) {
                 logger.error("定时任务执行失败: ", e);
                 // 异常捕获后不会影响下一次任务执行
+            }finally {
+                LogIdUtil.clear();
             }
         }, 0, SCHEDULE_INTERVAL, TimeUnit.SECONDS);
         

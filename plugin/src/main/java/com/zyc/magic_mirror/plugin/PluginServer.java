@@ -33,6 +33,7 @@ public class PluginServer {
     public static Map<String, Future<?>> tasks = new ConcurrentHashMap<>();
     
     public static void main(String[] args) {
+        LogIdUtil.generateAndSet();
         logger.info("插件处理服务启动...");
         try {
             // 加载配置
@@ -144,6 +145,7 @@ public class PluginServer {
         serviceInstanceConf.setAtomicInteger(taskCount);
         
         while (true) {
+            LogIdUtil.generateAndSet();
             // 服务注册和心跳报告
             ServerManagerUtil.heartbeatReport(serviceInstanceConf);
             ServerManagerUtil.reportTaskNum(serviceInstanceConf);
@@ -460,6 +462,7 @@ public class PluginServer {
         threadPoolExecutor.submit(() -> {
             while (true) {
                 try {
+                    LogIdUtil.generateAndSet();
                     String slotStr = ServerManagerUtil.getReportSlot("");
                     String[] slots = slotStr.split(",");
                     int startSlot = Integer.parseInt(slots[0]);
@@ -481,6 +484,8 @@ public class PluginServer {
                         Thread.currentThread().interrupt();
                         break;
                     }
+                }finally {
+                    LogIdUtil.clear();
                 }
             }
         });

@@ -1,9 +1,12 @@
 package com.zyc.magic_mirror.plugin.calculate;
 
+import com.zyc.magic_mirror.common.util.LogIdUtil;
+
 public abstract class BaseProcessCalculate implements Runnable{
 
     @Override
     public void run() {
+        LogIdUtil.generateAndSet();
         before();
         try{
             process();
@@ -11,9 +14,8 @@ public abstract class BaseProcessCalculate implements Runnable{
             e.printStackTrace();
         }finally {
             after();
+            LogIdUtil.clear();
         }
-
-
     }
 
     public abstract void before();

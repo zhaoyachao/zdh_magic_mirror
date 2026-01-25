@@ -2,6 +2,7 @@ package com.zyc.magic_mirror.common.http;
 
 
 import com.zyc.magic_mirror.common.util.JsonUtil;
+import com.zyc.magic_mirror.common.util.LogIdUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -24,14 +25,20 @@ public class HttpServerHandler extends HttpBaseHandler {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        FullHttpRequest request = (FullHttpRequest)msg;
-        boolean keepAlive = HttpUtil.isKeepAlive(request);
-        HttpResponse response = diapathcer(request);
-        if (keepAlive) {
-            response.headers().set(Connection, KeepAlive);
-            ctx.writeAndFlush(response);
-        } else {
-            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+        // 生成logId并设置到MDC
+        LogIdUtil.generateAndSet();
+        try{
+            FullHttpRequest request = (FullHttpRequest)msg;
+            boolean keepAlive = HttpUtil.isKeepAlive(request);
+            HttpResponse response = diapathcer(request);
+            if (keepAlive) {
+                response.headers().set(Connection, KeepAlive);
+                ctx.writeAndFlush(response);
+            } else {
+                ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+            }
+        }finally {
+            LogIdUtil.clear();
         }
     }
 

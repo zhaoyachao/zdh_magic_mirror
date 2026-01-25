@@ -37,6 +37,7 @@ public class LabelServer {
     public static ExecutorService fixedExecutorService = Executors.newSingleThreadExecutor();
 
     public static void main(String[] args) {
+        LogIdUtil.generateAndSet();
         logger.info("标签处理服务启动...");
         try {
             // 加载配置
@@ -150,6 +151,8 @@ public class LabelServer {
         serviceInstanceConf.setAtomicInteger(taskCount);
 
         while (true) {
+            LogIdUtil.generateAndSet();
+
             // 服务注册和心跳报告
             ServerManagerUtil.heartbeatReport(serviceInstanceConf);
             ServerManagerUtil.reportTaskNum(serviceInstanceConf);
@@ -401,6 +404,7 @@ public class LabelServer {
         threadPoolExecutor.submit(() -> {
             while (true) {
                 try {
+                    LogIdUtil.generateAndSet();
                     String slotStr = ServerManagerUtil.getReportSlot("");
                     String[] slots = slotStr.split(",");
                     int startSlot = Integer.parseInt(slots[0]);
@@ -422,6 +426,8 @@ public class LabelServer {
                         Thread.currentThread().interrupt();
                         break;
                     }
+                }finally {
+                    LogIdUtil.clear();
                 }
             }
         });
@@ -492,6 +498,7 @@ public class LabelServer {
         fixedExecutorService.execute(() -> {
             try {
                 while (true) {
+                    LogIdUtil.generateAndSet();
                     RQueueClient rQueueClient = RQueueManager.getRQueueClient(
                             Const.LABEL_DOUBLE_CHECK_DEPENDS_QUEUE_NAME, RQueueMode.DELAYEDQUEUE);
                     Object taskId = rQueueClient.poll();
@@ -502,6 +509,8 @@ public class LabelServer {
                 }
             } catch (Exception e) {
                 logger.error("标签任务依赖检查重置失败: ", e);
+            }finally {
+                LogIdUtil.clear();
             }
         });
     }

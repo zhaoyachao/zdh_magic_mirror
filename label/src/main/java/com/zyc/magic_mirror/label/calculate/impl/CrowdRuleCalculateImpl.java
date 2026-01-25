@@ -124,8 +124,7 @@ public class CrowdRuleCalculateImpl extends  BaseCalculate{
             writeFileAndPrintLogAndUpdateStatus2Finish(strategyLogInfo,rowsObj);
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rowsObj, Const.STATUS_FINISH);
         }catch (Exception e){
-            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
-            logger.error("label crowdrule run error: ", e);
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e);
             writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 

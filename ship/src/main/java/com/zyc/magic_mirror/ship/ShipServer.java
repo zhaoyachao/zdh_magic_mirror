@@ -43,6 +43,8 @@ public class ShipServer {
 
     public static void main(String[] args) {
         try {
+            LogIdUtil.generateAndSet();
+            logger.info("Ship server starting...");
             // 加载配置文件
             ConfigUtil.load();
             
@@ -65,6 +67,8 @@ public class ShipServer {
         } catch (Exception e) {
             logger.error("Ship server startup error: ", e);
             System.exit(-1);
+        }finally {
+            LogIdUtil.clear();
         }
     }
     
@@ -124,11 +128,14 @@ public class ShipServer {
         // 每分钟执行一次更新配置任务
         scheduler.scheduleAtFixedRate(() -> {
             try {
+                LogIdUtil.generateAndSet();
                 logger.info("更新配置");
                 cacheStrategyService.schedule();
                 cacheFunctionService.schedule();
             } catch (Exception e) {
                 logger.error("定时更新配置失败: ", e);
+            }finally {
+                LogIdUtil.clear();
             }
         }, 0, 1, TimeUnit.MINUTES);
         
@@ -205,6 +212,7 @@ public class ShipServer {
         Runnable task = () -> {
             while (true) {
                 try {
+                    LogIdUtil.generateAndSet();
                     // 更新服务实例信息
                     ServerManagerUtil.registerServiceInstance(serviceInstanceConf.getService_name());
                     ServerManagerUtil.heartbeatReport(serviceInstanceConf);
@@ -227,6 +235,8 @@ public class ShipServer {
                     logger.error("日志消费异常: ", e);
                     // 避免异常导致循环过快
                     try { Thread.sleep(1000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+                } finally {
+                    LogIdUtil.clear();
                 }
             }
         };

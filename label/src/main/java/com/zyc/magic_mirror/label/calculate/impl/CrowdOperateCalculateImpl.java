@@ -132,7 +132,7 @@ public class CrowdOperateCalculateImpl extends BaseCalculate{
             writeRocksdb(strategyLogInfo.getFile_rocksdb_path(), strategyLogInfo.getStrategy_instance_id(), rs, Const.STATUS_FINISH);
 
         }catch (Exception e){
-            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e.getMessage());
+            LogUtil.error(strategyLogInfo.getStrategy_id(), strategyLogInfo.getStrategy_instance_id(), e);
             writeEmptyFileAndStatus(strategyLogInfo);
         }finally {
 

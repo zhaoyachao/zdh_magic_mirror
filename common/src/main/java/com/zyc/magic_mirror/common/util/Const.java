@@ -4,6 +4,7 @@ package com.zyc.magic_mirror.common.util;
  * 常量
  */
 public class Const {
+    public static String LOG_ID = "logId";
     public static String STATUS_INIT="create";
     public static String STATUS_CHECK_DEP="check_dep";
     public static String STATUS_CHECK_DEP_FINISH="check_dep_finish";

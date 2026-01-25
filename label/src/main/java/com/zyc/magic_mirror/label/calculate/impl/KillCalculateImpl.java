@@ -4,6 +4,7 @@ import cn.hutool.core.util.NumberUtil;
 import com.zyc.magic_mirror.common.entity.InstanceType;
 import com.zyc.magic_mirror.common.entity.StrategyInstance;
 import com.zyc.magic_mirror.common.util.Const;
+import com.zyc.magic_mirror.common.util.LogIdUtil;
 import com.zyc.magic_mirror.common.util.LogUtil;
 import com.zyc.magic_mirror.common.util.ServerManagerUtil;
 import com.zyc.magic_mirror.label.LabelServer;
@@ -91,6 +92,7 @@ public class KillCalculateImpl extends BaseCalculate {
         String logStr="";
         while (true){
             try{
+                LogIdUtil.generateAndSet();
                 //获取要杀死的任务
                 List<StrategyInstance> strategyInstanceList = strategyInstanceService.selectByStatus(new String[]{"kill"},
                         new String[]{InstanceType.LABEL.getCode(),InstanceType.CROWD_RULE.getCode(),InstanceType.CROWD_OPERATE.getCode(),InstanceType.CROWD_FILE.getCode(), InstanceType.CUSTOM_LIST.getCode()});
@@ -136,7 +138,7 @@ public class KillCalculateImpl extends BaseCalculate {
                 //执行失败,更新标签任务失败
                 logger.error("label kill run error: ", e);
             }finally {
-
+                LogIdUtil.clear();
             }
         }
 
