@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.zyc.magic_mirror</groupId>
         <artifactId>zdh_magic_mirror</artifactId>
-        <version>5.7.1-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>

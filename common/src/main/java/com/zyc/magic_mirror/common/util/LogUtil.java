@@ -215,7 +215,7 @@ public class LogUtil {
         zdhLogs.setLevel(level);
         zdhLogs.setJob_id(job_id);
         zdhLogs.setTask_logs_id(task_logs_id);
-        zdhLogs.setMsg(msg);
+        zdhLogs.setMsg(String.format("logId:%s,%s", LogIdUtil.get() != null? LogIdUtil.get():"", msg));
         zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
         return zdhLogs;
     }

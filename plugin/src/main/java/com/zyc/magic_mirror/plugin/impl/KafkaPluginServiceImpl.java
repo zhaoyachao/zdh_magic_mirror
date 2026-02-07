@@ -6,6 +6,7 @@ import com.zyc.magic_mirror.common.plugin.PluginParam;
 import com.zyc.magic_mirror.common.plugin.PluginResult;
 import com.zyc.magic_mirror.common.plugin.PluginService;
 import com.zyc.magic_mirror.common.util.JsonUtil;
+import com.zyc.magic_mirror.common.util.KafkaUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -57,8 +58,9 @@ public class KafkaPluginServiceImpl implements PluginService {
 
             String topic = props.getProperty("topic","test");
             String msg = props.getProperty("message", "");
-            producer = new KafkaProducer<>(props);
-            RecordMetadata recordMetadata = producer.send(new ProducerRecord<>(topic, msg)).get();
+
+            KafkaProducer<Object, Object> kafkaProducer = KafkaUtil.getKafkaProducer(props);
+            RecordMetadata recordMetadata = kafkaProducer.send(new ProducerRecord<>(topic, msg)).get();
             kafkaPluginResult.setCode(0);
             kafkaPluginResult.setMessage("success");
             kafkaPluginResult.setResult(JsonUtil.formatJsonString(recordMetadata));
@@ -68,9 +70,7 @@ public class KafkaPluginServiceImpl implements PluginService {
             kafkaPluginResult.setCode(-1);
             kafkaPluginResult.setMessage(e.getMessage());
         }finally {
-            if(producer != null){
-                producer.close();
-            }
+
         }
         return kafkaPluginResult;
     }
