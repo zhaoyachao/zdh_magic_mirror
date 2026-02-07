@@ -2,6 +2,7 @@ package com.zyc.magic_mirror.common.util;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
@@ -11,6 +12,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -133,6 +135,12 @@ public class HttpUtil {
         StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
         Map<String, String> header = new HashMap<>();
         header.put("Content-Type", "application/json");
+        return postRequest(path, entity, null, null);
+    }
+
+    public String postJSON(String path, HttpEntity entity) throws Exception {
+        Map<String, String> header = new HashMap<>();
+        header.put("Content-Type", "application/json");
         return postRequest(path, entity, header, null);
     }
 
@@ -160,28 +168,40 @@ public class HttpUtil {
         String fullUrl = uriBuilder.build().toString();
 
         try {
-            // 构建请求日志信息
-            StringBuilder requestLog = new StringBuilder("HTTP请求 - ")
-                    .append("Method: GET, ")
-                    .append("URL: ").append(fullUrl);
-
-            if (parametersBody != null && !parametersBody.isEmpty()) {
-                requestLog.append(", Parameters: ").append(parametersBody);
-            }
-            if (header != null && !header.isEmpty()) {
-                requestLog.append(", Headers: ").append(header);
-            }
-            if (cookie != null && !cookie.isEmpty()) {
-                requestLog.append(", Cookies: ").append(cookie);
-            }
-
-            logger.info(requestLog.toString());
-
             HttpGet get = new HttpGet(fullUrl);
 
             HttpClientContext context = HttpClientContext.create();
             setCookie(context, cookie);
             setHeader(get, header);
+
+            // 构建请求日志信息
+            StringBuilder requestLog = new StringBuilder("HTTP请求 - ")
+                    .append("Method: GET, ")
+                    .append("URL: ").append(fullUrl);
+
+            // 记录实际设置的请求头
+            Header[] allHeaders = get.getAllHeaders();
+            Map<String, String> actualHeaders = new HashMap<>();
+            for (Header h : allHeaders) {
+                actualHeaders.put(h.getName(), h.getValue());
+            }
+
+            if (!actualHeaders.isEmpty()) {
+                requestLog.append(", Headers: ").append(actualHeaders);
+            }
+
+            CookieStore cookieStore = context.getCookieStore();
+            if (cookieStore != null && !cookieStore.getCookies().isEmpty()) {
+                Map<String, String> actualCookies = new HashMap<>();
+                for (org.apache.http.cookie.Cookie c : cookieStore.getCookies()) {
+                    actualCookies.put(c.getName(), c.getValue());
+                }
+                requestLog.append(", Cookies: ").append(actualCookies);
+            }
+
+            // 记录请求体内容
+
+            logger.info(requestLog.toString());
 
             CloseableHttpClient client = httpClient;
 
@@ -219,35 +239,53 @@ public class HttpUtil {
      */
     public String postRequest(String path, String mediaType, HttpEntity entity) throws Exception {
         try {
-            // 构建请求日志信息
-            StringBuilder requestLog = new StringBuilder("HTTP请求 - ")
-                    .append("Method: POST, ")
-                    .append("URL: ").append(path)
-                    .append(", Content-Type: ").append(mediaType);
-
-            // 记录请求体内容
-            if (entity instanceof StringEntity) {
-                try {
-                    String requestBody = EntityUtils.toString(entity);
-                    requestLog.append(", Body: ").append(requestBody);
-                    // 重新创建entity，因为toString消耗了流
-                    entity = new StringEntity(requestBody, StandardCharsets.UTF_8);
-                } catch (Exception e) {
-                    logger.warn("无法记录POST请求体内容", e);
-                }
-            }
-
-            logger.info(requestLog.toString());
-
             HttpPost post = new HttpPost(path);
-
+            post.setEntity(entity);
+            // 设置请求头
             HttpClientContext context = HttpClientContext.create();
             setCookie(context, null);
             setHeader(post, null);
 
             post.addHeader("Content-Type", mediaType);
             post.addHeader("Accept", "application/json");
-            post.setEntity(entity);
+
+            // 构建请求日志信息
+            StringBuilder requestLog = new StringBuilder("HTTP请求 - ")
+                    .append("Method: POST, ")
+                    .append("URL: ").append(path);
+
+            // 记录实际设置的请求头
+            Header[] allHeaders = post.getAllHeaders();
+            Map<String, String> actualHeaders = new HashMap<>();
+            for (Header h : allHeaders) {
+                actualHeaders.put(h.getName(), h.getValue());
+            }
+
+            if (!actualHeaders.isEmpty()) {
+                requestLog.append(", Headers: ").append(actualHeaders);
+            }
+
+            CookieStore cookieStore = context.getCookieStore();
+            if (cookieStore != null && !cookieStore.getCookies().isEmpty()) {
+                Map<String, String> actualCookies = new HashMap<>();
+                for (org.apache.http.cookie.Cookie c : cookieStore.getCookies()) {
+                    actualCookies.put(c.getName(), c.getValue());
+                }
+                requestLog.append(", Cookies: ").append(actualCookies);
+            }
+
+            // 记录请求体内容
+            try {
+                if (entity != null) {
+                    BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                    String content = EntityUtils.toString(bufferedEntity);
+                    requestLog.append(", Body: ").append(content);
+                }
+            } catch (Exception e) {
+                logger.warn("无法记录POST请求体内容", e);
+            }
+
+            logger.info(requestLog.toString());
 
             CloseableHttpClient client = httpClient;
 
@@ -284,39 +322,50 @@ public class HttpUtil {
     public String postRequest(String path, HttpEntity entity, Map<String, String> header,
                               Map<String, String> cookie) throws Exception {
         try {
-            // 构建请求日志信息
-            StringBuilder requestLog = new StringBuilder("HTTP请求 - ")
-                    .append("Method: POST, ")
-                    .append("URL: ").append(path);
-
-            if (header != null && !header.isEmpty()) {
-                requestLog.append(", Headers: ").append(header);
-            }
-            if (cookie != null && !cookie.isEmpty()) {
-                requestLog.append(", Cookies: ").append(cookie);
-            }
-
-            // 记录请求体内容
-            if (entity instanceof StringEntity) {
-                try {
-                    String requestBody = EntityUtils.toString(entity);
-                    requestLog.append(", Body: ").append(requestBody);
-                    // 重新创建entity，因为toString消耗了流
-                    entity = new StringEntity(requestBody, StandardCharsets.UTF_8);
-                } catch (Exception e) {
-                    logger.warn("无法记录POST请求体内容", e);
-                }
-            }
-
-            logger.info(requestLog.toString());
-
             HttpPost post = new HttpPost(path);
+            post.setEntity(entity);
             // 设置请求头
             HttpClientContext context = HttpClientContext.create();
             setCookie(context, cookie);
             setHeader(post, header);
 
-            post.setEntity(entity);
+            // 构建请求日志信息
+            StringBuilder requestLog = new StringBuilder("HTTP请求 - ")
+                    .append("Method: POST, ")
+                    .append("URL: ").append(path);
+
+            // 记录实际设置的请求头
+            Header[] allHeaders = post.getAllHeaders();
+            Map<String, String> actualHeaders = new HashMap<>();
+            for (Header h : allHeaders) {
+                actualHeaders.put(h.getName(), h.getValue());
+            }
+
+            if (!actualHeaders.isEmpty()) {
+                requestLog.append(", Headers: ").append(actualHeaders);
+            }
+
+            CookieStore cookieStore = context.getCookieStore();
+            if (cookieStore != null && !cookieStore.getCookies().isEmpty()) {
+                Map<String, String> actualCookies = new HashMap<>();
+                for (org.apache.http.cookie.Cookie c : cookieStore.getCookies()) {
+                    actualCookies.put(c.getName(), c.getValue());
+                }
+                requestLog.append(", Cookies: ").append(actualCookies);
+            }
+
+            // 记录请求体内容
+            try {
+                if (entity != null) {
+                    BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                    String content = EntityUtils.toString(bufferedEntity);
+                    requestLog.append(", Body: ").append(content);
+                }
+            } catch (Exception e) {
+                logger.warn("无法记录POST请求体内容", e);
+            }
+
+            logger.info(requestLog.toString());
 
             CloseableHttpClient client = httpClient;
 
@@ -355,27 +404,52 @@ public class HttpUtil {
      */
     public String patchRequest(String path, List<NameValuePair> parametersBody) throws Exception {
         try {
+            HttpPatch patch = new HttpPatch(path);
+            HttpEntity entity = new UrlEncodedFormEntity(parametersBody, StandardCharsets.UTF_8);
+            patch.setEntity(entity);
+
+            // 设置请求头
+            HttpClientContext context = HttpClientContext.create();
+            setCookie(context, null);
+            setHeader(patch, null);
+
             // 构建请求日志信息
             StringBuilder requestLog = new StringBuilder("HTTP请求 - ")
                     .append("Method: PATCH, ")
                     .append("URL: ").append(path);
 
-            if (parametersBody != null && !parametersBody.isEmpty()) {
-                requestLog.append(", Parameters: ").append(parametersBody);
+            // 记录实际设置的请求头
+            Header[] allHeaders = patch.getAllHeaders();
+            Map<String, String> actualHeaders = new HashMap<>();
+            for (Header h : allHeaders) {
+                actualHeaders.put(h.getName(), h.getValue());
+            }
+
+            if (!actualHeaders.isEmpty()) {
+                requestLog.append(", Headers: ").append(actualHeaders);
+            }
+
+            CookieStore cookieStore = context.getCookieStore();
+            if (cookieStore != null && !cookieStore.getCookies().isEmpty()) {
+                Map<String, String> actualCookies = new HashMap<>();
+                for (org.apache.http.cookie.Cookie c : cookieStore.getCookies()) {
+                    actualCookies.put(c.getName(), c.getValue());
+                }
+                requestLog.append(", Cookies: ").append(actualCookies);
+            }
+
+            // 记录请求体内容
+            try {
+                if (entity != null) {
+                    BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+                    String content = EntityUtils.toString(bufferedEntity);
+                    requestLog.append(", Body: ").append(content);
+                }
+            } catch (Exception e) {
+                logger.warn("无法记录POST请求体内容", e);
             }
 
             logger.info(requestLog.toString());
-
-            HttpPatch patch = new HttpPatch(path);
-
-            HttpClientContext context = HttpClientContext.create();
-            setCookie(context, null);
-            setHeader(patch, null);
-
-            patch.addHeader("Content-Type", "application/json");
-            patch.addHeader("Accept", "application/json");
-            HttpEntity entity = new UrlEncodedFormEntity(parametersBody, StandardCharsets.UTF_8);
-            patch.setEntity(entity);
 
             CloseableHttpClient client = httpClient;
 
@@ -614,7 +688,7 @@ public class HttpUtil {
         }
 
         public String postJSON(String path, HttpEntity entity) throws Exception {
-            return getHttpUtil().postRequest(path, entity, null, null);
+            return getHttpUtil().postJSON(path, entity);
         }
 
         public String postJSON(String path, String json,
@@ -624,6 +698,11 @@ public class HttpUtil {
 
         public String postJSON(String path, HttpEntity entity,
                                Map<String, String> headers, Map<String, String> cookies) throws Exception {
+            return getHttpUtil().postRequest(path, entity, headers, cookies);
+        }
+
+        public String post(String path, HttpEntity entity,
+                           Map<String, String> headers, Map<String, String> cookies) throws Exception {
             return getHttpUtil().postRequest(path, entity, headers, cookies);
         }
 
