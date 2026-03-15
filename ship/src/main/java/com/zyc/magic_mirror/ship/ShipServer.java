@@ -2,6 +2,7 @@ package com.zyc.magic_mirror.ship;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.zyc.magic_mirror.common.entity.ZdhLogs;
 import com.zyc.magic_mirror.common.http.HttpAction;
 import com.zyc.magic_mirror.common.http.HttpServer;
 import com.zyc.magic_mirror.common.http.PackageScanner;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -263,7 +265,13 @@ public class ShipServer {
                         
                         for (Map<String, Object> logObj : jsonArray) {
                             String jobId = logObj.getOrDefault("strategyGroupInstanceId", taskLogId).toString();
-                            LogUtil.info(jobId, taskLogId, JsonUtil.formatJsonString(logObj));
+                            ZdhLogs zdhLogs=new ZdhLogs();
+                            zdhLogs.setLevel("INFO");
+                            zdhLogs.setJob_id(jobId);
+                            zdhLogs.setTask_logs_id(taskLogId);
+                            zdhLogs.setMsg(JsonUtil.formatJsonString(logObj));
+                            zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
+                            LogUtil.send(zdhLogs);
                         }
                     }
                 }
@@ -292,7 +300,13 @@ public class ShipServer {
                         
                         for (Map<String, Object> logObj : jsonArray) {
                             String jobId = logObj.getOrDefault("strategyGroupInstanceId", taskLogId).toString();
-                            LogUtil.info(jobId, taskLogId, JsonUtil.formatJsonString(logObj));
+                            ZdhLogs zdhLogs=new ZdhLogs();
+                            zdhLogs.setLevel("INFO");
+                            zdhLogs.setJob_id(jobId);
+                            zdhLogs.setTask_logs_id(taskLogId);
+                            zdhLogs.setMsg(JsonUtil.formatJsonString(logObj));
+                            zdhLogs.setLog_time(new Timestamp(System.currentTimeMillis()));
+                            LogUtil.send(zdhLogs);
                         }
                     }
                 }

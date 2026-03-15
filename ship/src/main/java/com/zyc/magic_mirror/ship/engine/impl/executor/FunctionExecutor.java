@@ -11,6 +11,7 @@ import com.zyc.magic_mirror.ship.disruptor.ShipEvent;
 import com.zyc.magic_mirror.ship.disruptor.ShipResult;
 import com.zyc.magic_mirror.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.magic_mirror.ship.engine.impl.RiskShipResultImpl;
+import com.zyc.magic_mirror.ship.engine.impl.ShipResutObjMapKey;
 import com.zyc.magic_mirror.ship.service.impl.CacheFunctionServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -76,7 +77,7 @@ public class FunctionExecutor extends BaseExecutor{
 
             Object res = functionExcute(functionInfo, objectMap);
 
-            shipResult.addObj2Map("ret", res);
+            shipResult.addObj2Map(ShipResutObjMapKey.RET_FUNCTION, res);
             //在线模块尽量直接使用返回结果, 需要设置 开启对比：关闭,取值表达式：为空或者ret
             if(return_diff_enable.equalsIgnoreCase("false") && (StringUtils.isEmpty(return_value_express) || return_value_express.equalsIgnoreCase("ret"))){
                 if(res == null){
@@ -98,7 +99,7 @@ public class FunctionExecutor extends BaseExecutor{
                 }else{
                     tmp = ShipResultStatusEnum.SUCCESS.code;
                 }
-                shipResult.addObj2Map("ret_express_value", ret_express_value);
+                shipResult.addObj2Map(ShipResutObjMapKey.RET_FUNCTION_EXPRESS_VALUE, ret_express_value);
                 shipResult.setStatus(tmp);
                 return shipResult;
             }
@@ -112,7 +113,7 @@ public class FunctionExecutor extends BaseExecutor{
                 }else{
                     tmp = ShipResultStatusEnum.ERROR.code;
                 }
-                shipResult.addObj2Map("ret_diff_value", ret_express_value);
+                shipResult.addObj2Map(ShipResutObjMapKey.RET_FUNCTION_DIFF_VALUE, ret_express_value);
                 shipResult.setStatus(tmp);
                 return shipResult;
             }
@@ -182,7 +183,11 @@ public class FunctionExecutor extends BaseExecutor{
                 }
             }
             if(!StringUtils.isEmpty(function_script)){
-                Object ret = GroovyFactory.execExpress(function_script, function_name, objectMap);
+                Map<String,Object> stringObjectMap = new LinkedHashMap<>();
+                for (String param_code: param_codes){
+                    stringObjectMap.put(param_code, objectMap.get(param_code));
+                }
+                Object ret = GroovyFactory.execExpress(function_script, function_name, stringObjectMap);
                 return ret;
             }
         }catch (Exception e){

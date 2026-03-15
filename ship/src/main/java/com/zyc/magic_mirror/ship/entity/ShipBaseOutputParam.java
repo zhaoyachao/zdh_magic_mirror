@@ -15,6 +15,8 @@ public class ShipBaseOutputParam implements OutputParam{
 
     private String status;//success,error
 
+    private Long costTime;
+
     private Map<String,Map<String, ShipResult>> strategyGroupResults = new HashMap<>();
 
     private Map<String, Map<String, Object>> decisionResult = new HashMap<>();
@@ -80,5 +82,13 @@ public class ShipBaseOutputParam implements OutputParam{
 
     public void setDecisionResult(Map<String, Map<String, Object>> decisionResult) {
         this.decisionResult = decisionResult;
+    }
+
+    public Long getCostTime() {
+        return costTime;
+    }
+
+    public void setCostTime(Long costTime) {
+        this.costTime = costTime;
     }
 }

@@ -122,7 +122,9 @@ public class ShipOnLineManagerEngine extends ShipCommonEngine {
             shipBaseOutputParam.setMessage(e.getMessage());
         }finally {
             long end_time = System.currentTimeMillis();
-            logger.info("request_id: {}, cost_time: {}ms, end", request_id_str, end_time-start_time);
+            long cost_time = end_time - start_time;
+            shipBaseOutputParam.setCostTime(cost_time);
+            logger.info("request_id: {}, cost_time: {}ms, end", request_id_str, cost_time);
         }
 
         return shipBaseOutputParam;

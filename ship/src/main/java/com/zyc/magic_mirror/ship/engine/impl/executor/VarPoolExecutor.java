@@ -8,6 +8,7 @@ import com.zyc.magic_mirror.ship.disruptor.ShipEvent;
 import com.zyc.magic_mirror.ship.disruptor.ShipResult;
 import com.zyc.magic_mirror.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.magic_mirror.ship.engine.impl.RiskShipResultImpl;
+import com.zyc.magic_mirror.ship.engine.impl.ShipResutObjMapKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,7 @@ public class VarPoolExecutor extends BaseExecutor{
 
     public ShipResult execute(StrategyInstance strategyInstance, ShipEvent shipEvent){
         ShipResult shipResult = new RiskShipResultImpl();
-        Map<String, Object> ext = shipEvent.getRunParam();
+        Map<String, Object> ext = shipEvent.getRunParam();//当前执行器输出结果
         String tmp = ShipResultStatusEnum.SUCCESS.code;
         try{
             Map<String, Object> jsonObject = JsonUtil.toJavaMap(strategyInstance.getRun_jsmind_data());
@@ -123,6 +124,7 @@ public class VarPoolExecutor extends BaseExecutor{
                 }
             }
 
+            shipResult.addObj2Map(ShipResutObjMapKey.RET_VARPOOL, varParams);
             ext.putAll(varParams);
 
         }catch (Exception e){

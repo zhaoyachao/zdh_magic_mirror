@@ -15,7 +15,7 @@ public class CrowdRuleExecutor extends BaseExecutor{
         ShipResult shipResult = new RiskShipResultImpl();
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{
-
+            shipResult.setMessage("暂未实现");
         }catch (Exception e){
             logger.error("ship excutor label error: ", e);
             tmp = ShipResultStatusEnum.ERROR.code;

@@ -2,6 +2,8 @@ package com.zyc.magic_mirror.common.util;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -26,10 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,7 +43,7 @@ public class HttpUtil {
     private static PoolingHttpClientConnectionManager connectionManager;
     private static CloseableHttpClient httpClient;
     private CloseableHttpClient httpClientCustom;
-    private Map<String, String> cookieCustom;
+    private Map<String, String> cookieCustom = new HashMap<>();
     private Map<String, String> headersCustom = new HashMap<>();
 
     public HttpUtil() {
@@ -88,10 +87,9 @@ public class HttpUtil {
                     .setDefaultRequestConfig(RequestConfig.custom()
                             .setConnectTimeout(config.getConnectionTimeout())
                             .setSocketTimeout(config.getSocketTimeout())
-                            .setConnectionRequestTimeout(config.getConnectionTimeout()) // 从连接池获取连接的超时时间
+                            .setConnectionRequestTimeout(config.getConnectionRequestTimeout()) // 从连接池获取连接的超时时间
                             .build())
                     .build();
-
         }
     }
 
@@ -126,24 +124,28 @@ public class HttpUtil {
         HttpEntity entity = new UrlEncodedFormEntity(parametersBody, StandardCharsets.UTF_8);
         return postRequest(path, "application/x-www-form-urlencoded", entity);
     }
-
     /**
      * 发送POST请求（JSON形式）
      * 默认不重试
      */
     public String postJSON(String path, String json) throws Exception {
         StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
-        Map<String, String> header = new HashMap<>();
-        header.put("Content-Type", "application/json");
-        return postRequest(path, entity, null, null);
+        return postRequest(path, "application/json", entity);
     }
 
     public String postJSON(String path, HttpEntity entity) throws Exception {
-        Map<String, String> header = new HashMap<>();
-        header.put("Content-Type", "application/json");
-        return postRequest(path, entity, header, null);
+        return postRequest(path, "application/json", entity);
     }
 
+    /**
+     * 默认不重试
+     * @param path
+     * @param json
+     * @param header
+     * @param cookie
+     * @return
+     * @throws Exception
+     */
     public String postJSON(String path, String json, Map<String, String> header,
                            Map<String, String> cookie) throws Exception {
         StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
@@ -162,11 +164,10 @@ public class HttpUtil {
     public String getRequest(String path, List<NameValuePair> parametersBody, Map<String, String> header,
                              Map<String, String> cookie) throws Exception {
         URIBuilder uriBuilder = new URIBuilder(path);
-        if(parametersBody != null && !parametersBody.isEmpty()){
-            uriBuilder.setParameters(parametersBody);
-        }
+        uriBuilder.setParameters(parametersBody);
         String fullUrl = uriBuilder.build().toString();
 
+        long startTime = System.currentTimeMillis();
         try {
             HttpGet get = new HttpGet(fullUrl);
 
@@ -209,7 +210,7 @@ public class HttpUtil {
                 client = httpClientCustom;
             }
 
-            try(CloseableHttpResponse response = client.execute(get, context)){
+            try (CloseableHttpResponse response = client.execute(get)) {
                 int code = response.getStatusLine().getStatusCode();
                 String responseBody = EntityUtils.toString(response.getEntity());
                 // 构建响应日志信息
@@ -222,105 +223,30 @@ public class HttpUtil {
                     logger.error(errorLog);
                     throw new RuntimeException("HTTP请求失败，状态码: " + code + "，响应: " + responseBody);
                 }
-                logger.info(responseLog);
+                long endTime = System.currentTimeMillis();
+                long duration = endTime - startTime;
+                String timedResponseLog = String.format("%s, Time: %dms", responseLog, duration);
+                logger.info(timedResponseLog);
                 return responseBody;
-            }finally {
-                get.releaseConnection();
             }
         } catch (Exception e) {
-            logger.error("HTTP请求异常 - URL: " + fullUrl, e);
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            logger.error("HTTP请求异常 - URL: " + fullUrl + ", Time: " + duration + "ms", e);
             throw e;
         }
     }
 
-    /**
-     * 发送POST请求（通用方法）
-     * 默认不重试
-     */
+
     public String postRequest(String path, String mediaType, HttpEntity entity) throws Exception {
-        try {
-            HttpPost post = new HttpPost(path);
-            post.setEntity(entity);
-            // 设置请求头
-            HttpClientContext context = HttpClientContext.create();
-            setCookie(context, null);
-            setHeader(post, null);
-
-            post.addHeader("Content-Type", mediaType);
-            post.addHeader("Accept", "application/json");
-
-            // 构建请求日志信息
-            StringBuilder requestLog = new StringBuilder("HTTP请求 - ")
-                    .append("Method: POST, ")
-                    .append("URL: ").append(path);
-
-            // 记录实际设置的请求头
-            Header[] allHeaders = post.getAllHeaders();
-            Map<String, String> actualHeaders = new HashMap<>();
-            for (Header h : allHeaders) {
-                actualHeaders.put(h.getName(), h.getValue());
-            }
-
-            if (!actualHeaders.isEmpty()) {
-                requestLog.append(", Headers: ").append(actualHeaders);
-            }
-
-            CookieStore cookieStore = context.getCookieStore();
-            if (cookieStore != null && !cookieStore.getCookies().isEmpty()) {
-                Map<String, String> actualCookies = new HashMap<>();
-                for (org.apache.http.cookie.Cookie c : cookieStore.getCookies()) {
-                    actualCookies.put(c.getName(), c.getValue());
-                }
-                requestLog.append(", Cookies: ").append(actualCookies);
-            }
-
-            // 记录请求体内容
-            try {
-                if (entity != null) {
-                    BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                    String content = EntityUtils.toString(bufferedEntity);
-                    requestLog.append(", Body: ").append(content);
-                }
-            } catch (Exception e) {
-                logger.warn("无法记录POST请求体内容", e);
-            }
-
-            logger.info(requestLog.toString());
-
-            CloseableHttpClient client = httpClient;
-
-            if(httpClientCustom != null){
-                client = httpClientCustom;
-            }
-
-            try (CloseableHttpResponse response = client.execute(post,context)) {
-                int code = response.getStatusLine().getStatusCode();
-                String responseBody = EntityUtils.toString(response.getEntity());
-
-                // 构建响应日志信息
-                String responseLog = String.format("HTTP响应 - URL: %s, Status: %d, Response: %s",
-                        path, code, responseBody);
-
-                if (code >= 400) {
-                    String errorLog = String.format("HTTP请求失败 - URL: %s, Status: %d, Error: %s",
-                            path, code, responseBody);
-                    logger.error(errorLog);
-                    throw new Exception(responseBody);
-                }
-
-                logger.info(responseLog);
-                return responseBody;
-            }finally {
-                post.releaseConnection();
-            }
-        } catch (Exception e) {
-            logger.error("HTTP请求异常 - URL: " + path, e);
-            throw e;
-        }
+        Map<String, String> header = new HashMap<>();
+        header.put("Content-Type", mediaType);
+        return postRequest(path, entity, header, null);
     }
 
     public String postRequest(String path, HttpEntity entity, Map<String, String> header,
                               Map<String, String> cookie) throws Exception {
+        long startTime = System.currentTimeMillis();
         try {
             HttpPost post = new HttpPost(path);
             post.setEntity(entity);
@@ -362,10 +288,10 @@ public class HttpUtil {
                     requestLog.append(", Body: ").append(content);
                 }
             } catch (Exception e) {
-                logger.warn("无法记录POST请求体内容", e);
+                logger.error("无法记录POST请求体内容", e);
             }
 
-            logger.info(requestLog.toString());
+            logger.info( requestLog.toString());
 
             CloseableHttpClient client = httpClient;
 
@@ -373,7 +299,7 @@ public class HttpUtil {
                 client = httpClientCustom;
             }
 
-            try (CloseableHttpResponse response = client.execute(post,context)) {
+            try (CloseableHttpResponse response = client.execute(post, context)) {
                 int code = response.getStatusLine().getStatusCode();
                 String responseBody = EntityUtils.toString(response.getEntity());
 
@@ -388,13 +314,16 @@ public class HttpUtil {
                     throw new Exception(responseBody);
                 }
 
-                logger.info(responseLog);
+                long endTime = System.currentTimeMillis();
+                long duration = endTime - startTime;
+                String timedResponseLog = String.format("%s, Time: %dms", responseLog, duration);
+                logger.info(timedResponseLog);
                 return responseBody;
-            }finally {
-                post.releaseConnection();
             }
         } catch (Exception e) {
-            logger.error("HTTP请求异常 - URL: " + path, e);
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            logger.error("HTTP请求异常 - URL: " + path + ", Time: " + duration + "ms", e);
             throw e;
         }
     }
@@ -403,6 +332,7 @@ public class HttpUtil {
      * PATCH请求
      */
     public String patchRequest(String path, List<NameValuePair> parametersBody) throws Exception {
+        long startTime = System.currentTimeMillis();
         try {
             HttpPatch patch = new HttpPatch(path);
             HttpEntity entity = new UrlEncodedFormEntity(parametersBody, StandardCharsets.UTF_8);
@@ -446,7 +376,7 @@ public class HttpUtil {
                     requestLog.append(", Body: ").append(content);
                 }
             } catch (Exception e) {
-                logger.warn("无法记录POST请求体内容", e);
+                logger.error("无法记录POST请求体内容", e);
             }
 
             logger.info(requestLog.toString());
@@ -472,11 +402,16 @@ public class HttpUtil {
                     throw new Exception(responseBody);
                 }
 
-                logger.info(responseLog);
+                long endTime = System.currentTimeMillis();
+                long duration = endTime - startTime;
+                String timedResponseLog = String.format("%s, Time: %dms", responseLog, duration);
+                logger.info(timedResponseLog);
                 return responseBody;
             }
         } catch (Exception e) {
-            logger.error("HTTP请求异常 - URL: " + path, e);
+            long endTime = System.currentTimeMillis();
+            long duration = endTime - startTime;
+            logger.error("HTTP请求异常 - URL: " + path + ", Time: " + duration + "ms", e);
             throw e;
         }
     }
@@ -513,6 +448,7 @@ public class HttpUtil {
         context.setCookieStore(cookieStore);
     }
 
+
     /**
      * 关闭连接池（应用关闭时调用）
      */
@@ -526,6 +462,16 @@ public class HttpUtil {
         }
         if (connectionManager != null) {
             connectionManager.shutdown();
+        }
+    }
+
+    private void shutdownCustom(){
+        if (httpClientCustom != null) {
+            try {
+                httpClientCustom.close();
+            } catch (IOException e) {
+                logger.error("Failed to close HTTP Custom client", e);
+            }
         }
     }
 
@@ -555,15 +501,31 @@ public class HttpUtil {
         private int socketTimeout = config.getSocketTimeout();
         private int connectionRequestTimeout = config.getConnectionRequestTimeout();
         private HttpHost proxy = null;
+        private boolean isDefault=true;
         /**
          * header 和 cookie 不做缓存, 当前header 和 cookie 只做基础配置,减少工作量
          */
         private Map<String, String> headers = new HashMap<>();
-        private Map<String, String> cookie = new HashMap<>();
+        private Map<String, String> cookies = new HashMap<>();
+
         private static Cache<String, HttpUtil> cache = CacheBuilder.newBuilder()
                 .maximumSize(10000) // 最大缓存容量（超过则按 LRU 回收）
                 .expireAfterWrite(6, TimeUnit.HOURS) // 写入后 5 秒过期
                 .expireAfterAccess(6, TimeUnit.HOURS) // 访问后 3 秒过期（优先级高于写入过期）
+                .removalListener(new RemovalListener<String, HttpUtil>() {
+
+                    @Override
+                    public void onRemoval(RemovalNotification<String, HttpUtil> removalNotification) {
+                        try{
+                            HttpUtil httpUtil = removalNotification.getValue();
+                            if(httpUtil != null){
+                                httpUtil.shutdownCustom();
+                            }
+                        }catch (Exception e){
+                            logger.error("Http cache remove error", e);
+                        }
+                    }
+                })
                 .concurrencyLevel(8) // 并发级别（同时写缓存的线程数）
                 .build();
 
@@ -576,6 +538,41 @@ public class HttpUtil {
             return new Builder();
         }
 
+        public HttpUtil build(){
+
+            if(isDefault){
+                return new HttpUtil();
+            }
+
+            String cacheKey = String.format("retryCount:%s_retryInterval:%s_connectionTimeout:%s_socketTimeout:%s_connectionRequestTimeout:%s_proxy:%s", retryCount, retryInterval, connectionTimeout, socketTimeout, connectionRequestTimeout, proxy!=null?proxy.toString():"");
+
+            if(cache.getIfPresent(cacheKey) != null){
+                return cache.getIfPresent(cacheKey);
+            }
+
+            synchronized (cacheKey.intern()){
+                if(cache.getIfPresent(cacheKey) != null){
+                    return cache.getIfPresent(cacheKey);
+                }
+
+                HttpRequestRetryStrategy retryStrategy = new HttpRequestRetryStrategy(
+                        retryCount, retryInterval);
+
+                CloseableHttpClient httpclientCustom = HttpClients.custom()
+                        .setConnectionManager(connectionManager)
+                        .setRetryHandler(retryStrategy)
+                        .setProxy(proxy)
+                        .setDefaultRequestConfig(RequestConfig.custom()
+                                .setConnectTimeout(connectionTimeout)
+                                .setSocketTimeout(socketTimeout)
+                                .setConnectionRequestTimeout(connectionRequestTimeout) // 从连接池获取连接的超时时间
+                                .build())
+                        .build();
+                HttpUtil httpUtil = new HttpUtil(httpclientCustom, headers, cookies);
+                cache.put(cacheKey, httpUtil);
+            }
+            return cache.getIfPresent(cacheKey);
+        }
 
         public Builder header(String name, String value) {
             return header(name, value, true);
@@ -593,13 +590,13 @@ public class HttpUtil {
         }
 
         public Builder cookie(String name, String value) {
-            this.cookie.put(name, value);
+            this.cookies.put(name, value);
             return this;
         }
 
-        public Builder cookie(Map<String, String> cookie) {
-            if(cookie != null){
-                this.cookie.putAll(cookie);
+        public Builder cookie(Map<String, String> cookies) {
+            if(cookies != null){
+                this.cookies.putAll(cookies);
             }
             return this;
         }
@@ -609,25 +606,30 @@ public class HttpUtil {
          */
         public Builder retryCount(int retryCount) {
             this.retryCount = Math.max(0, retryCount);
+            this.isDefault = false;
             return this;
         }
 
         public Builder retryInterval(long retryInterval) {
             this.retryInterval = retryInterval;
+            this.isDefault = false;
             return this;
         }
 
         public Builder connectionTimeout(int connectionTimeout) {
             this.connectionTimeout = connectionTimeout;
+            this.isDefault = false;
             return this;
         }
         public Builder socketTimeout(int socketTimeout) {
             this.socketTimeout = socketTimeout;
+            this.isDefault = false;
             return this;
         }
 
         public Builder connectionRequestTimeout(int connectionRequestTimeout) {
             this.connectionRequestTimeout = connectionRequestTimeout;
+            this.isDefault = false;
             return this;
         }
 
@@ -636,27 +638,32 @@ public class HttpUtil {
          */
         public Builder proxy(HttpHost proxy) {
             this.proxy = proxy;
+            this.isDefault = false;
             return this;
         }
 
-        public HttpUtil getHttpUtil(){
 
-            HttpUtil httpUtil;
-            HttpRequestRetryStrategy retryStrategy = new HttpRequestRetryStrategy(
-                    retryCount, retryInterval);
-
-            CloseableHttpClient httpclientCustom = HttpClients.custom()
-                    .setConnectionManager(connectionManager)
-                    .setRetryHandler(retryStrategy)
-                    .setProxy(proxy)
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setConnectTimeout(connectionTimeout)
-                            .setSocketTimeout(socketTimeout)
-                            .setConnectionRequestTimeout(connectionRequestTimeout) // 从连接池获取连接的超时时间
-                            .build())
-                    .build();
-            httpUtil = new HttpUtil(httpclientCustom, headers, cookie);
-            return httpUtil;
+        /**
+         * m2 合并到 m1, 如果m2中的key在m1中存在, 则使用m2中value替换
+         * @param m1
+         * @param m2
+         * @return
+         */
+        private Map<String, String> merge(Map<String, String> m1, Map<String, String> m2){
+            Map<String, String> ret = new HashMap<>();
+            if(!Objects.isNull(m1)){
+                for (Map.Entry<String, String> entry : m1.entrySet()) {
+                    // putIfAbsent：key 不存在则添加，存在则返回原有值（不替换）
+                    ret.put(entry.getKey(), entry.getValue());
+                }
+            }
+            if(!Objects.isNull(m2)){
+                for (Map.Entry<String, String> entry : m2.entrySet()) {
+                    // putIfAbsent：key 不存在则添加，存在则返回原有值（不替换）
+                    ret.put(entry.getKey(), entry.getValue());
+                }
+            }
+            return ret;
         }
 
         /**
@@ -664,53 +671,62 @@ public class HttpUtil {
          */
         public String getRequest(String path, List<NameValuePair> parameters) throws Exception {
             //根据retryCount和proxy 确定是否有缓存
-            return getHttpUtil().getRequest(path, parameters, null, null);
+            return build().getRequest(path, parameters, this.headers, this.cookies);
         }
 
         public String getRequest(String path, List<NameValuePair> parameters,
                                  Map<String, String> headers, Map<String, String> cookies) throws Exception {
-
-            return getHttpUtil().getRequest(path, parameters, headers, cookies);
+            return build().getRequest(path, parameters, merge(this.headers, headers), merge(this.cookies, cookies));
         }
 
         /**
          * 执行POST表单请求
          */
         public String postForm(String path, List<NameValuePair> parameters) throws Exception {
-            return getHttpUtil().postForm(path, parameters);
+            HttpEntity entity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+            Map<String, String> header = new HashMap<>();
+            header.put("Content-Type", "application/x-www-form-urlencoded");
+            return build().postRequest(path, entity, merge(header, this.headers), merge(null, this.cookies));
         }
 
         /**
          * 执行POST JSON请求
          */
         public String postJSON(String path, String json) throws Exception {
-            return getHttpUtil().postJSON(path, json);
+            Map<String, String> header = new HashMap<>();
+            header.put("Content-Type", "application/json");
+            StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
+            return build().postRequest(path, entity, merge(header, this.headers), this.cookies);
         }
 
         public String postJSON(String path, HttpEntity entity) throws Exception {
-            return getHttpUtil().postJSON(path, entity);
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Content-Type", "application/json");
+            return build().postRequest(path, entity, merge(headers, this.headers), this.cookies);
         }
 
         public String postJSON(String path, String json,
                                Map<String, String> headers, Map<String, String> cookies) throws Exception {
-            return getHttpUtil().postJSON(path, json, headers, cookies);
+            StringEntity entity = new StringEntity(json, StandardCharsets.UTF_8);
+            return postJSON(path, entity, headers, cookies);
         }
 
         public String postJSON(String path, HttpEntity entity,
                                Map<String, String> headers, Map<String, String> cookies) throws Exception {
-            return getHttpUtil().postRequest(path, entity, headers, cookies);
-        }
-
-        public String post(String path, HttpEntity entity,
-                           Map<String, String> headers, Map<String, String> cookies) throws Exception {
-            return getHttpUtil().postRequest(path, entity, headers, cookies);
+            if((this.headers == null || !this.headers.containsKey("Content-Type")) && (headers == null || !headers.containsKey("Content-Type"))){
+                if(headers == null){
+                    headers = new HashMap<>();
+                }
+                headers.put("Content-Type", "application/json");
+            }
+            return build().postRequest(path, entity, merge(this.headers, headers), merge(this.cookies, cookies));
         }
 
         /**
          * 执行PATCH请求
          */
         public String patch(String path, List<NameValuePair> parameters) throws Exception {
-            return getHttpUtil().patchRequest(path, parameters);
+            return build().patchRequest(path, parameters);
         }
     }
 

@@ -16,7 +16,7 @@ public class RightsExecutor extends BaseExecutor{
         String tmp = ShipResultStatusEnum.ERROR.code;
         try{
             //节点,当前不支持在线权益
-
+            shipResult.setMessage("暂不支持");
         }catch (Exception e){
             logger.error("ship excutor rights error: ", e);
             tmp = ShipResultStatusEnum.ERROR.code;

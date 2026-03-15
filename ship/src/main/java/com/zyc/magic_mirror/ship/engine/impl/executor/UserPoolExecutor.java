@@ -8,6 +8,7 @@ import com.zyc.magic_mirror.ship.disruptor.ShipEvent;
 import com.zyc.magic_mirror.ship.disruptor.ShipResult;
 import com.zyc.magic_mirror.ship.disruptor.ShipResultStatusEnum;
 import com.zyc.magic_mirror.ship.engine.impl.RiskShipResultImpl;
+import com.zyc.magic_mirror.ship.engine.impl.ShipResutObjMapKey;
 import com.zyc.magic_mirror.ship.entity.ShipCommonInputParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- *
+ * 用户池-在当前模式下 需要用户主动把对应的参数信息传递过来
  */
 public class UserPoolExecutor extends BaseExecutor{
     private static Logger logger= LoggerFactory.getLogger(UserPoolExecutor.class);
@@ -46,11 +47,12 @@ public class UserPoolExecutor extends BaseExecutor{
             param_value_str = jinjava.render(param_value_str, params);
 
             boolean ret = expr(params, param_value_str, param_code, param_type, param_operate);
-            String expr = param_code+", "+param_operate+", "+param_value_str;
-            shipResult.addObj2Map("ret", ret);
-            shipResult.addObj2Map("expr", expr);
+            String expr = param_code+":"+params.getOrDefault(param_code, "is null")+", operate:"+param_operate+", input:"+param_value_str;
+            shipResult.addObj2Map(ShipResutObjMapKey.RET_USERPOOL, ret);
+            shipResult.addObj2Map(ShipResutObjMapKey.RET_USERPOOL_EXPRESS, expr);
             if(!ret){
                 tmp = ShipResultStatusEnum.ERROR.code;
+                shipResult.setMessage(expr);
             }
         }catch (Exception e){
             logger.error("ship excutor userpool error: ", e);

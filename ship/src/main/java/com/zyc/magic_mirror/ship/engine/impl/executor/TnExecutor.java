@@ -102,7 +102,8 @@ public class TnExecutor extends BaseExecutor{
             //获取当前request_id
             RQueueClient<String> rQueueClient = RQueueManager.getRQueueClient(queueName, RQueueMode.DELAYEDQUEUE);
             rQueueClient.offer(JsonUtil.formatJsonString(jsonObject), delay_senond, TimeUnit.SECONDS);
-            tmp = ShipResultStatusEnum.ERROR.code;
+            tmp = ShipResultStatusEnum.SUCCESS.code;
+            shipResult.setMessage("tn模块执行成功,待延迟队列触发(未主动实现)");
         }catch (Exception e){
             logger.error("ship excutor tn error: ", e);
             tmp = ShipResultStatusEnum.ERROR.code;

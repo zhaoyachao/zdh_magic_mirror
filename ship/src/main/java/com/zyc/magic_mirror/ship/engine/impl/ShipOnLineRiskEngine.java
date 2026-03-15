@@ -98,6 +98,7 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
 
 
             //遍历策略信息,对每一个策略解析,拉取标签结果,后期确定是否采用disruptor
+            //key: 策略组实例id, value: 策略实例id 和 结果 组成的map
             Map<String, Map<String, ShipResult>> result = new ConcurrentHashMap<>();
 
             CountDownLatch groupCountDownLatch = new CountDownLatch(hit_strategy_groups.size());
@@ -127,7 +128,9 @@ public class ShipOnLineRiskEngine extends ShipCommonEngine{
             shipBaseOutputParam.setStatus(Const.STATUS_ERROR);
         }finally {
             long end_time = System.currentTimeMillis();
-            logger.info("request_id: {}, cost_time: {}ms, end", request_id_str, end_time-start_time);
+            long cost_time = end_time-start_time;
+            shipBaseOutputParam.setCostTime(cost_time);
+            logger.info("request_id: {}, cost_time: {}ms, end", request_id_str, cost_time);
         }
 
         return shipBaseOutputParam;
