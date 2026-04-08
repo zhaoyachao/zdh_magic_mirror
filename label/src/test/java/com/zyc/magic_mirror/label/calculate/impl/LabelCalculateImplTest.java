@@ -1,7 +1,6 @@
 package com.zyc.magic_mirror.label.calculate.impl;
 
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.util.MinioUtil;
 import io.minio.MinioClient;
@@ -102,7 +101,7 @@ public class LabelCalculateImplTest {
 
         long start=System.currentTimeMillis();
         Set<String> a = Sets.newHashSet();
-        Map<String,String> b = Maps.newHashMap();
+        Map<String,String> b = new HashMap<>();
         for(int i=0;i<10000000;i++){
             a.add("aaaaaaaaaaaaa"+i);
             b.put("aaaaaaaaaaaaa"+i,"dddddddddddddd"+i);

@@ -1,6 +1,5 @@
 package com.zyc.magic_mirror.ship.action;
 
-import com.google.common.collect.Maps;
 import com.zyc.magic_mirror.common.http.HttpAction;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import com.zyc.magic_mirror.ship.entity.OutputParam;
@@ -8,6 +7,7 @@ import com.zyc.magic_mirror.ship.entity.ShipCommonInputParam;
 import com.zyc.magic_mirror.ship.seaport.Input;
 import com.zyc.magic_mirror.ship.seaport.impl.ShipInput;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +38,7 @@ public class ShipAction extends HttpAction {
     }
 
     public void checkParam(Map<String, Object> param) throws Exception {
-        Map<String, List<String>> rules = Maps.newHashMap();
+        Map<String, List<String>> rules = new HashMap<>();
 //        rules.put("uid", Lists.newArrayList("isEmpty"));
 //        rules.put("variable", Lists.newArrayList("isEmpty"));
 //        rules.put("product_code", Lists.newArrayList("isEmpty"));

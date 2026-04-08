@@ -1,7 +1,6 @@
 package com.zyc.magic_mirror.ship.service.impl;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.entity.StrategyInstance;
 import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
@@ -82,7 +81,7 @@ public class CacheStrategyServiceImpl extends BaseServiceImpl implements Strateg
 //            sqlSession= MybatisUtil.getSqlSession();
 //            StrategyGroupMapper strategyInstanceMappler = sqlSession.getMapper(StrategyGroupMapper.class);
 //            List<Map<String,Object>> rows = strategyInstanceMappler.selectByOnlineAndStatusDispatch();
-            Map<String,List<StrategyGroupInstance>> maps = Maps.newHashMap();
+            Map<String,List<StrategyGroupInstance>> maps = new HashMap<>();
             for(Map<String,Object> row : rows){
                 DAG dag=new DAG();
                 StrategyGroupInstance strategyGroupInstance=new StrategyGroupInstance();
@@ -99,7 +98,7 @@ public class CacheStrategyServiceImpl extends BaseServiceImpl implements Strateg
                 for (Map<String,Object> run_line: run_lins){
                     String from = run_line.get("from").toString();
                     String to = run_line.get("to").toString();
-                    Map<String,String> tmp = Maps.newHashMap();
+                    Map<String,String> tmp = new HashMap<>();
                     tmp.put("from", from);
                     tmp.put("to", to);
                     dagMap.add(tmp);

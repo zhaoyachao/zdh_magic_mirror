@@ -1,11 +1,11 @@
 package com.zyc.magic_mirror.variable.action;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.zyc.magic_mirror.common.http.HttpAction;
 import com.zyc.magic_mirror.variable.service.FilterService;
 import com.zyc.magic_mirror.variable.service.impl.FilterServiceImpl;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +35,7 @@ public class FilterHitAction extends HttpAction {
     }
 
     public void checkParam(Map<String, Object> param) throws Exception {
-        Map<String, List<String>> rules = Maps.newHashMap();
+        Map<String, List<String>> rules = new HashMap<>();
         rules.put("uid", Lists.newArrayList("isEmpty"));
         rules.put("filter_code", Lists.newArrayList("isEmpty"));
         rules.put("product_code", Lists.newArrayList("isEmpty"));

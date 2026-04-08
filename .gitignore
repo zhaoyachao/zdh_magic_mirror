@@ -10,3 +10,5 @@ ship/target
 *-SNAPSHOT
 *.log
 .comate
+.vscode
+.trae

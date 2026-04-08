@@ -3,7 +3,6 @@ package com.zyc.magic_mirror.ship.service.impl;
 import cn.hutool.core.lang.JarClassLoader;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ClassLoaderUtil;
-import com.google.common.collect.Maps;
 import com.zyc.magic_mirror.common.entity.FunctionInfo;
 import com.zyc.magic_mirror.common.service.impl.BaseServiceImpl;
 import com.zyc.magic_mirror.common.util.JsonUtil;
@@ -60,7 +59,7 @@ public class CacheFunctionServiceImpl extends BaseServiceImpl implements Functio
                 return functionMapper.selectAllNotDelete();
             });
 
-            Map<String,FunctionInfo> maps = Maps.newHashMap();
+            Map<String,FunctionInfo> maps = new HashMap<>();
             for(FunctionInfo row : rows) {
                 maps.put(row.getFunction_name(), row);
 

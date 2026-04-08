@@ -1,6 +1,5 @@
 package com.zyc.magic_mirror.plugin.calculate.impl;
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.entity.DataPipe;
 import com.zyc.magic_mirror.common.entity.FilterInfo;
@@ -39,7 +38,7 @@ public class FileFilterEngineImpl implements FilterEngine {
     @Override
     public FilterResult getMap(Collection<DataPipe> rs) throws Exception {
         File f=new File(file_path);
-        Map<String,String> id_map = Maps.newHashMap();
+        Map<String,String> id_map = new HashMap<>();
         Set<DataPipe> id_map_rs = Sets.newHashSet();
         Set<DataPipe> id_map_rs_error = Sets.newHashSet();
         FilterResult idMappingResult = new FilterResult();

@@ -2,6 +2,7 @@ package com.zyc.magic_mirror.common.http;
 
 import com.google.common.collect.Lists;
 import com.zyc.magic_mirror.common.util.LogIdUtil;
+import com.zyc.magic_mirror.common.util.MD5Util;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +61,6 @@ public abstract class HttpAction {
             httpBaseResponse.setData(obj);
             return httpBaseResponse;
         }catch (Exception e){
-
             httpBaseResponse.setCode(-1);
             httpBaseResponse.setMsg(e.getMessage());
             return httpBaseResponse;
@@ -120,19 +120,8 @@ public abstract class HttpAction {
             sb.append(signKey);
             String signStr = sb.toString().substring(1);
 
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            // 更新数据
-            byte[] messageDigest = md.digest(signStr.getBytes());
-            // 将字节数组转换为十六进制字符串
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : messageDigest) {
-                String hex = Integer.toHexString(0xFF & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
-            }
-            return hexString.toString();
+            //小写32位MD5
+            return MD5Util.getMD5(signStr);
         }catch (Exception e){
            logger.error("HTTP action error: {}", e.getMessage(), e);
         }
@@ -147,7 +136,8 @@ public abstract class HttpAction {
                         clazz == Float.class ||
                         clazz == Double.class ||
                         clazz == Character.class ||
-                        clazz == Boolean.class
+                        clazz == Boolean.class ||
+                        clazz == String.class
         );
     }
 

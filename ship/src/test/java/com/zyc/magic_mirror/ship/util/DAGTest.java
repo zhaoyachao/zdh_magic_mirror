@@ -3,6 +3,7 @@ package com.zyc.magic_mirror.ship.util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.zyc.magic_mirror.common.http.HttpAction;
 import com.zyc.magic_mirror.common.util.DAG;
 import com.zyc.magic_mirror.common.util.JsonUtil;
 import org.junit.Test;
@@ -174,5 +175,13 @@ public class DAGTest {
         }
 
         return roots;
+    }
+
+    @Test
+    public void testSign(){
+        String s = "{\"uid\":\"15236479806\",\"data_node\":\"data_a\",\"sign\":\"022e21324f2fd4238ae6feb507fb3a52\",\"id_type\":\"phone\",\"source\":\"zdh\",\"product_code\":\"zdh\",\"scene\":\"online_manager\"}";
+
+        System.out.println(HttpAction.generatSign(JsonUtil.toJavaMap(s), "123456"));
+
     }
 }

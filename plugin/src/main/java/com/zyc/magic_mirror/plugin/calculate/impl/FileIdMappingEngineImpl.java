@@ -1,6 +1,5 @@
 package com.zyc.magic_mirror.plugin.calculate.impl;
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.zyc.magic_mirror.common.entity.DataPipe;
 import com.zyc.magic_mirror.common.util.Const;
@@ -43,7 +42,7 @@ public class FileIdMappingEngineImpl implements IdMappingEngine {
             throw new Exception("未找到id_mapping依赖的文件: "+this.file_path);
         }
         File f=new File(file_path);
-        Map<String,String> id_map = Maps.newHashMap();
+        Map<String,String> id_map = new HashMap<>();
         Set<DataPipe> id_map_rs = Sets.newHashSet();
         Set<DataPipe> id_map_rs_error = Sets.newHashSet();
         IdMappingResult idMappingResult = new IdMappingResult();

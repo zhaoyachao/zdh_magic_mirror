@@ -76,7 +76,9 @@ public class HttpServerHandler extends HttpBaseHandler {
         if(request.method().name().equalsIgnoreCase(HttpMethod.GET.name())){
             return getParam(request.uri());
         }else if(request.method().name().equalsIgnoreCase(HttpMethod.POST.name())){
-            return getBody(request.content().toString(CharsetUtil.UTF_8));
+            Map<String,Object> map = getParam(request.uri());
+            map.putAll(getBody(request.content().toString(CharsetUtil.UTF_8)));
+            return map;
         }else if(request.method().name().equalsIgnoreCase(HttpMethod.PUT.name())){
             Map<String,Object> map = getParam(request.uri());
             map.putAll(getBody(request.content().toString(CharsetUtil.UTF_8)));
@@ -100,10 +102,11 @@ public class HttpServerHandler extends HttpBaseHandler {
         String uri = URLDecoder.decode(request.uri(), chartSet);
         String method = request.method().name();
         HttpBaseResponse httpBaseResponse=new HttpBaseResponse();
-        logger.info("request:{}, 接收到请求:{}, 请求类型:{}", request_id, uri, method);
+        Map<String,Object> param = getReqContent(request);
+        logger.info("request:{}, 接收到请求:{}, 请求类型:{}, 请求参数:{}", request_id, uri, method, JsonUtil.formatJsonString(param));
         try{
             //解析参数
-            Map<String,Object> param = getReqContent(request);
+
 
             //根据uri 匹配数据库中mock数据
             String url=uri.split("\\?")[0];
