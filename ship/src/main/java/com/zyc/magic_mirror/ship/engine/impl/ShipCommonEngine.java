@@ -271,8 +271,11 @@ public class ShipCommonEngine implements Engine {
             StopFlag stopFlag = new StopFlag();
             shipEvent.setLabelValues(labels);
             shipEvent.setFilterValues(filters);
-
-            Disruptor master = DisruptorManager.getDisruptor("ship_master", 1, new ShipMasterEventWorkHandler(), Integer.valueOf(ShipConf.getProperty(ShipConf.SHIP_DISRUPTOR_MASTER_RING_NUM, "1024")));
+            int master_handler_num =Integer.valueOf(ShipConf.getProperty(ShipConf.SHIP_DISRUPTOR_MASTER_HANDLER_NUM, "1"));
+            //获取小于master_handler_num 的随机数
+            Random random = new Random();
+            int index = random.nextInt(master_handler_num);
+            Disruptor master = DisruptorManager.getDisruptor("ship_master_"+index, 1, new ShipMasterEventWorkHandler(), Integer.valueOf(ShipConf.getProperty(ShipConf.SHIP_DISRUPTOR_MASTER_RING_NUM, "1024")));
             Disruptor worker = DisruptorManager.getDisruptor("ship_worker", 1, new ShipWorkerEventWorkHandler(), Integer.valueOf(ShipConf.getProperty(ShipConf.SHIP_DISRUPTOR_WORKER_RING_NUM, "1024")));
 
 

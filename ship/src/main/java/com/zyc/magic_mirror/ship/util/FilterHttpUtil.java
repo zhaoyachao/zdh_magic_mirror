@@ -28,8 +28,7 @@ public class FilterHttpUtil {
 
             String sign = HttpAction.generatSign(body, signKey);
             body.put("sign", sign);
-
-            String json = HttpUtil.builder().postJSON(url, JsonUtil.formatJsonString(body));
+            String json = HttpUtil.builder().header("connection", "keep-alive").postJSON(url, JsonUtil.formatJsonString(body));
             Map<String,Object> result = JsonUtil.toJavaBean(json,Map.class);
             return result;
         }catch (Exception e){

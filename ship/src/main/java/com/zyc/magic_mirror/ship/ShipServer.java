@@ -9,6 +9,7 @@ import com.zyc.magic_mirror.common.http.PackageScanner;
 import com.zyc.magic_mirror.common.redis.JedisPoolUtil;
 import com.zyc.magic_mirror.common.util.*;
 import com.zyc.magic_mirror.ship.common.Const;
+import com.zyc.magic_mirror.ship.conf.ShipConf;
 import com.zyc.magic_mirror.ship.disruptor.DisruptorManager;
 import com.zyc.magic_mirror.ship.disruptor.ShipMasterEventWorkHandler;
 import com.zyc.magic_mirror.ship.disruptor.ShipWorkerEventWorkHandler;
@@ -158,12 +159,13 @@ public class ShipServer {
      * 初始化Disruptor
      */
     private static void initDisruptor(Properties properties) throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        int masterHandlerNum = Integer.valueOf(properties.getProperty("ship.disruptr.master.handler.num", "1"));
-        int workerHandlerNum = Integer.valueOf(properties.getProperty("ship.disruptr.worker.handler.num", "1"));
-        int masterRingBufferSize = Integer.valueOf(properties.getProperty("ship.disruptr.master.ring.num", "1024"));
-        int workerRingBufferSize = Integer.valueOf(properties.getProperty("ship.disruptr.worker.ring.num", "1024"));
-        
-        DisruptorManager.getDisruptor("ship_master", masterHandlerNum, new ShipMasterEventWorkHandler(), masterRingBufferSize);
+        int masterHandlerNum = Integer.valueOf(properties.getProperty(ShipConf.SHIP_DISRUPTOR_MASTER_HANDLER_NUM, "1"));
+        int workerHandlerNum = Integer.valueOf(properties.getProperty(ShipConf.SHIP_DISRUPTOR_WORKER_HANDLER_NUM, "1"));
+        int masterRingBufferSize = Integer.valueOf(properties.getProperty(ShipConf.SHIP_DISRUPTOR_MASTER_RING_NUM, "1024"));
+        int workerRingBufferSize = Integer.valueOf(properties.getProperty(ShipConf.SHIP_DISRUPTOR_WORKER_RING_NUM, "1024"));
+        for(int i = 0; i < masterHandlerNum; i++){
+            DisruptorManager.getDisruptor("ship_master_"+i, 1, new ShipMasterEventWorkHandler(), masterRingBufferSize);
+        }
         DisruptorManager.getDisruptor("ship_worker", workerHandlerNum, new ShipWorkerEventWorkHandler(), workerRingBufferSize);
     }
     
