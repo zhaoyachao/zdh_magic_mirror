@@ -560,6 +560,7 @@ public class HttpUtil {
 
                 CloseableHttpClient httpclientCustom = HttpClients.custom()
                         .setConnectionManager(connectionManager)
+                        .setConnectionManagerShared(true)
                         .setRetryHandler(retryStrategy)
                         .setProxy(proxy)
                         .setDefaultRequestConfig(RequestConfig.custom()
